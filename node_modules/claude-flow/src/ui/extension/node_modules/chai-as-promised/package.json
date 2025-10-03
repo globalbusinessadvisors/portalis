@@ -1,0 +1,47 @@
+{
+  "name": "chai-as-promised",
+  "type": "module",
+  "description": "Extends Chai with assertions about promises.",
+  "keywords": [
+    "chai",
+    "chai-plugin",
+    "browser",
+    "async",
+    "testing",
+    "assertions",
+    "promises",
+    "promises-aplus"
+  ],
+  "version": "8.0.1",
+  "author": "Domenic Denicola <d@domenic.me> (https://domenic.me)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chaijs/chai-as-promised.git"
+  },
+  "main": "./lib/chai-as-promised.js",
+  "exports": {
+    ".": "./lib/chai-as-promised.js"
+  },
+  "files": [
+    "lib"
+  ],
+  "scripts": {
+    "test": "c8 mocha",
+    "lint": "eslint .",
+    "format": "prettier --write lib test"
+  },
+  "dependencies": {
+    "check-error": "^2.0.0"
+  },
+  "peerDependencies": {
+    "chai": ">= 2.1.2 < 6"
+  },
+  "devDependencies": {
+    "c8": "^9.1.0",
+    "chai": "^5.1.0",
+    "eslint": "^8.57.0",
+    "mocha": "^10.4.0",
+    "prettier": "^3.2.5"
+  }
+}

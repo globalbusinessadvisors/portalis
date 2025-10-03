@@ -1,0 +1,114 @@
+[2m[13:16:07.681][0m [32mℹ️  INFO [0m [1m[mcp-tools][0m Initializing swarm
+{
+  component: [32m'mcp-tools-enhanced'[39m,
+  params: {
+    maxAgents: [33m5[39m,
+    topology: [32m'mesh'[39m
+  }
+}
+[2m[13:16:07.709][0m [32mℹ️  INFO [0m [1m[mcp-tools][0m Swarm created successfully
+{
+  component: [32m'mcp-tools-enhanced'[39m,
+  swarmId: [32m'swarm-1751634967705'[39m
+}
+[2m[13:16:07.714][0m [33m⚠️  WARN [0m [1m[mcp-tools][0m Failed to persist task
+{
+  component: [32m'mcp-tools-enhanced'[39m,
+  error: [32m'UNIQUE constraint failed: tasks.id'[39m,
+  taskId: [32m'task-1751634967711'[39m
+}
+[2m[13:16:07.715][0m [32mℹ️  INFO [0m [1m[mcp-tools][0m Spawning agent
+{
+  component: [32m'mcp-tools-enhanced'[39m,
+  params: {
+    name: [32m'Test Agent'[39m,
+    swarmId: [90mundefined[39m,
+    type: [32m'researcher'[39m
+  }
+}
+[2m[13:16:07.718][0m [33m⚠️  WARN [0m [1m[mcp-tools][0m Agent already exists in database, updating existing record
+{
+  agentId: [32m'agent-1751634967715'[39m,
+  component: [32m'mcp-tools-enhanced'[39m,
+  error: [32m'UNIQUE constraint failed: agents.id'[39m,
+  swarmId: [32m'swarm-1751633136676'[39m
+}
+[2m[13:16:07.719][0m [31m❌ ERROR[0m [1m[mcp-tools][0m Failed to update existing agent record
+{
+  agentId: [32m'agent-1751634967715'[39m,
+  component: [32m'mcp-tools-enhanced'[39m,
+  error: [32m'this.persistence.updateAgent is not a function'[39m
+}
+[2m[13:16:07.719][0m [32mℹ️  INFO [0m [1m[mcp-tools][0m Spawning agent
+{
+  component: [32m'mcp-tools-enhanced'[39m,
+  params: {
+    name: [32m'Test Agent'[39m,
+    swarmId: [90mundefined[39m,
+    type: [32m'researcher'[39m
+  }
+}
+[2m[13:16:07.723][0m [33m⚠️  WARN [0m [1m[mcp-tools][0m Agent already exists in database, updating existing record
+{
+  agentId: [32m'agent-1751634967719'[39m,
+  component: [32m'mcp-tools-enhanced'[39m,
+  error: [32m'UNIQUE constraint failed: agents.id'[39m,
+  swarmId: [32m'swarm-1751633136676'[39m
+}
+[2m[13:16:07.723][0m [31m❌ ERROR[0m [1m[mcp-tools][0m Failed to update existing agent record
+{
+  agentId: [32m'agent-1751634967719'[39m,
+  component: [32m'mcp-tools-enhanced'[39m,
+  error: [32m'this.persistence.updateAgent is not a function'[39m
+}
+[2m[13:16:07.727][0m [31m❌ ERROR[0m [1m[mcp-tools][0m Failed to persist neural network state
+{
+  agentId: [32m'agent-1751634967715'[39m,
+  component: [32m'mcp-tools-enhanced'[39m,
+  error: [32m'no such column: training_history'[39m,
+  networkId: {
+    changes: [33m1[39m,
+    lastInsertRowid: [33m1[39m
+  }
+}
+[2m[13:16:33.911][0m [32mℹ️  INFO [0m [1m[mcp-tools][0m Initializing swarm
+{
+  component: [32m'mcp-tools-enhanced'[39m,
+  params: {
+    maxAgents: [33m3[39m,
+    topology: [32m'mesh'[39m
+  }
+}
+[2m[13:16:33.939][0m [32mℹ️  INFO [0m [1m[mcp-tools][0m Swarm created successfully
+{
+  component: [32m'mcp-tools-enhanced'[39m,
+  swarmId: [32m'swarm-1751634993935'[39m
+}
+[2m[13:16:33.944][0m [33m⚠️  WARN [0m [1m[mcp-tools][0m Failed to persist task
+{
+  component: [32m'mcp-tools-enhanced'[39m,
+  error: [32m'UNIQUE constraint failed: tasks.id'[39m,
+  taskId: [32m'task-1751634993940'[39m
+}
+[2m[13:16:33.945][0m [32mℹ️  INFO [0m [1m[mcp-tools][0m Spawning agent
+{
+  component: [32m'mcp-tools-enhanced'[39m,
+  params: {
+    name: [32m'Test Agent'[39m,
+    swarmId: [90mundefined[39m,
+    type: [32m'researcher'[39m
+  }
+}
+[2m[13:16:33.948][0m [33m⚠️  WARN [0m [1m[mcp-tools][0m Agent already exists in database, updating existing record
+{
+  agentId: [32m'agent-1751634993945'[39m,
+  component: [32m'mcp-tools-enhanced'[39m,
+  error: [32m'UNIQUE constraint failed: agents.id'[39m,
+  swarmId: [32m'swarm-1751633136676'[39m
+}
+[2m[13:16:33.949][0m [31m❌ ERROR[0m [1m[mcp-tools][0m Failed to update existing agent record
+{
+  agentId: [32m'agent-1751634993945'[39m,
+  component: [32m'mcp-tools-enhanced'[39m,
+  error: [32m'this.persistence.updateAgent is not a function'[39m
+}
