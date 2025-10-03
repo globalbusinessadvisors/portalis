@@ -1,0 +1,31 @@
+# NeMo Framework Dependencies
+nemo-toolkit[all]>=1.22.0
+nvidia-pytriton>=0.4.0
+transformers>=4.35.0
+torch>=2.1.0
+numpy>=1.24.0
+pydantic>=2.5.0
+
+# CUDA Support
+cupy-cuda12x>=12.3.0
+nvidia-cuda-runtime-cu12>=12.3.0
+
+# Code Analysis
+libcst>=1.1.0
+astor>=0.8.1
+typing-extensions>=4.8.0
+
+# Testing
+pytest>=7.4.0
+pytest-cov>=4.1.0
+pytest-asyncio>=0.21.0
+hypothesis>=6.92.0
+
+# Logging and Monitoring
+loguru>=0.7.2
+prometheus-client>=0.19.0
+
+# Utilities
+pyyaml>=6.0.1
+jsonschema>=4.20.0
+tenacity>=8.2.3

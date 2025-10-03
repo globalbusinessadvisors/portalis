@@ -1,0 +1,134 @@
+# NeMo Translation Model Configuration
+# For Python to Rust code translation
+
+name: "portalis-python-rust-translator"
+version: "1.0.0"
+
+# Model Architecture
+model:
+  architecture: "megatron-gpt"
+  type: "text-to-text"
+
+  # Model size (adjust based on available resources)
+  hidden_size: 2048
+  num_layers: 24
+  num_attention_heads: 16
+  ffn_hidden_size: 8192
+
+  # Context window
+  max_position_embeddings: 2048
+
+  # Vocabulary
+  vocab_size: 50000
+  tokenizer: "sentencepiece"
+
+  # Training configuration
+  training:
+    batch_size: 32
+    micro_batch_size: 4
+    gradient_accumulation_steps: 8
+
+    learning_rate: 1.0e-4
+    warmup_steps: 1000
+    max_steps: 100000
+
+    optimizer: "adam"
+    weight_decay: 0.01
+
+    precision: "fp16"
+    use_amp: true
+
+# Inference Configuration
+inference:
+  max_length: 512
+  min_length: 10
+
+  # Sampling parameters
+  temperature: 0.2  # Low temperature for deterministic code
+  top_k: 5
+  top_p: 0.9
+  repetition_penalty: 1.2
+
+  # Beam search
+  num_beams: 1  # Greedy by default
+  num_return_sequences: 1
+
+  # CUDA optimization
+  use_cuda: true
+  cuda_device: 0
+  tensor_parallel_size: 1
+
+# Training Data
+data:
+  train_dataset:
+    path: "data/python_rust_pairs_train.jsonl"
+    format: "jsonl"
+    fields:
+      source: "python"
+      target: "rust"
+
+  validation_dataset:
+    path: "data/python_rust_pairs_val.jsonl"
+    format: "jsonl"
+
+  preprocessing:
+    max_source_length: 512
+    max_target_length: 1024
+    truncation: true
+
+    # Data augmentation
+    augmentation:
+      enabled: true
+      strategies:
+        - "random_variable_renaming"
+        - "comment_removal"
+        - "whitespace_normalization"
+
+# Fine-tuning
+fine_tuning:
+  base_model: "nvidia/megatron-gpt-345m"
+  strategy: "full"  # full, lora, or adapter
+
+  # LoRA configuration (if using LoRA)
+  lora:
+    enabled: false
+    rank: 8
+    alpha: 16
+    dropout: 0.1
+    target_modules: ["q_proj", "v_proj"]
+
+# Evaluation
+evaluation:
+  metrics:
+    - "bleu"
+    - "exact_match"
+    - "compilation_success"
+    - "semantic_equivalence"
+
+  benchmark_datasets:
+    - "data/benchmarks/stdlib_functions.jsonl"
+    - "data/benchmarks/common_patterns.jsonl"
+    - "data/benchmarks/error_handling.jsonl"
+
+# Deployment
+deployment:
+  export_format: "nemo"
+  triton_compatible: true
+
+  optimization:
+    quantization: false
+    pruning: false
+
+  serving:
+    backend: "triton"
+    max_batch_size: 32
+    dynamic_batching: true
+
+# Monitoring
+monitoring:
+  enable_metrics: true
+  log_level: "info"
+
+  checkpointing:
+    save_every_n_steps: 1000
+    keep_last_n_checkpoints: 5

@@ -1,0 +1,40 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "portalis-nim.fullname" . }}-api
+  labels:
+    {{- include "portalis-nim.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "portalis-nim.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: http
+    port: {{ .Values.service.api.port }}
+    targetPort: {{ .Values.service.api.targetPort }}
+    protocol: TCP
+  - name: metrics
+    port: {{ .Values.service.metrics.port }}
+    targetPort: {{ .Values.service.metrics.targetPort }}
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "portalis-nim.fullname" . }}-grpc
+  labels:
+    {{- include "portalis-nim.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  selector:
+    {{- include "portalis-nim.selectorLabels" . | nindent 4 }}
+  ports:
+  - name: grpc
+    port: {{ .Values.service.grpc.port }}
+    targetPort: {{ .Values.service.grpc.targetPort }}
+    protocol: TCP
+  sessionAffinity: ClientIP

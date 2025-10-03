@@ -1,0 +1,232 @@
+# Ray Cluster Configuration for DGX Cloud
+# Portalis Translation Pipeline Distributed Processing
+
+cluster_name: portalis-translation-cluster
+max_workers: 10
+upscaling_speed: 1.0
+idle_timeout_minutes: 5
+
+# Authentication
+auth:
+  ssh_user: ubuntu
+  ssh_private_key: ~/.ssh/portalis_dgx_key
+
+# Docker configuration
+docker:
+  image: "nvcr.io/nvidia/pytorch:24.01-py3"
+  container_name: "portalis-ray-worker"
+  pull_before_run: true
+  run_options:
+    - --runtime=nvidia
+    - --shm-size=16g
+    - --ulimit memlock=-1
+    - --ulimit stack=67108864
+
+# Head node configuration
+head_node:
+  InstanceType: dgxa100.80g  # 8x A100 80GB GPUs
+  ImageId: ami-nvidia-dgx-latest
+
+  # Head node resources
+  Resources:
+    CPU: 32
+    GPU: 2  # Reduced GPU for head node
+    memory: 256000000000  # 256 GB
+
+  # Setup commands
+  setup_commands:
+    - pip install -U ray[default] ray[tune] ray[rllib]
+    - pip install nemo-toolkit[all] nvidia-pytriton transformers
+    - pip install boto3 redis prometheus-client grafana-api
+    - pip install pydantic loguru tenacity psutil
+    - pip install cupy-cuda12x nvidia-cuda-runtime-cu12
+
+  # Head start command
+  head_start_ray_commands:
+    - ray stop
+    - >-
+      ulimit -n 65536;
+      ray start
+      --head
+      --port=6379
+      --object-manager-port=8076
+      --autoscaling-config=~/ray_bootstrap_config.yaml
+      --dashboard-host=0.0.0.0
+      --dashboard-port=8265
+      --num-cpus=30
+      --num-gpus=2
+      --memory=240000000000
+
+# Worker node configuration
+worker_nodes:
+  # Primary worker pool (GPU-heavy)
+  - name: gpu_workers
+    min_workers: 2
+    max_workers: 8
+
+    node_config:
+      InstanceType: dgxa100.80g  # 8x A100 80GB GPUs
+      ImageId: ami-nvidia-dgx-latest
+
+      Resources:
+        CPU: 64
+        GPU: 8
+        memory: 512000000000  # 512 GB
+
+      # Worker setup commands
+      setup_commands:
+        - pip install -U ray[default]
+        - pip install nemo-toolkit[all] nvidia-pytriton transformers
+        - pip install boto3 redis prometheus-client
+        - pip install pydantic loguru tenacity psutil
+        - pip install cupy-cuda12x nvidia-cuda-runtime-cu12
+
+      # Worker start command
+      worker_start_ray_commands:
+        - ray stop
+        - >-
+          ulimit -n 65536;
+          ray start
+          --address=$RAY_HEAD_IP:6379
+          --object-manager-port=8076
+          --num-cpus=60
+          --num-gpus=8
+          --memory=500000000000
+
+  # Spot instance pool (cost optimization)
+  - name: spot_workers
+    min_workers: 0
+    max_workers: 5
+
+    node_config:
+      InstanceType: dgxa100.40g  # 4x A100 40GB GPUs
+      ImageId: ami-nvidia-dgx-latest
+      InstanceMarketOptions:
+        MarketType: spot
+        SpotOptions:
+          MaxPrice: "15.00"  # Max price per hour
+
+      Resources:
+        CPU: 32
+        GPU: 4
+        memory: 256000000000  # 256 GB
+        spot: 1  # Tag as spot instance
+
+      setup_commands:
+        - pip install -U ray[default]
+        - pip install nemo-toolkit[all] nvidia-pytriton transformers
+        - pip install boto3 redis prometheus-client
+        - pip install pydantic loguru tenacity psutil
+        - pip install cupy-cuda12x nvidia-cuda-runtime-cu12
+
+      worker_start_ray_commands:
+        - ray stop
+        - >-
+          ulimit -n 65536;
+          ray start
+          --address=$RAY_HEAD_IP:6379
+          --object-manager-port=8076
+          --num-cpus=28
+          --num-gpus=4
+          --memory=240000000000
+
+# File mounts (shared storage)
+file_mounts:
+  "/mnt/portalis/models":
+    source: "s3://portalis-models/"
+    sync_on_update: true
+  "/mnt/portalis/cache":
+    source: "s3://portalis-cache/"
+    sync_on_update: false
+  "/mnt/portalis/results":
+    source: "s3://portalis-results/"
+    sync_on_update: false
+
+# Cluster syncing
+rsync_exclude:
+  - "**/.git"
+  - "**/.git/**"
+  - "**/node_modules"
+  - "**/__pycache__"
+  - "**/*.pyc"
+
+rsync_filter:
+  - ".gitignore"
+
+# Initialization commands
+initialization_commands:
+  - mkdir -p /mnt/portalis/{models,cache,results}
+  - mkdir -p /tmp/ray_logs
+  - chmod -R 755 /mnt/portalis
+
+# Available node types for autoscaling
+available_node_types:
+  gpu_workers:
+    min_workers: 2
+    max_workers: 8
+    resources: {"CPU": 64, "GPU": 8, "memory": 512000000000}
+    node_config:
+      InstanceType: dgxa100.80g
+
+  spot_workers:
+    min_workers: 0
+    max_workers: 5
+    resources: {"CPU": 32, "GPU": 4, "memory": 256000000000, "spot": 1}
+    node_config:
+      InstanceType: dgxa100.40g
+      InstanceMarketOptions:
+        MarketType: spot
+
+# Autoscaling configuration
+autoscaling:
+  upscaling_speed: 1.0
+  downscaling_speed: 1.0
+  target_utilization_fraction: 0.7
+  idle_timeout_minutes: 5
+
+  # Custom autoscaling resources
+  custom_resources:
+    - name: "translation_worker"
+      max: 8
+    - name: "validation_worker"
+      max: 4
+    - name: "embedding_worker"
+      max: 8
+
+# Provider-specific configuration
+provider:
+  type: aws
+  region: us-east-1
+  availability_zone: us-east-1a
+
+  # Security
+  security_group:
+    GroupName: portalis-ray-cluster
+    IpPermissions:
+      - FromPort: 6379
+        ToPort: 6379
+        IpProtocol: TCP
+        IpRanges:
+          - CidrIp: 10.0.0.0/16
+      - FromPort: 8265
+        ToPort: 8265
+        IpProtocol: TCP
+        IpRanges:
+          - CidrIp: 0.0.0.0/0  # Dashboard (restrict in production)
+      - FromPort: 8076
+        ToPort: 8076
+        IpProtocol: TCP
+        IpRanges:
+          - CidrIp: 10.0.0.0/16
+      - FromPort: 22
+        ToPort: 22
+        IpProtocol: TCP
+        IpRanges:
+          - CidrIp: 0.0.0.0/0
+
+# Logging
+logging:
+  level: INFO
+  log_dir: /tmp/ray_logs
+  rotation: "100 MB"
+  retention: "7 days"

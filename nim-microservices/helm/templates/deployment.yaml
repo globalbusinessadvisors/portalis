@@ -1,0 +1,124 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "portalis-nim.fullname" . }}
+  labels:
+    {{- include "portalis-nim.labels" . | nindent 4 }}
+spec:
+  {{- if not .Values.autoscaling.enabled }}
+  replicas: {{ .Values.replicaCount }}
+  {{- end }}
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      {{- include "portalis-nim.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ include (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        {{- with .Values.podAnnotations }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+      labels:
+        {{- include "portalis-nim.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "portalis-nim.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      {{- with .Values.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: {{ .Chart.Name }}
+        securityContext:
+          {{- toYaml .Values.securityContext | nindent 12 }}
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        imagePullPolicy: {{ .Values.image.pullPolicy }}
+        ports:
+        - name: http
+          containerPort: {{ .Values.service.api.targetPort }}
+          protocol: TCP
+        - name: grpc
+          containerPort: {{ .Values.service.grpc.targetPort }}
+          protocol: TCP
+        - name: metrics
+          containerPort: {{ .Values.service.metrics.targetPort }}
+          protocol: TCP
+        env:
+        {{- range $key, $value := .Values.env }}
+        - name: {{ $key }}
+          value: {{ $value | quote }}
+        {{- end }}
+        {{- if .Values.probes.liveness.enabled }}
+        livenessProbe:
+          httpGet:
+            path: {{ .Values.probes.liveness.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.probes.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.liveness.failureThreshold }}
+        {{- end }}
+        {{- if .Values.probes.readiness.enabled }}
+        readinessProbe:
+          httpGet:
+            path: {{ .Values.probes.readiness.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.probes.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.readiness.failureThreshold }}
+        {{- end }}
+        {{- if .Values.probes.startup.enabled }}
+        startupProbe:
+          httpGet:
+            path: {{ .Values.probes.startup.path }}
+            port: http
+          initialDelaySeconds: {{ .Values.probes.startup.initialDelaySeconds }}
+          periodSeconds: {{ .Values.probes.startup.periodSeconds }}
+          timeoutSeconds: {{ .Values.probes.startup.timeoutSeconds }}
+          failureThreshold: {{ .Values.probes.startup.failureThreshold }}
+        {{- end }}
+        resources:
+          {{- toYaml .Values.resources | nindent 12 }}
+        volumeMounts:
+        {{- if .Values.persistence.models.enabled }}
+        - name: models
+          mountPath: /models
+          readOnly: true
+        {{- end }}
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: cache
+          mountPath: /tmp/cache
+      volumes:
+      {{- if .Values.persistence.models.enabled }}
+      - name: models
+        persistentVolumeClaim:
+          claimName: {{ include "portalis-nim.fullname" . }}-models
+      {{- end }}
+      - name: config
+        configMap:
+          name: {{ include "portalis-nim.fullname" . }}-config
+      - name: cache
+        emptyDir:
+          sizeLimit: 2Gi
+      terminationGracePeriodSeconds: 60

@@ -1,0 +1,25 @@
+[package]
+name = "portalis-orchestration"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+portalis-core = { path = "../core" }
+portalis-ingest = { path = "../agents/ingest" }
+portalis-analysis = { path = "../agents/analysis" }
+portalis-specgen = { path = "../agents/specgen" }
+portalis-transpiler = { path = "../agents/transpiler" }
+portalis-build = { path = "../agents/build" }
+portalis-test = { path = "../agents/test" }
+portalis-packaging = { path = "../agents/packaging" }
+tokio.workspace = true
+async-trait.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile = "3.8"

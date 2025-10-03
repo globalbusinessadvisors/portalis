@@ -1,0 +1,205 @@
+# Default values for portalis-nim
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+# Number of replicas
+replicaCount: 3
+
+# Container image configuration
+image:
+  repository: portalis-nim
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: ""
+
+# Pod annotations
+podAnnotations:
+  prometheus.io/scrape: "true"
+  prometheus.io/port: "9090"
+  prometheus.io/path: "/metrics"
+
+# Pod security context
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+
+# Container security context
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop:
+    - ALL
+
+# Service configuration
+service:
+  type: ClusterIP
+  api:
+    port: 8000
+    targetPort: 8000
+  grpc:
+    port: 50051
+    targetPort: 50051
+  metrics:
+    port: 9090
+    targetPort: 9090
+
+# Ingress configuration
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+  hosts:
+    - host: portalis-nim.example.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: portalis-nim-tls
+      hosts:
+        - portalis-nim.example.com
+
+# Resource requests and limits
+resources:
+  requests:
+    cpu: 2
+    memory: 4Gi
+    nvidia.com/gpu: 1
+  limits:
+    cpu: 4
+    memory: 8Gi
+    nvidia.com/gpu: 1
+
+# Autoscaling configuration
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Node selector for GPU nodes
+nodeSelector:
+  nvidia.com/gpu: "true"
+
+# Tolerations for GPU nodes
+tolerations:
+  - key: nvidia.com/gpu
+    operator: Exists
+    effect: NoSchedule
+
+# Affinity rules
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchLabels:
+            app: portalis-nim
+        topologyKey: kubernetes.io/hostname
+
+# Environment variables
+env:
+  SERVICE_NAME: portalis-nim
+  SERVICE_VERSION: "1.0.0"
+  ENVIRONMENT: production
+  LOG_LEVEL: info
+  ENABLE_CUDA: "true"
+  GPU_ID: "0"
+  TRITON_URL: triton-service:8000
+  TRITON_PROTOCOL: http
+  WORKERS: "2"
+  ENABLE_METRICS: "true"
+  ENABLE_AUTH: "false"
+
+# Persistent storage
+persistence:
+  models:
+    enabled: true
+    storageClass: "fast-storage"
+    accessMode: ReadOnlyMany
+    size: 50Gi
+  cache:
+    enabled: false
+    storageClass: "fast-storage"
+    accessMode: ReadWriteMany
+    size: 20Gi
+
+# Probes configuration
+probes:
+  liveness:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 30
+    timeoutSeconds: 10
+    failureThreshold: 3
+    path: /live
+  readiness:
+    enabled: true
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 3
+    path: /ready
+  startup:
+    enabled: true
+    initialDelaySeconds: 10
+    periodSeconds: 10
+    timeoutSeconds: 5
+    failureThreshold: 30
+    path: /health
+
+# Monitoring
+monitoring:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+    interval: 15s
+  podMonitor:
+    enabled: true
+    interval: 15s
+
+# ConfigMap data
+config:
+  service.yaml: |
+    service:
+      name: portalis-nim
+      version: "1.0.0"
+      environment: production
+
+# Secrets (use external secrets operator in production)
+secrets: {}
+
+# Triton configuration
+triton:
+  enabled: true
+  url: triton-service:8000
+  protocol: http
+  modelName: translation_model
+
+# Feature flags
+features:
+  streaming: true
+  batch: true
+  auth: false
+  tracing: false
+
+# Rate limiting
+rateLimiting:
+  enabled: true
+  requestsPerMinute: 60
+  burst: 10

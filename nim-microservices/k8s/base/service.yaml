@@ -1,0 +1,70 @@
+---
+# REST API Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portalis-nim-api
+  labels:
+    app: portalis-nim
+    component: translation-service
+spec:
+  type: ClusterIP
+  selector:
+    app: portalis-nim
+    component: translation-service
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+
+---
+# gRPC Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portalis-nim-grpc
+  labels:
+    app: portalis-nim
+    component: translation-service
+spec:
+  type: ClusterIP
+  selector:
+    app: portalis-nim
+    component: translation-service
+  ports:
+  - name: grpc
+    port: 50051
+    targetPort: 50051
+    protocol: TCP
+  sessionAffinity: ClientIP
+
+---
+# Headless Service for StatefulSet (if using StatefulSet for model caching)
+apiVersion: v1
+kind: Service
+metadata:
+  name: portalis-nim-headless
+  labels:
+    app: portalis-nim
+    component: translation-service
+spec:
+  clusterIP: None
+  selector:
+    app: portalis-nim
+    component: translation-service
+  ports:
+  - name: http
+    port: 8000
+    targetPort: 8000
+  - name: grpc
+    port: 50051
+    targetPort: 50051

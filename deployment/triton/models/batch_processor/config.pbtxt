@@ -1,0 +1,155 @@
+name: "batch_processor"
+platform: "ensemble"
+max_batch_size: 128
+
+input [
+  {
+    name: "source_files"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "project_config"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  },
+  {
+    name: "optimization_level"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+    optional: true
+  }
+]
+
+output [
+  {
+    name: "translated_files"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "compilation_status"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "performance_metrics"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  },
+  {
+    name: "wasm_binaries"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+
+ensemble_scheduling {
+  step [
+    {
+      model_name: "analysis_agent"
+      model_version: -1
+      input_map {
+        key: "source_files"
+        value: "source_files"
+      }
+      input_map {
+        key: "project_config"
+        value: "project_config"
+      }
+      output_map {
+        key: "api_spec"
+        value: "analyzed_apis"
+      }
+      output_map {
+        key: "dependency_graph"
+        value: "dependencies"
+      }
+    },
+    {
+      model_name: "spec_generator"
+      model_version: -1
+      input_map {
+        key: "api_spec"
+        value: "analyzed_apis"
+      }
+      input_map {
+        key: "dependency_graph"
+        value: "dependencies"
+      }
+      output_map {
+        key: "rust_spec"
+        value: "rust_specifications"
+      }
+    },
+    {
+      model_name: "translation_model"
+      model_version: -1
+      input_map {
+        key: "python_code"
+        value: "source_files"
+      }
+      input_map {
+        key: "translation_options"
+        value: "rust_specifications"
+      }
+      output_map {
+        key: "rust_code"
+        value: "translated_files"
+      }
+      output_map {
+        key: "metadata"
+        value: "translation_metadata"
+      }
+    },
+    {
+      model_name: "build_agent"
+      model_version: -1
+      input_map {
+        key: "rust_source"
+        value: "translated_files"
+      }
+      input_map {
+        key: "optimization_level"
+        value: "optimization_level"
+      }
+      output_map {
+        key: "wasm_binaries"
+        value: "wasm_binaries"
+      }
+      output_map {
+        key: "compilation_status"
+        value: "compilation_status"
+      }
+    },
+    {
+      model_name: "test_validator"
+      model_version: -1
+      input_map {
+        key: "wasm_binaries"
+        value: "wasm_binaries"
+      }
+      input_map {
+        key: "source_files"
+        value: "source_files"
+      }
+      output_map {
+        key: "performance_metrics"
+        value: "performance_metrics"
+      }
+    }
+  ]
+}
+
+instance_group [
+  {
+    count: 1
+    kind: KIND_CPU
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 16, 32, 64, 128 ]
+  max_queue_delay_microseconds: 500000
+  preserve_ordering: false
+}

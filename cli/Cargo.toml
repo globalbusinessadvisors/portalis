@@ -1,0 +1,19 @@
+[package]
+name = "portalis-cli"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[[bin]]
+name = "portalis"
+path = "src/main.rs"
+
+[dependencies]
+portalis-core = { path = "../core" }
+portalis-orchestration = { path = "../orchestration" }
+tokio.workspace = true
+anyhow.workspace = true
+clap = { version = "4.4", features = ["derive"] }
+tracing.workspace = true
+tracing-subscriber.workspace = true

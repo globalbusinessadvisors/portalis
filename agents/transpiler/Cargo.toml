@@ -1,0 +1,28 @@
+[package]
+name = "portalis-transpiler"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+portalis-core = { path = "../../core" }
+portalis-nemo-bridge = { path = "../nemo-bridge", optional = true }
+tokio.workspace = true
+async-trait.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+
+[features]
+default = []
+nemo = ["portalis-nemo-bridge"]
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }
+wiremock = "0.6"
+
+[[bench]]
+name = "translation_benchmark"
+harness = false

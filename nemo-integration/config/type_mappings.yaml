@@ -1,0 +1,205 @@
+# Python to Rust Type Mappings Configuration
+
+# Primitive Types
+primitives:
+  int:
+    rust_type: "i64"
+    notes: "Default integer mapping, use i32 for smaller values"
+    alternatives:
+      - type: "i32"
+        condition: "value_range < 2^31"
+      - type: "i128"
+        condition: "value_range >= 2^63"
+      - type: "usize"
+        condition: "array_index"
+
+  float:
+    rust_type: "f64"
+    notes: "64-bit floating point"
+    alternatives:
+      - type: "f32"
+        condition: "precision_requirements_low"
+
+  str:
+    rust_type: "String"
+    notes: "Owned string, use &str for references"
+    alternatives:
+      - type: "&str"
+        condition: "immutable_reference"
+
+  bool:
+    rust_type: "bool"
+    notes: "Direct mapping"
+
+  bytes:
+    rust_type: "Vec<u8>"
+    notes: "Byte vector"
+    alternatives:
+      - type: "&[u8]"
+        condition: "immutable_reference"
+
+  None:
+    rust_type: "()"
+    notes: "Unit type"
+
+# Collection Types
+collections:
+  list:
+    rust_type: "Vec<T>"
+    imports: []
+    notes: "Dynamic array"
+    alternatives:
+      - type: "SmallVec<[T; N]>"
+        condition: "small_fixed_size"
+        imports: ["use smallvec::SmallVec;"]
+
+  dict:
+    rust_type: "HashMap<K, V>"
+    imports: ["use std::collections::HashMap;"]
+    notes: "Hash-based map"
+    alternatives:
+      - type: "BTreeMap<K, V>"
+        condition: "sorted_keys_required"
+        imports: ["use std::collections::BTreeMap;"]
+
+  set:
+    rust_type: "HashSet<T>"
+    imports: ["use std::collections::HashSet;"]
+    notes: "Hash-based set"
+    alternatives:
+      - type: "BTreeSet<T>"
+        condition: "sorted_order_required"
+        imports: ["use std::collections::BTreeSet;"]
+
+  tuple:
+    rust_type: "(T1, T2, ...)"
+    notes: "Direct tuple mapping"
+
+  frozenset:
+    rust_type: "HashSet<T>"
+    imports: ["use std::collections::HashSet;"]
+    notes: "Immutable set (enforced by not exposing &mut)"
+
+# Generic Types (typing module)
+generics:
+  Optional:
+    rust_type: "Option<T>"
+    notes: "Built-in Option type"
+    pattern: "Optional[T] -> Option<T>"
+
+  Union:
+    rust_type: "enum UnionType { Variant1(T1), Variant2(T2) }"
+    notes: "Custom enum for each union"
+    pattern: "Union[T1, T2] -> enum"
+
+  List:
+    rust_type: "Vec<T>"
+    pattern: "List[T] -> Vec<T>"
+
+  Dict:
+    rust_type: "HashMap<K, V>"
+    imports: ["use std::collections::HashMap;"]
+    pattern: "Dict[K, V] -> HashMap<K, V>"
+
+  Set:
+    rust_type: "HashSet<T>"
+    imports: ["use std::collections::HashSet;"]
+    pattern: "Set[T] -> HashSet<T>"
+
+  Tuple:
+    rust_type: "(T1, T2, ...)"
+    pattern: "Tuple[T1, T2] -> (T1, T2)"
+
+  Callable:
+    rust_type: "Box<dyn Fn(Args) -> Ret>"
+    notes: "Boxed function trait object"
+    pattern: "Callable[[Args], Ret] -> Box<dyn Fn(Args) -> Ret>"
+    alternatives:
+      - type: "impl Fn(Args) -> Ret"
+        condition: "known_at_compile_time"
+
+  Iterator:
+    rust_type: "impl Iterator<Item = T>"
+    pattern: "Iterator[T] -> impl Iterator<Item = T>"
+
+  Iterable:
+    rust_type: "impl IntoIterator<Item = T>"
+    pattern: "Iterable[T] -> impl IntoIterator<Item = T>"
+
+  Any:
+    rust_type: "Box<dyn Any>"
+    imports: ["use std::any::Any;"]
+    notes: "Type-erased value, use sparingly"
+
+# Standard Library Types
+stdlib:
+  "pathlib.Path":
+    rust_type: "PathBuf"
+    imports: ["use std::path::PathBuf;"]
+    crate: "std"
+
+  "datetime.datetime":
+    rust_type: "DateTime<Utc>"
+    imports: ["use chrono::{DateTime, Utc};"]
+    crate: "chrono"
+    version: "0.4"
+
+  "datetime.date":
+    rust_type: "NaiveDate"
+    imports: ["use chrono::NaiveDate;"]
+    crate: "chrono"
+
+  "datetime.time":
+    rust_type: "NaiveTime"
+    imports: ["use chrono::NaiveTime;"]
+    crate: "chrono"
+
+  "re.Pattern":
+    rust_type: "Regex"
+    imports: ["use regex::Regex;"]
+    crate: "regex"
+    version: "1.10"
+
+  "io.TextIOWrapper":
+    rust_type: "BufReader<File>"
+    imports:
+      - "use std::io::BufReader;"
+      - "use std::fs::File;"
+    crate: "std"
+
+  "io.BytesIO":
+    rust_type: "Cursor<Vec<u8>>"
+    imports: ["use std::io::Cursor;"]
+    crate: "std"
+
+  "json.JSONDecoder":
+    rust_type: "serde_json::Value"
+    imports: ["use serde_json;"]
+    crate: "serde_json"
+    version: "1.0"
+
+# Numeric Types (numpy)
+numpy:
+  "numpy.ndarray":
+    rust_type: "ArrayD<T>"
+    imports: ["use ndarray::ArrayD;"]
+    crate: "ndarray"
+    version: "0.15"
+
+  "numpy.int32":
+    rust_type: "i32"
+
+  "numpy.int64":
+    rust_type: "i64"
+
+  "numpy.float32":
+    rust_type: "f32"
+
+  "numpy.float64":
+    rust_type: "f64"
+
+# Custom Mappings
+custom:
+  # Add project-specific type mappings here
+  enabled: true
+  mappings: []

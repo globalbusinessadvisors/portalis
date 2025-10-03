@@ -1,0 +1,306 @@
+// Portalis Translation Service - gRPC Protocol Definition
+//
+// High-performance gRPC API for Python-to-Rust code translation.
+
+syntax = "proto3";
+
+package portalis.translation.v1;
+
+option java_multiple_files = true;
+option java_package = "com.portalis.translation.v1";
+option java_outer_classname = "TranslationProto";
+option go_package = "github.com/portalis/translation/v1;translation";
+
+// Translation service definition
+service TranslationService {
+  // Translate single Python code snippet to Rust
+  rpc TranslateCode(TranslateRequest) returns (TranslateResponse);
+
+  // Translate multiple files in batch
+  rpc TranslateBatch(BatchTranslateRequest) returns (BatchTranslateResponse);
+
+  // Stream translation results
+  rpc TranslateStream(TranslateRequest) returns (stream TranslationChunk);
+
+  // Bidirectional streaming for interactive translation
+  rpc TranslateInteractive(stream InteractiveRequest) returns (stream InteractiveResponse);
+
+  // Get available models
+  rpc ListModels(ListModelsRequest) returns (ListModelsResponse);
+
+  // Health check
+  rpc HealthCheck(HealthCheckRequest) returns (HealthCheckResponse);
+}
+
+// Translation request
+message TranslateRequest {
+  // Python source code to translate
+  string python_code = 1;
+
+  // Translation mode
+  TranslationMode mode = 2;
+
+  // Optional context (imports, type hints, examples)
+  map<string, string> context = 3;
+
+  // Generation parameters
+  GenerationParameters parameters = 4;
+
+  // Include alternative translations
+  bool include_alternatives = 5;
+}
+
+// Translation response
+message TranslateResponse {
+  // Translated Rust code
+  string rust_code = 1;
+
+  // Confidence score (0.0 - 1.0)
+  double confidence = 2;
+
+  // Alternative translations (if requested)
+  repeated string alternatives = 3;
+
+  // Metadata
+  map<string, string> metadata = 4;
+
+  // Warnings
+  repeated string warnings = 5;
+
+  // Optimization suggestions
+  repeated string suggestions = 6;
+
+  // Processing time in milliseconds
+  double processing_time_ms = 7;
+}
+
+// Batch translation request
+message BatchTranslateRequest {
+  // Source files (name -> content)
+  map<string, string> source_files = 1;
+
+  // Project configuration
+  ProjectConfig project_config = 2;
+
+  // Optimization level
+  OptimizationLevel optimization_level = 3;
+
+  // Compile to WASM after translation
+  bool compile_wasm = 4;
+
+  // Run tests after translation
+  bool run_tests = 5;
+}
+
+// Batch translation response
+message BatchTranslateResponse {
+  // Translated files (name -> content)
+  map<string, string> translated_files = 1;
+
+  // Compilation status for each file
+  map<string, string> compilation_status = 2;
+
+  // Performance metrics
+  PerformanceMetrics performance_metrics = 3;
+
+  // WASM binaries (if requested)
+  map<string, bytes> wasm_binaries = 4;
+
+  // Total processing time
+  double total_processing_time_ms = 5;
+
+  // Success/failure counts
+  int32 success_count = 6;
+  int32 failure_count = 7;
+}
+
+// Streaming translation chunk
+message TranslationChunk {
+  // Chunk type (code, metadata, complete, error)
+  string chunk_type = 1;
+
+  // Chunk content
+  string content = 2;
+
+  // Whether this is the final chunk
+  bool is_final = 3;
+
+  // Optional metadata
+  map<string, string> metadata = 4;
+}
+
+// Interactive translation request
+message InteractiveRequest {
+  // Request type (translate, refine, explain)
+  string request_type = 1;
+
+  // Content
+  string content = 2;
+
+  // Context from previous interactions
+  repeated string context = 3;
+
+  // Parameters
+  map<string, string> parameters = 4;
+}
+
+// Interactive translation response
+message InteractiveResponse {
+  // Response type (translation, refinement, explanation)
+  string response_type = 1;
+
+  // Content
+  string content = 2;
+
+  // Confidence score
+  double confidence = 3;
+
+  // Suggestions
+  repeated string suggestions = 4;
+}
+
+// List models request
+message ListModelsRequest {
+  // Filter by capability
+  repeated string capabilities = 1;
+}
+
+// List models response
+message ListModelsResponse {
+  // Available models
+  repeated ModelInfo models = 1;
+}
+
+// Model information
+message ModelInfo {
+  // Model name
+  string name = 1;
+
+  // Model version
+  string version = 2;
+
+  // Framework (NeMo, Triton, etc.)
+  string framework = 3;
+
+  // Model capabilities
+  repeated string capabilities = 4;
+
+  // Model status (ready, loading, error)
+  string status = 5;
+
+  // Additional metadata
+  map<string, string> metadata = 6;
+}
+
+// Health check request
+message HealthCheckRequest {
+  // Optional: specific component to check
+  string component = 1;
+}
+
+// Health check response
+message HealthCheckResponse {
+  // Overall status (healthy, degraded, unhealthy)
+  string status = 1;
+
+  // Service version
+  string version = 2;
+
+  // Uptime in seconds
+  double uptime_seconds = 3;
+
+  // GPU availability
+  bool gpu_available = 4;
+
+  // Model loaded status
+  bool model_loaded = 5;
+
+  // Dependency status
+  map<string, string> dependencies = 6;
+}
+
+// Generation parameters
+message GenerationParameters {
+  // Maximum length of generated code
+  int32 max_length = 1;
+
+  // Sampling temperature (0.0 - 2.0)
+  double temperature = 2;
+
+  // Top-k sampling
+  int32 top_k = 3;
+
+  // Top-p (nucleus) sampling
+  double top_p = 4;
+
+  // Repetition penalty
+  double repetition_penalty = 5;
+
+  // Number of beams for beam search
+  int32 num_beams = 6;
+}
+
+// Project configuration
+message ProjectConfig {
+  // Project name
+  string name = 1;
+
+  // Dependencies
+  repeated Dependency dependencies = 2;
+
+  // Features to enable
+  repeated string features = 3;
+
+  // Build configuration
+  map<string, string> build_config = 4;
+}
+
+// Dependency specification
+message Dependency {
+  // Dependency name
+  string name = 1;
+
+  // Version requirement
+  string version = 2;
+
+  // Optional features
+  repeated string features = 3;
+}
+
+// Performance metrics
+message PerformanceMetrics {
+  // Total processing time
+  double total_time_ms = 1;
+
+  // Parse time
+  double parse_time_ms = 2;
+
+  // Translation time
+  double translation_time_ms = 3;
+
+  // Compilation time
+  double compilation_time_ms = 4;
+
+  // Lines of code processed
+  int32 lines_of_code = 5;
+
+  // Tokens processed
+  int32 tokens_processed = 6;
+}
+
+// Translation mode enumeration
+enum TranslationMode {
+  TRANSLATION_MODE_UNSPECIFIED = 0;
+  TRANSLATION_MODE_STANDARD = 1;
+  TRANSLATION_MODE_FAST = 2;
+  TRANSLATION_MODE_QUALITY = 3;
+  TRANSLATION_MODE_STREAMING = 4;
+}
+
+// Optimization level enumeration
+enum OptimizationLevel {
+  OPTIMIZATION_LEVEL_UNSPECIFIED = 0;
+  OPTIMIZATION_LEVEL_DEBUG = 1;
+  OPTIMIZATION_LEVEL_RELEASE = 2;
+  OPTIMIZATION_LEVEL_RELEASE_WITH_DEBUG = 3;
+}

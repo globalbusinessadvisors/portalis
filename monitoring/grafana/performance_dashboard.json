@@ -1,0 +1,372 @@
+{
+  "dashboard": {
+    "title": "Portalis Performance Dashboard",
+    "tags": ["portalis", "performance", "nvidia"],
+    "timezone": "browser",
+    "refresh": "10s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "title": "Translation Latency (P50, P95, P99)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, rate(portalis_translation_duration_seconds_bucket[5m]))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, rate(portalis_translation_duration_seconds_bucket[5m]))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, rate(portalis_translation_duration_seconds_bucket[5m]))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Latency"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [0.5],
+                "type": "gt"
+              },
+              "query": {
+                "params": ["B", "5m", "now"]
+              },
+              "reducer": {
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "name": "High P95 Latency"
+        }
+      },
+      {
+        "id": 2,
+        "title": "Requests Per Second",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(portalis_translation_requests_total[1m])",
+            "legendFormat": "{{method}} - {{status}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "reqps",
+            "label": "Requests/sec"
+          }
+        ]
+      },
+      {
+        "id": 3,
+        "title": "GPU Utilization",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 8, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_gpu_utilization_percent",
+            "legendFormat": "GPU {{gpu_id}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "Utilization",
+            "max": 100,
+            "min": 0
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 60,
+            "colorMode": "custom",
+            "fill": true,
+            "line": true,
+            "op": "lt",
+            "fillColor": "rgba(255, 0, 0, 0.1)"
+          },
+          {
+            "value": 80,
+            "colorMode": "custom",
+            "fill": true,
+            "line": true,
+            "op": "gt",
+            "fillColor": "rgba(255, 165, 0, 0.1)"
+          }
+        ]
+      },
+      {
+        "id": 4,
+        "title": "GPU Memory Usage",
+        "type": "graph",
+        "gridPos": {"x": 8, "y": 8, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_gpu_memory_used_bytes / portalis_gpu_memory_total_bytes * 100",
+            "legendFormat": "GPU {{gpu_id}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "Memory Used",
+            "max": 100,
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Success Rate",
+        "type": "singlestat",
+        "gridPos": {"x": 16, "y": 8, "w": 8, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_translation_requests_total{status=\"success\"}[5m])) / sum(rate(portalis_translation_requests_total[5m])) * 100",
+            "refId": "A"
+          }
+        ],
+        "format": "percent",
+        "thresholds": "90,99",
+        "colors": ["#d44a3a", "#e0b400", "#299c46"]
+      },
+      {
+        "id": 6,
+        "title": "NeMo Model Performance",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(portalis_nemo_translation_duration_seconds_sum[5m]) / rate(portalis_nemo_translation_duration_seconds_count[5m])",
+            "legendFormat": "Avg Latency",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(portalis_nemo_batch_size_sum[5m]) / rate(portalis_nemo_batch_size_count[5m])",
+            "legendFormat": "Avg Batch Size",
+            "refId": "B",
+            "yAxisIndex": 1
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Latency"
+          },
+          {
+            "format": "short",
+            "label": "Batch Size"
+          }
+        ]
+      },
+      {
+        "id": 7,
+        "title": "CUDA Kernel Performance",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_cuda_kernel_duration_seconds{kernel=\"tokenize\"}",
+            "legendFormat": "Tokenize",
+            "refId": "A"
+          },
+          {
+            "expr": "portalis_cuda_kernel_duration_seconds{kernel=\"embed\"}",
+            "legendFormat": "Embed",
+            "refId": "B"
+          },
+          {
+            "expr": "portalis_cuda_kernel_duration_seconds{kernel=\"similarity\"}",
+            "legendFormat": "Similarity",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "s",
+            "label": "Duration"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Triton Inference Server Metrics",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(nv_inference_request_success[1m])",
+            "legendFormat": "Successful Requests",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(nv_inference_request_failure[1m])",
+            "legendFormat": "Failed Requests",
+            "refId": "B"
+          },
+          {
+            "expr": "nv_inference_queue_duration_us / 1000",
+            "legendFormat": "Queue Time (ms)",
+            "refId": "C"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Cache Performance",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 24, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(portalis_cache_hits_total[5m])",
+            "legendFormat": "Cache Hits",
+            "refId": "A"
+          },
+          {
+            "expr": "rate(portalis_cache_misses_total[5m])",
+            "legendFormat": "Cache Misses",
+            "refId": "B"
+          },
+          {
+            "expr": "rate(portalis_cache_hits_total[5m]) / (rate(portalis_cache_hits_total[5m]) + rate(portalis_cache_misses_total[5m])) * 100",
+            "legendFormat": "Hit Rate %",
+            "refId": "C",
+            "yAxisIndex": 1
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "ops",
+            "label": "Operations/sec"
+          },
+          {
+            "format": "percent",
+            "label": "Hit Rate",
+            "max": 100,
+            "min": 0
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "Cost Metrics",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 32, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_translation_cost_usd",
+            "legendFormat": "Cost per Translation",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(portalis_gpu_hours_total * 3.0)",
+            "legendFormat": "Total GPU Cost (hourly)",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "currencyUSD",
+            "label": "Cost"
+          }
+        ]
+      },
+      {
+        "id": 11,
+        "title": "DGX Cloud Cluster Utilization",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 32, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_dgx_cluster_utilization_percent",
+            "legendFormat": "Cluster Utilization",
+            "refId": "A"
+          },
+          {
+            "expr": "portalis_dgx_pending_jobs",
+            "legendFormat": "Pending Jobs",
+            "refId": "B",
+            "yAxisIndex": 1
+          },
+          {
+            "expr": "portalis_dgx_running_jobs",
+            "legendFormat": "Running Jobs",
+            "refId": "C",
+            "yAxisIndex": 1
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "Utilization",
+            "max": 100,
+            "min": 0
+          },
+          {
+            "format": "short",
+            "label": "Jobs"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "SLA Compliance Scorecard",
+        "type": "table",
+        "gridPos": {"x": 0, "y": 40, "w": 24, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(portalis_translation_duration_seconds_bucket[5m])) < 0.5",
+            "legendFormat": "P95 Latency < 500ms",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(portalis_translation_requests_total{status=\"success\"}[5m])) / sum(rate(portalis_translation_requests_total[5m])) > 0.99",
+            "legendFormat": "Success Rate > 99%",
+            "refId": "B"
+          },
+          {
+            "expr": "portalis_gpu_utilization_percent > 70",
+            "legendFormat": "GPU Utilization > 70%",
+            "refId": "C"
+          },
+          {
+            "expr": "portalis_translation_cost_usd < 0.10",
+            "legendFormat": "Cost < $0.10/translation",
+            "refId": "D"
+          }
+        ],
+        "styles": [
+          {
+            "pattern": "Value",
+            "type": "string",
+            "mappingType": 1,
+            "valueMaps": [
+              {"value": "1", "text": "✓ PASS"},
+              {"value": "0", "text": "✗ FAIL"}
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

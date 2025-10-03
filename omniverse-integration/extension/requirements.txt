@@ -1,0 +1,28 @@
+# Portalis WASM Runtime Extension Requirements
+
+# WASM Runtime
+wasmtime>=16.0.0
+
+# USD/Omniverse (provided by Omniverse Kit)
+# These are available in Omniverse environment, listed for reference
+# pxr
+# omni.kit.uiapp
+# omni.usd
+# omni.kit.window.extensions
+# omni.physx
+# omni.timeline
+# omni.kit.viewport.window
+# omni.ui
+
+# Data processing
+numpy>=1.24.0
+
+# Performance monitoring
+psutil>=5.9.0
+
+# Logging (optional, using built-in logging)
+# loguru>=0.7.2
+
+# Type checking (development only)
+# mypy>=1.7.0
+# types-psutil>=5.9.0

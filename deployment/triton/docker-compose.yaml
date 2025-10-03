@@ -1,0 +1,106 @@
+# Docker Compose for local Triton development
+# Use this for testing before Kubernetes deployment
+
+version: '3.8'
+
+services:
+  triton-server:
+    image: nvcr.io/nvidia/tritonserver:24.01-py3
+    container_name: portalis-triton
+    ports:
+      - "8000:8000"  # HTTP
+      - "8001:8001"  # gRPC
+      - "8002:8002"  # Metrics
+    volumes:
+      - ./models:/models
+      - ./configs:/configs
+      - /dev/shm:/dev/shm  # Shared memory
+    environment:
+      - CUDA_VISIBLE_DEVICES=0,1
+      - TRITON_SERVER_CPU_ONLY=0
+      - OMP_NUM_THREADS=8
+    command: >
+      tritonserver
+      --model-repository=/models
+      --strict-model-config=false
+      --log-verbose=1
+      --allow-gpu-metrics=true
+      --allow-cpu-metrics=true
+      --metrics-port=8002
+      --backend-config=python,shm-default-byte-size=16777216
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 2
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - portalis-net
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: portalis-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus-config.yaml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=30d'
+    networks:
+      - portalis-net
+    depends_on:
+      - triton-server
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: portalis-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana-dashboards.json:/etc/grafana/provisioning/dashboards/triton.json
+    networks:
+      - portalis-net
+    depends_on:
+      - prometheus
+
+  # Optional: DCGM exporter for GPU metrics
+  dcgm-exporter:
+    image: nvcr.io/nvidia/k8s/dcgm-exporter:3.1.3-3.1.4-ubuntu20.04
+    container_name: portalis-dcgm
+    ports:
+      - "9400:9400"
+    environment:
+      - DCGM_EXPORTER_LISTEN=:9400
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    cap_add:
+      - SYS_ADMIN
+    networks:
+      - portalis-net
+
+networks:
+  portalis-net:
+    driver: bridge
+
+volumes:
+  prometheus-data:
+  grafana-data:

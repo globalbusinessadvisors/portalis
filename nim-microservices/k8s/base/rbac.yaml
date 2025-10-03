@@ -1,0 +1,50 @@
+---
+# Service Account
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: portalis-nim-sa
+  labels:
+    app: portalis-nim
+    component: translation-service
+
+---
+# Role for accessing ConfigMaps and Secrets
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: portalis-nim-role
+  labels:
+    app: portalis-nim
+    component: translation-service
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list"]
+
+---
+# RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: portalis-nim-rolebinding
+  labels:
+    app: portalis-nim
+    component: translation-service
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: portalis-nim-role
+subjects:
+- kind: ServiceAccount
+  name: portalis-nim-sa
+  namespace: default

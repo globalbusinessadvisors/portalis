@@ -1,0 +1,76 @@
+# Core Testing Framework
+pytest>=7.4.3
+pytest-asyncio>=0.21.1
+pytest-cov>=4.1.0
+pytest-timeout>=2.2.0
+pytest-xdist>=3.5.0  # Parallel test execution
+pytest-mock>=3.12.0
+pytest-benchmark>=4.0.0
+
+# Property-based testing
+hypothesis>=6.92.0
+
+# HTTP/API Testing
+httpx>=0.26.0
+requests>=2.31.0
+aiohttp>=3.9.1
+
+# NVIDIA Stack Dependencies
+nemo-toolkit[all]>=1.22.0
+torch>=2.1.0
+transformers>=4.35.0
+tritonclient[all]>=2.40.0
+grpcio>=1.60.0
+nvidia-pytriton>=0.4.0
+
+# CUDA Testing (optional, for GPU tests)
+cupy-cuda12x>=12.3.0; platform_machine == "x86_64"
+nvidia-cuda-runtime-cu12>=12.3.0; platform_machine == "x86_64"
+
+# FastAPI/NIM Testing
+fastapi>=0.109.0
+uvicorn>=0.27.0
+
+# Performance Testing
+locust>=2.20.0
+memory-profiler>=0.61.0
+psutil>=5.9.6
+
+# Mocking and Fixtures
+faker>=22.0.0
+factory-boy>=3.3.0
+responses>=0.24.1
+pytest-docker>=2.0.1
+
+# Code Quality
+black>=23.12.1
+ruff>=0.1.9
+mypy>=1.8.0
+
+# Monitoring and Metrics
+prometheus-client>=0.19.0
+opentelemetry-api>=1.22.0
+opentelemetry-sdk>=1.22.0
+
+# Security Testing
+bandit>=1.7.6
+safety>=3.0.0
+
+# Utilities
+pyyaml>=6.0.1
+python-dotenv>=1.0.0
+tenacity>=8.2.3
+loguru>=0.7.2
+pydantic>=2.5.0
+numpy>=1.24.0
+
+# Coverage reporting
+coverage[toml]>=7.4.0
+pytest-html>=4.1.1
+
+# Docker testing
+docker>=7.0.0
+testcontainers>=3.7.1
+
+# WebAssembly testing
+wasmtime>=16.0.0

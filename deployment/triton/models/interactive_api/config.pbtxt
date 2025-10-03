@@ -1,0 +1,181 @@
+name: "interactive_api"
+platform: "python"
+max_batch_size: 8
+
+input [
+  {
+    name: "code_snippet"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "target_language"
+    data_type: TYPE_STRING
+    dims: [ 1 ]
+  },
+  {
+    name: "context"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+    optional: true
+  }
+]
+
+output [
+  {
+    name: "translated_code"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "confidence"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  },
+  {
+    name: "suggestions"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "warnings"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 1, 2, 4, 8 ]
+  max_queue_delay_microseconds: 50000
+  preserve_ordering: true
+  priority_levels: 3
+  default_priority_level: 2
+
+  priority_queue_policy {
+    key: 1
+    value {
+      allow_timeout_override: true
+      timeout_action: REJECT
+      default_timeout_microseconds: 5000000
+      max_queue_size: 32
+    }
+  }
+  priority_queue_policy {
+    key: 2
+    value {
+      allow_timeout_override: true
+      timeout_action: DELAY
+      default_timeout_microseconds: 30000000
+      max_queue_size: 64
+    }
+  }
+  priority_queue_policy {
+    key: 3
+    value {
+      allow_timeout_override: false
+      timeout_action: DELAY
+      default_timeout_microseconds: 60000000
+      max_queue_size: 128
+    }
+  }
+}
+
+instance_group [
+  {
+    count: 4
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  }
+]
+
+optimization {
+  cuda {
+    graphs: true
+    busy_wait_events: true
+  }
+  input_pinned_memory {
+    enable: true
+  }
+  output_pinned_memory {
+    enable: true
+  }
+}
+
+sequence_batching {
+  max_sequence_idle_microseconds: 60000000
+  control_input [
+    {
+      name: "START"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_START
+          fp32_false_true: [ 0, 1 ]
+        }
+      ]
+    },
+    {
+      name: "READY"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_READY
+          fp32_false_true: [ 0, 1 ]
+        }
+      ]
+    },
+    {
+      name: "END"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_END
+          fp32_false_true: [ 0, 1 ]
+        }
+      ]
+    }
+  ]
+}
+
+model_warmup [
+  {
+    name: "interactive_warmup"
+    batch_size: 1
+    inputs {
+      key: "code_snippet"
+      value {
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+        zero_data: false
+        input_data_file: "warmup/interactive_sample.dat"
+      }
+    }
+    inputs {
+      key: "target_language"
+      value {
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+        zero_data: false
+        input_data_file: "warmup/target_lang.dat"
+      }
+    }
+  }
+]
+
+parameters: {
+  key: "EXECUTION_ENV_PATH"
+  value: {
+    string_value: "/opt/tritonserver/backends/python/envs/interactive_env"
+  }
+}
+
+parameters: {
+  key: "ENABLE_STREAMING"
+  value: {
+    string_value: "true"
+  }
+}
+
+parameters: {
+  key: "MAX_CONTEXT_LENGTH"
+  value: {
+    string_value: "8192"
+  }
+}

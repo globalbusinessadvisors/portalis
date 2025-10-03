@@ -1,0 +1,87 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portalis-nemo-integration"
+version = "0.1.0"
+description = "NeMo-based Python to Rust translation engine for Portalis"
+readme = "README.md"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [
+    {name = "Portalis Team", email = "team@portalis.ai"}
+]
+keywords = ["nemo", "translation", "python", "rust", "transpiler", "gpu"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Code Generators",
+    "Topic :: Software Development :: Compilers",
+]
+
+dependencies = [
+    "nemo-toolkit[all]>=1.22.0",
+    "nvidia-pytriton>=0.4.0",
+    "transformers>=4.35.0",
+    "torch>=2.1.0",
+    "numpy>=1.24.0",
+    "pydantic>=2.5.0",
+    "libcst>=1.1.0",
+    "astor>=0.8.1",
+    "typing-extensions>=4.8.0",
+    "loguru>=0.7.2",
+    "pyyaml>=6.0.1",
+    "jsonschema>=4.20.0",
+    "tenacity>=8.2.3",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-cov>=4.1.0",
+    "pytest-asyncio>=0.21.0",
+    "hypothesis>=6.92.0",
+    "black>=23.12.0",
+    "ruff>=0.1.9",
+    "mypy>=1.7.1",
+]
+
+cuda = [
+    "cupy-cuda12x>=12.3.0",
+    "nvidia-cuda-runtime-cu12>=12.3.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/portalis/portalis"
+Documentation = "https://portalis.readthedocs.io"
+Repository = "https://github.com/portalis/portalis"
+Issues = "https://github.com/portalis/portalis/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.black]
+line-length = 100
+target-version = ['py310', 'py311']
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "-v --cov=src --cov-report=term-missing --cov-report=html"

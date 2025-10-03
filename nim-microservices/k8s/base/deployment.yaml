@@ -1,0 +1,170 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portalis-nim
+  labels:
+    app: portalis-nim
+    component: translation-service
+    version: v1
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: portalis-nim
+      component: translation-service
+  template:
+    metadata:
+      labels:
+        app: portalis-nim
+        component: translation-service
+        version: v1
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      # GPU node affinity
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu
+                operator: Exists
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchLabels:
+                  app: portalis-nim
+              topologyKey: kubernetes.io/hostname
+
+      # Init container for model loading
+      initContainers:
+      - name: model-loader
+        image: busybox:latest
+        command: ['sh', '-c', 'echo "Checking models..."; ls -la /models || echo "No models found"']
+        volumeMounts:
+        - name: models
+          mountPath: /models
+
+      containers:
+      - name: portalis-nim
+        image: portalis-nim:latest
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        - name: grpc
+          containerPort: 50051
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+
+        env:
+        - name: SERVICE_NAME
+          value: "portalis-nim"
+        - name: SERVICE_VERSION
+          value: "1.0.0"
+        - name: ENVIRONMENT
+          value: "production"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: ENABLE_CUDA
+          value: "true"
+        - name: GPU_ID
+          value: "0"
+        - name: TRITON_URL
+          value: "triton-service:8000"
+        - name: TRITON_PROTOCOL
+          value: "http"
+        - name: WORKERS
+          value: "2"
+        - name: ENABLE_METRICS
+          value: "true"
+
+        # Resource requests and limits
+        resources:
+          requests:
+            cpu: "2"
+            memory: "4Gi"
+            nvidia.com/gpu: "1"
+          limits:
+            cpu: "4"
+            memory: "8Gi"
+            nvidia.com/gpu: "1"
+
+        # Liveness probe
+        livenessProbe:
+          httpGet:
+            path: /live
+            port: 8000
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+
+        # Readiness probe
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+
+        # Startup probe (for slow model loading)
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 30
+
+        volumeMounts:
+        - name: models
+          mountPath: /models
+          readOnly: true
+        - name: config
+          mountPath: /app/config
+          readOnly: true
+        - name: cache
+          mountPath: /tmp/cache
+
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: portalis-models-pvc
+      - name: config
+        configMap:
+          name: portalis-nim-config
+      - name: cache
+        emptyDir:
+          sizeLimit: 2Gi
+
+      # Termination grace period for graceful shutdown
+      terminationGracePeriodSeconds: 60
+
+      # Service account
+      serviceAccountName: portalis-nim-sa

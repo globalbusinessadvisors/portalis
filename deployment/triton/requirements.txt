@@ -1,0 +1,31 @@
+# Python dependencies for Triton deployment
+
+# Triton client libraries
+tritonclient[all]==2.40.0
+grpcio==1.60.0
+protobuf==4.25.1
+
+# NeMo and ML frameworks
+nemo-toolkit[all]==1.23.0
+torch==2.1.2
+transformers==4.36.2
+sentencepiece==0.1.99
+
+# Data processing
+numpy==1.24.4
+scipy==1.11.4
+pandas==2.1.4
+
+# Monitoring and metrics
+prometheus-client==0.19.0
+
+# Testing
+pytest==7.4.3
+pytest-cov==4.1.0
+pytest-asyncio==0.21.1
+pytest-timeout==2.2.0
+
+# Utilities
+pyyaml==6.0.1
+requests==2.31.0
+aiohttp==3.9.1

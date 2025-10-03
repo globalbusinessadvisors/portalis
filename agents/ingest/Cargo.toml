@@ -1,0 +1,20 @@
+[package]
+name = "portalis-ingest"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+portalis-core = { path = "../../core" }
+tokio.workspace = true
+async-trait.workspace = true
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tracing.workspace = true
+regex = "1.10"
+rustpython-parser.workspace = true
+
+[dev-dependencies]
+tokio = { workspace = true, features = ["test-util"] }

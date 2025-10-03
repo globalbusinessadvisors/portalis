@@ -1,0 +1,298 @@
+# Prometheus Alerting and Recording Rules for Portalis Performance
+
+groups:
+  - name: portalis_latency
+    interval: 30s
+    rules:
+      # Recording rules for aggregated latency metrics
+      - record: portalis:translation_latency:p50
+        expr: histogram_quantile(0.50, rate(portalis_translation_duration_seconds_bucket[5m]))
+
+      - record: portalis:translation_latency:p95
+        expr: histogram_quantile(0.95, rate(portalis_translation_duration_seconds_bucket[5m]))
+
+      - record: portalis:translation_latency:p99
+        expr: histogram_quantile(0.99, rate(portalis_translation_duration_seconds_bucket[5m]))
+
+      # Alert: High P95 latency
+      - alert: HighTranslationLatencyP95
+        expr: portalis:translation_latency:p95 > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: nemo
+        annotations:
+          summary: "High P95 translation latency"
+          description: "P95 latency is {{ $value | humanizeDuration }} (target: <500ms)"
+
+      # Alert: Very high P99 latency
+      - alert: VeryHighTranslationLatencyP99
+        expr: portalis:translation_latency:p99 > 2.0
+        for: 5m
+        labels:
+          severity: critical
+          component: nemo
+        annotations:
+          summary: "Very high P99 translation latency"
+          description: "P99 latency is {{ $value | humanizeDuration }} (target: <2s)"
+
+  - name: portalis_throughput
+    interval: 30s
+    rules:
+      # Recording rule for QPS
+      - record: portalis:requests:qps
+        expr: rate(portalis_translation_requests_total[1m])
+
+      # Alert: Low throughput
+      - alert: LowThroughput
+        expr: portalis:requests:qps < 100
+        for: 10m
+        labels:
+          severity: warning
+          component: triton
+        annotations:
+          summary: "Translation throughput below target"
+          description: "Current QPS is {{ $value | humanize }} (target: >100 QPS)"
+
+  - name: portalis_success_rate
+    interval: 30s
+    rules:
+      # Recording rule for success rate
+      - record: portalis:requests:success_rate
+        expr: |
+          sum(rate(portalis_translation_requests_total{status="success"}[5m]))
+          /
+          sum(rate(portalis_translation_requests_total[5m]))
+
+      # Alert: Low success rate
+      - alert: LowSuccessRate
+        expr: portalis:requests:success_rate < 0.90
+        for: 5m
+        labels:
+          severity: critical
+          component: pipeline
+        annotations:
+          summary: "Low translation success rate"
+          description: "Success rate is {{ $value | humanizePercentage }} (target: >90%)"
+
+      # Alert: Very low success rate
+      - alert: VeryLowSuccessRate
+        expr: portalis:requests:success_rate < 0.80
+        for: 2m
+        labels:
+          severity: critical
+          component: pipeline
+        annotations:
+          summary: "CRITICAL: Very low success rate"
+          description: "Success rate dropped to {{ $value | humanizePercentage }}"
+
+  - name: portalis_gpu
+    interval: 30s
+    rules:
+      # Recording rules for GPU metrics
+      - record: portalis:gpu:utilization:avg
+        expr: avg(portalis_gpu_utilization_percent)
+
+      - record: portalis:gpu:memory_used:percent
+        expr: |
+          portalis_gpu_memory_used_bytes
+          /
+          portalis_gpu_memory_total_bytes * 100
+
+      # Alert: Low GPU utilization
+      - alert: LowGPUUtilization
+        expr: portalis:gpu:utilization:avg < 60
+        for: 15m
+        labels:
+          severity: info
+          component: cuda
+        annotations:
+          summary: "Low GPU utilization"
+          description: "Average GPU utilization is {{ $value | humanize }}% (target: >60%)"
+
+      # Alert: GPU out of memory
+      - alert: GPUOutOfMemory
+        expr: portalis:gpu:memory_used:percent > 95
+        for: 2m
+        labels:
+          severity: critical
+          component: cuda
+        annotations:
+          summary: "GPU out of memory"
+          description: "GPU {{ $labels.gpu_id }} memory usage at {{ $value | humanize }}%"
+
+  - name: portalis_cache
+    interval: 30s
+    rules:
+      # Recording rule for cache hit rate
+      - record: portalis:cache:hit_rate
+        expr: |
+          rate(portalis_cache_hits_total[5m])
+          /
+          (rate(portalis_cache_hits_total[5m]) + rate(portalis_cache_misses_total[5m]))
+
+      # Alert: Low cache hit rate
+      - alert: LowCacheHitRate
+        expr: portalis:cache:hit_rate < 0.30
+        for: 10m
+        labels:
+          severity: info
+          component: nim
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (opportunity for optimization)"
+
+  - name: portalis_cost
+    interval: 60s
+    rules:
+      # Recording rules for cost metrics
+      - record: portalis:cost:per_translation
+        expr: |
+          sum(portalis_gpu_hours_total * 3.0)
+          /
+          sum(portalis_translation_requests_total{status="success"})
+
+      - record: portalis:cost:hourly
+        expr: sum(portalis_gpu_hours_total * 3.0)
+
+      # Alert: High cost per translation
+      - alert: HighCostPerTranslation
+        expr: portalis:cost:per_translation > 0.10
+        for: 30m
+        labels:
+          severity: warning
+          component: dgx
+        annotations:
+          summary: "Cost per translation exceeds target"
+          description: "Cost is ${{ $value | humanize }} (target: <$0.10)"
+
+      # Alert: Daily budget exceeded
+      - alert: DailyBudgetExceeded
+        expr: sum_over_time(portalis:cost:hourly[24h]) > 2400
+        for: 1h
+        labels:
+          severity: warning
+          component: dgx
+        annotations:
+          summary: "Daily GPU budget exceeded"
+          description: "24h cost is ${{ $value | humanize }} (budget: $2400/day)"
+
+  - name: portalis_triton
+    interval: 30s
+    rules:
+      # Triton-specific metrics
+      - record: portalis:triton:queue_time:p95
+        expr: histogram_quantile(0.95, rate(nv_inference_queue_duration_us_bucket[5m])) / 1000
+
+      # Alert: High queue time
+      - alert: HighTritonQueueTime
+        expr: portalis:triton:queue_time:p95 > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: triton
+        annotations:
+          summary: "High Triton inference queue time"
+          description: "P95 queue time is {{ $value | humanize }}ms (target: <100ms)"
+
+  - name: portalis_dgx
+    interval: 60s
+    rules:
+      # DGX Cloud cluster metrics
+      - record: portalis:dgx:utilization
+        expr: portalis_dgx_cluster_utilization_percent
+
+      - record: portalis:dgx:pending_jobs
+        expr: portalis_dgx_pending_jobs
+
+      # Alert: High pending jobs
+      - alert: HighPendingJobs
+        expr: portalis:dgx:pending_jobs > 100
+        for: 15m
+        labels:
+          severity: warning
+          component: dgx
+        annotations:
+          summary: "High number of pending jobs"
+          description: "{{ $value | humanize }} jobs pending (consider scaling up)"
+
+      # Alert: Low cluster utilization
+      - alert: LowClusterUtilization
+        expr: portalis:dgx:utilization < 30
+        for: 30m
+        labels:
+          severity: info
+          component: dgx
+        annotations:
+          summary: "Low cluster utilization"
+          description: "Cluster utilization is {{ $value | humanize }}% (consider scaling down)"
+
+  - name: portalis_sla
+    interval: 60s
+    rules:
+      # SLA compliance metrics
+      - record: portalis:sla:latency_compliance
+        expr: portalis:translation_latency:p95 < 0.5
+
+      - record: portalis:sla:success_rate_compliance
+        expr: portalis:requests:success_rate > 0.99
+
+      - record: portalis:sla:throughput_compliance
+        expr: portalis:requests:qps > 100
+
+      - record: portalis:sla:cost_compliance
+        expr: portalis:cost:per_translation < 0.10
+
+      - record: portalis:sla:overall_compliance
+        expr: |
+          (
+            portalis:sla:latency_compliance +
+            portalis:sla:success_rate_compliance +
+            portalis:sla:throughput_compliance +
+            portalis:sla:cost_compliance
+          ) / 4
+
+      # Alert: SLA violation
+      - alert: SLAViolation
+        expr: portalis:sla:overall_compliance < 0.75
+        for: 15m
+        labels:
+          severity: critical
+          component: sla
+        annotations:
+          summary: "SLA compliance below threshold"
+          description: "Overall SLA compliance is {{ $value | humanizePercentage }} (target: >75%)"
+
+  - name: portalis_optimization
+    interval: 60s
+    rules:
+      # Optimization opportunity detection
+      - alert: OptimizationOpportunity_CacheWarmup
+        expr: portalis:cache:hit_rate < 0.20 and rate(portalis_translation_requests_total[30m]) > 10
+        for: 30m
+        labels:
+          severity: info
+          component: optimization
+        annotations:
+          summary: "Cache warmup opportunity detected"
+          description: "Low cache hit rate with steady traffic - consider cache warmup"
+
+      - alert: OptimizationOpportunity_BatchSize
+        expr: avg(portalis_nemo_batch_size) < 16 and portalis:dgx:pending_jobs > 50
+        for: 10m
+        labels:
+          severity: info
+          component: optimization
+        annotations:
+          summary: "Batch size optimization opportunity"
+          description: "Low batch size with high pending jobs - consider increasing batch size"
+
+      - alert: OptimizationOpportunity_GPUUnderutilized
+        expr: portalis:gpu:utilization:avg < 40 and portalis:requests:qps > 50
+        for: 20m
+        labels:
+          severity: info
+          component: optimization
+        annotations:
+          summary: "GPU underutilization detected"
+          description: "GPU utilization {{ $value | humanize }}% with active traffic - check batching and parallelization"

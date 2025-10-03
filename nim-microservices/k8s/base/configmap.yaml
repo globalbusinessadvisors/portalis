@@ -1,0 +1,113 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portalis-nim-config
+  labels:
+    app: portalis-nim
+    component: translation-service
+data:
+  # Service configuration
+  service.yaml: |
+    service:
+      name: portalis-nim
+      version: "1.0.0"
+      environment: production
+
+    api:
+      host: 0.0.0.0
+      port: 8000
+      workers: 2
+      log_level: info
+
+    model:
+      path: /models/nemo_translation.nemo
+      version: "1.0.0"
+
+    gpu:
+      enable_cuda: true
+      gpu_id: 0
+      memory_fraction: 0.9
+
+    triton:
+      url: triton-service:8000
+      protocol: http
+      model_name: translation_model
+
+    performance:
+      batch_size: 32
+      max_queue_size: 100
+      request_timeout: 300
+
+    rate_limiting:
+      per_minute: 60
+      burst: 10
+
+    monitoring:
+      enable_metrics: true
+      metrics_port: 9090
+      enable_tracing: false
+
+    features:
+      enable_streaming: true
+      enable_batch: true
+
+  # Prometheus scraping config
+  prometheus.yaml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+
+    scrape_configs:
+      - job_name: 'portalis-nim'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - default
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: portalis-nim
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+
+  # Logging configuration
+  logging.yaml: |
+    version: 1
+    disable_existing_loggers: false
+
+    formatters:
+      default:
+        format: '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+      json:
+        format: '{"timestamp": "%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}'
+
+    handlers:
+      console:
+        class: logging.StreamHandler
+        level: INFO
+        formatter: json
+        stream: ext://sys.stdout
+
+    root:
+      level: INFO
+      handlers:
+        - console
+
+    loggers:
+      uvicorn:
+        level: INFO
+      fastapi:
+        level: INFO
+      portalis:
+        level: DEBUG

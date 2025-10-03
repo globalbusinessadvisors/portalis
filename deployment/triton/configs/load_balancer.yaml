@@ -1,0 +1,175 @@
+# Load Balancer Configuration for Triton Inference Server
+# Supports Kubernetes HPA and NGINX load balancing
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: triton-load-balancer-config
+  namespace: portalis-deployment
+data:
+  nginx.conf: |
+    upstream triton_http {
+        least_conn;  # Use least connections algorithm
+
+        # Health checks
+        zone triton_http 64k;
+
+        # Triton server instances
+        server triton-server-0.triton-headless:8000 max_fails=3 fail_timeout=30s;
+        server triton-server-1.triton-headless:8000 max_fails=3 fail_timeout=30s;
+        server triton-server-2.triton-headless:8000 max_fails=3 fail_timeout=30s;
+
+        keepalive 32;
+    }
+
+    upstream triton_grpc {
+        least_conn;
+        zone triton_grpc 64k;
+
+        server triton-server-0.triton-headless:8001 max_fails=3 fail_timeout=30s;
+        server triton-server-1.triton-headless:8001 max_fails=3 fail_timeout=30s;
+        server triton-server-2.triton-headless:8001 max_fails=3 fail_timeout=30s;
+
+        keepalive 32;
+    }
+
+    server {
+        listen 80;
+        server_name triton-lb.portalis.local;
+
+        # HTTP/REST endpoint
+        location /v2/models {
+            proxy_pass http://triton_http;
+            proxy_http_version 1.1;
+            proxy_set_header Connection "";
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+
+            # Timeouts
+            proxy_connect_timeout 60s;
+            proxy_send_timeout 300s;
+            proxy_read_timeout 300s;
+
+            # Buffering
+            proxy_buffering on;
+            proxy_buffer_size 4k;
+            proxy_buffers 8 4k;
+            proxy_busy_buffers_size 8k;
+        }
+
+        # Health check endpoint
+        location /health {
+            access_log off;
+            return 200 "healthy\n";
+            add_header Content-Type text/plain;
+        }
+
+        # Metrics endpoint
+        location /metrics {
+            proxy_pass http://triton_http/metrics;
+            proxy_http_version 1.1;
+        }
+    }
+
+    # gRPC load balancer
+    server {
+        listen 8001 http2;
+
+        location / {
+            grpc_pass grpc://triton_grpc;
+            grpc_connect_timeout 60s;
+            grpc_send_timeout 300s;
+            grpc_read_timeout 300s;
+
+            # Error handling
+            error_page 502 = /error502grpc;
+        }
+
+        location = /error502grpc {
+            internal;
+            default_type application/grpc;
+            add_header grpc-status 14;  # UNAVAILABLE
+            add_header grpc-message "Triton server unavailable";
+            return 204;
+        }
+    }
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: triton-load-balancer
+  namespace: portalis-deployment
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app: nginx-lb
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: grpc
+      port: 8001
+      targetPort: 8001
+      protocol: TCP
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 3600
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-load-balancer
+  namespace: portalis-deployment
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx-lb
+  template:
+    metadata:
+      labels:
+        app: nginx-lb
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:alpine
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 8001
+          name: grpc
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/nginx.conf
+          subPath: nginx.conf
+        resources:
+          requests:
+            cpu: 500m
+            memory: 512Mi
+          limits:
+            cpu: 1000m
+            memory: 1Gi
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: triton-load-balancer-config

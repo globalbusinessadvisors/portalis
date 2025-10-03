@@ -1,0 +1,428 @@
+# Resource Allocation Policies for Portalis DGX Cloud
+# Smart GPU allocation, multi-tenancy, and priority queuing
+
+# Job size classification
+job_size_thresholds:
+  tiny:
+    max_functions: 10
+    max_loc: 100
+    gpu_allocation: 1
+    cpu_cores: 4
+    memory_gb: 16
+    priority_queue: interactive
+    max_latency_ms: 1000
+
+  small:
+    max_functions: 100
+    max_loc: 1000
+    gpu_allocation: 1
+    cpu_cores: 8
+    memory_gb: 32
+    priority_queue: interactive
+    max_latency_ms: 5000
+
+  medium:
+    max_functions: 1000
+    max_loc: 10000
+    gpu_allocation: 2
+    cpu_cores: 16
+    memory_gb: 64
+    priority_queue: batch
+    max_latency_ms: 30000
+
+  large:
+    max_functions: 10000
+    max_loc: 100000
+    gpu_allocation: 4
+    cpu_cores: 32
+    memory_gb: 128
+    priority_queue: batch
+    max_latency_ms: 300000
+
+  xlarge:
+    max_functions: 100000
+    max_loc: 1000000
+    gpu_allocation: 8
+    cpu_cores: 64
+    memory_gb: 256
+    priority_queue: batch
+    max_latency_ms: 1800000
+
+# Priority queue configuration
+priority_queues:
+  interactive:
+    name: "Interactive Translations"
+    priority: 100
+    max_concurrent_jobs: 10
+    max_queue_size: 50
+    timeout_seconds: 60
+    gpu_share_policy: "preemptive"
+    autoscale_trigger: queue_length > 5
+    target_latency_ms: 1000
+
+  batch:
+    name: "Batch Processing"
+    priority: 50
+    max_concurrent_jobs: 100
+    max_queue_size: 1000
+    timeout_seconds: 3600
+    gpu_share_policy: "non_preemptive"
+    autoscale_trigger: queue_length > 20
+    target_latency_ms: 30000
+
+  training:
+    name: "Model Training"
+    priority: 30
+    max_concurrent_jobs: 2
+    max_queue_size: 10
+    timeout_seconds: 86400  # 24 hours
+    gpu_share_policy: "exclusive"
+    autoscale_trigger: queue_length > 1
+    target_latency_ms: null
+
+  low_priority:
+    name: "Low Priority / Spot"
+    priority: 10
+    max_concurrent_jobs: 50
+    max_queue_size: 500
+    timeout_seconds: 7200
+    gpu_share_policy: "spot_only"
+    autoscale_trigger: queue_length > 50
+    target_latency_ms: 300000
+    allow_preemption: true
+
+# GPU allocation strategies
+gpu_allocation:
+  # Strategy selection based on job type
+  strategy_selection:
+    interactive: "round_robin"
+    batch: "bin_packing"
+    training: "exclusive"
+    low_priority: "spot_only"
+
+  # Round robin - distribute evenly
+  round_robin:
+    description: "Distribute jobs evenly across GPUs"
+    load_balancing: true
+    max_jobs_per_gpu: 4
+    gpu_sharing: true
+
+  # Bin packing - maximize utilization
+  bin_packing:
+    description: "Pack jobs to minimize number of active GPUs"
+    load_balancing: false
+    max_jobs_per_gpu: 8
+    gpu_sharing: true
+    pack_threshold: 0.7  # Start new GPU when >70% utilized
+
+  # Exclusive - one job per GPU
+  exclusive:
+    description: "Dedicate entire GPU to single job"
+    load_balancing: false
+    max_jobs_per_gpu: 1
+    gpu_sharing: false
+
+  # Spot only - use only spot instances
+  spot_only:
+    description: "Use only spot instances for cost optimization"
+    load_balancing: true
+    max_jobs_per_gpu: 8
+    gpu_sharing: true
+    fallback_to_on_demand: true
+    fallback_threshold_minutes: 10
+
+# Multi-tenant resource isolation
+multi_tenant:
+  enabled: true
+
+  # Tenant resource quotas
+  quotas:
+    default:
+      max_gpus: 4
+      max_cpu_cores: 32
+      max_memory_gb: 128
+      max_concurrent_jobs: 20
+      max_queue_size: 100
+      max_cost_per_day: 500.00
+
+    premium:
+      max_gpus: 16
+      max_cpu_cores: 128
+      max_memory_gb: 512
+      max_concurrent_jobs: 100
+      max_queue_size: 500
+      max_cost_per_day: 5000.00
+
+    enterprise:
+      max_gpus: 64
+      max_cpu_cores: 512
+      max_memory_gb: 2048
+      max_concurrent_jobs: 1000
+      max_queue_size: 5000
+      max_cost_per_day: 50000.00
+
+  # Isolation enforcement
+  isolation:
+    gpu_memory_limit: true
+    cpu_core_pinning: true
+    network_bandwidth_limit: true
+    storage_quota: true
+
+  # Fair share scheduling
+  fair_share:
+    enabled: true
+    window_minutes: 60
+    min_share_percentage: 10  # Guarantee at least 10% of resources
+
+# Spot instance configuration
+spot_instances:
+  enabled: true
+
+  # Spot strategy
+  strategy:
+    max_price_multiplier: 0.7  # Max 70% of on-demand price
+    diversification: true  # Use multiple instance types
+    fallback_enabled: true
+    fallback_delay_minutes: 5
+
+  # Instance type preferences (in order)
+  instance_types:
+    - dgxa100.40g  # 4x A100 40GB
+    - dgxh100.80g  # 4x H100 80GB
+    - dgxa100.80g  # 8x A100 80GB (if price is right)
+
+  # Interruption handling
+  interruption:
+    checkpoint_interval_minutes: 15
+    auto_resume: true
+    max_retries: 3
+    notification_webhook: "https://portalis.ai/webhooks/spot-interruption"
+
+  # Monitoring
+  monitoring:
+    check_interval_seconds: 30
+    price_threshold_alert: 0.8  # Alert when price >80% of max
+
+# Load balancing configuration
+load_balancing:
+  algorithm: "weighted_round_robin"
+
+  # Health checks
+  health_check:
+    enabled: true
+    interval_seconds: 30
+    timeout_seconds: 5
+    unhealthy_threshold: 3
+    healthy_threshold: 2
+
+  # Metrics for load balancing
+  metrics:
+    - name: "gpu_utilization"
+      weight: 0.4
+      target: 0.7
+    - name: "queue_length"
+      weight: 0.3
+      target: 5
+    - name: "memory_utilization"
+      weight: 0.2
+      target: 0.8
+    - name: "error_rate"
+      weight: 0.1
+      target: 0.01
+
+  # Circuit breaker
+  circuit_breaker:
+    enabled: true
+    error_threshold: 5
+    timeout_seconds: 60
+    half_open_requests: 3
+
+# Resource reservation
+reservations:
+  # Reserve resources for specific workloads
+  enabled: true
+
+  schedules:
+    - name: "interactive_hours"
+      description: "Reserve GPUs for interactive use during business hours"
+      cron: "0 8-18 * * 1-5"  # 8 AM - 6 PM weekdays
+      resources:
+        gpus: 4
+        priority_queue: interactive
+
+    - name: "batch_processing"
+      description: "Use all resources for batch at night"
+      cron: "0 0-6 * * *"  # Midnight - 6 AM daily
+      resources:
+        gpus: all
+        priority_queue: batch
+
+    - name: "model_training"
+      description: "Weekly model training window"
+      cron: "0 0 * * 0"  # Sunday midnight
+      duration_hours: 12
+      resources:
+        gpus: 8
+        exclusive: true
+        priority_queue: training
+
+# Auto-scaling policies
+auto_scaling:
+  enabled: true
+
+  # Scale-up policies
+  scale_up:
+    # Queue length trigger
+    - metric: queue_length
+      threshold: 10
+      duration_seconds: 60
+      action:
+        add_workers: 2
+        max_workers: 8
+
+    # GPU utilization trigger
+    - metric: avg_gpu_utilization
+      threshold: 0.8
+      duration_seconds: 300
+      action:
+        add_workers: 1
+        max_workers: 8
+
+    # Latency trigger
+    - metric: avg_latency_ms
+      threshold: 5000
+      duration_seconds: 120
+      action:
+        add_workers: 2
+        max_workers: 8
+
+  # Scale-down policies
+  scale_down:
+    # Idle workers
+    - metric: idle_time_minutes
+      threshold: 5
+      duration_seconds: 300
+      action:
+        remove_workers: 1
+        min_workers: 2
+
+    # Low utilization
+    - metric: avg_gpu_utilization
+      threshold: 0.3
+      duration_seconds: 600
+      action:
+        remove_workers: 1
+        min_workers: 2
+
+  # Cooldown periods
+  cooldown:
+    scale_up_seconds: 180
+    scale_down_seconds: 300
+
+# GPU memory management
+gpu_memory:
+  # Memory allocation strategies
+  allocation_strategy: "dynamic"  # Options: dynamic, static, fractional
+
+  # Dynamic allocation
+  dynamic:
+    initial_fraction: 0.7
+    growth_factor: 1.2
+    max_fraction: 0.95
+    allow_growth: true
+
+  # Per-job memory limits
+  job_limits:
+    tiny: 4096  # 4 GB
+    small: 8192  # 8 GB
+    medium: 16384  # 16 GB
+    large: 32768  # 32 GB
+    xlarge: 65536  # 64 GB
+
+  # Memory pooling
+  pooling:
+    enabled: true
+    pool_size_gb: 16
+    reuse_threshold_gb: 8
+
+  # Out-of-memory handling
+  oom_handling:
+    retry_with_more_memory: true
+    max_retries: 2
+    memory_increment_gb: 8
+    fallback_to_cpu: true
+
+# Monitoring and metrics
+monitoring:
+  enabled: true
+
+  # Metrics collection
+  metrics:
+    - resource_utilization
+    - queue_metrics
+    - job_latency
+    - cost_tracking
+    - error_rates
+    - throughput
+
+  # Export targets
+  export:
+    prometheus:
+      enabled: true
+      port: 9090
+      path: /metrics
+    cloudwatch:
+      enabled: true
+      namespace: Portalis/DGX
+    grafana:
+      enabled: true
+      dashboard_url: "http://grafana:3000"
+
+# Alerts
+alerts:
+  enabled: true
+
+  rules:
+    - name: "high_gpu_utilization"
+      condition: "avg_gpu_utilization > 0.9"
+      duration_minutes: 10
+      severity: warning
+      action: scale_up
+
+    - name: "queue_backlog"
+      condition: "queue_length > 50"
+      duration_minutes: 5
+      severity: critical
+      action: scale_up
+
+    - name: "high_error_rate"
+      condition: "error_rate > 0.05"
+      duration_minutes: 5
+      severity: critical
+      action: notify
+
+    - name: "cost_threshold"
+      condition: "daily_cost > budget_limit * 0.8"
+      duration_minutes: 1
+      severity: warning
+      action: notify
+
+    - name: "low_utilization"
+      condition: "avg_gpu_utilization < 0.2"
+      duration_minutes: 30
+      severity: info
+      action: scale_down
+
+  # Notification channels
+  notifications:
+    slack:
+      enabled: true
+      webhook_url: "${SLACK_WEBHOOK_URL}"
+    email:
+      enabled: true
+      recipients:
+        - ops@portalis.ai
+        - ml-team@portalis.ai
+    pagerduty:
+      enabled: true
+      service_key: "${PAGERDUTY_SERVICE_KEY}"

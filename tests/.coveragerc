@@ -1,0 +1,48 @@
+[run]
+source =
+    nemo-integration/src
+    cuda-acceleration
+    deployment/triton
+    nim-microservices/src
+    dgx-cloud/src
+    omniverse-integration
+
+omit =
+    */tests/*
+    */test_*.py
+    */__pycache__/*
+    */venv/*
+    */node_modules/*
+    */migrations/*
+    */setup.py
+    */conftest.py
+    */__init__.py
+
+branch = True
+parallel = True
+
+[report]
+precision = 2
+show_missing = True
+skip_covered = False
+
+exclude_lines =
+    pragma: no cover
+    def __repr__
+    raise AssertionError
+    raise NotImplementedError
+    if __name__ == .__main__.:
+    if TYPE_CHECKING:
+    @abstractmethod
+    @abc.abstractmethod
+    @overload
+    if typing.TYPE_CHECKING:
+    class .*\bProtocol\):
+    @(abc\.)?abstractmethod
+
+[html]
+directory = htmlcov
+title = Portalis NVIDIA Stack Test Coverage
+
+[xml]
+output = coverage.xml

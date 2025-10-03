@@ -1,0 +1,335 @@
+{
+  "dashboard": {
+    "title": "Portalis DGX Cloud - Translation Pipeline",
+    "tags": ["portalis", "dgx", "translation", "gpu"],
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Cluster Overview",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 24, "h": 4},
+        "targets": [
+          {
+            "expr": "portalis_workers_total{status='active'}",
+            "legendFormat": "Active Workers"
+          },
+          {
+            "expr": "sum(portalis_gpu_utilization)",
+            "legendFormat": "Total GPU Utilization"
+          },
+          {
+            "expr": "portalis_jobs_active",
+            "legendFormat": "Active Jobs"
+          },
+          {
+            "expr": "portalis_cost_hourly_usd",
+            "legendFormat": "Hourly Cost (USD)"
+          }
+        ],
+        "options": {
+          "orientation": "horizontal",
+          "textMode": "value_and_name",
+          "colorMode": "value"
+        }
+      },
+      {
+        "id": 2,
+        "title": "GPU Utilization by GPU",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_gpu_utilization",
+            "legendFormat": "GPU {{gpu_id}} ({{node_id}})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 0.7, "color": "yellow"},
+                {"value": 0.9, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "GPU Memory Usage",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_gpu_memory_used_bytes / portalis_gpu_memory_total_bytes",
+            "legendFormat": "GPU {{gpu_id}} Memory"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 0.8, "color": "yellow"},
+                {"value": 0.95, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Job Queue Status",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_jobs_queued{priority='interactive'}",
+            "legendFormat": "Interactive Queue"
+          },
+          {
+            "expr": "portalis_jobs_queued{priority='batch'}",
+            "legendFormat": "Batch Queue"
+          },
+          {
+            "expr": "portalis_jobs_active{priority='interactive'}",
+            "legendFormat": "Active Interactive"
+          },
+          {
+            "expr": "portalis_jobs_active{priority='batch'}",
+            "legendFormat": "Active Batch"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Jobs"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Translation Latency (p50, p95, p99)",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(portalis_translation_latency_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p50"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_translation_latency_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p95"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(portalis_translation_latency_seconds_bucket[5m])) by (le))",
+            "legendFormat": "p99"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Latency"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Throughput (Jobs/Hour)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 20, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(portalis_jobs_completed_total[5m]) * 3600",
+            "legendFormat": "Completed Jobs/Hour"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Jobs/Hour"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Error Rate",
+        "type": "graph",
+        "gridPos": {"x": 8, "y": 20, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(portalis_errors_total[5m])",
+            "legendFormat": "{{error_type}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Errors/Sec"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [0.05], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High Error Rate",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 8,
+        "title": "Cost Tracking",
+        "type": "graph",
+        "gridPos": {"x": 16, "y": 20, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "portalis_cost_hourly_usd",
+            "legendFormat": "Current Hourly"
+          },
+          {
+            "expr": "increase(portalis_cost_usd_total[1h])",
+            "legendFormat": "Last Hour Total"
+          }
+        ],
+        "yaxes": [
+          {"format": "currencyUSD", "label": "Cost"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Cache Hit Rate",
+        "type": "gauge",
+        "gridPos": {"x": 0, "y": 26, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_cache_hits_total[5m])) / (sum(rate(portalis_cache_hits_total[5m])) + sum(rate(portalis_cache_misses_total[5m])))",
+            "legendFormat": "Hit Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 0.5, "color": "yellow"},
+                {"value": 0.8, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "GPU Temperature",
+        "type": "graph",
+        "gridPos": {"x": 8, "y": 26, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "portalis_gpu_temperature_celsius",
+            "legendFormat": "GPU {{gpu_id}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "celsius", "label": "Temperature"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [85], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High GPU Temperature",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 11,
+        "title": "System Resource Utilization",
+        "type": "timeseries",
+        "gridPos": {"x": 16, "y": 26, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "portalis_cpu_utilization",
+            "legendFormat": "CPU ({{node_id}})"
+          },
+          {
+            "expr": "portalis_memory_utilization",
+            "legendFormat": "Memory ({{node_id}})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "type": "datasource",
+          "query": "prometheus"
+        },
+        {
+          "name": "tenant",
+          "type": "query",
+          "query": "label_values(portalis_jobs_submitted_total, tenant_id)",
+          "datasource": "$datasource"
+        },
+        {
+          "name": "node",
+          "type": "query",
+          "query": "label_values(portalis_gpu_utilization, node_id)",
+          "datasource": "$datasource"
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "$datasource",
+          "enable": true,
+          "expr": "changes(portalis_workers_total[5m]) > 0",
+          "iconColor": "blue"
+        }
+      ]
+    }
+  }
+}

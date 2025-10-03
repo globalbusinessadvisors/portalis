@@ -1,0 +1,21 @@
+[package]
+name = "portalis-nemo-bridge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+
+[dependencies]
+portalis-core = { path = "../../core" }
+reqwest = { version = "0.11", features = ["json"] }
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+wiremock = "0.6"
+tokio = { workspace = true, features = ["test-util"] }

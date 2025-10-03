@@ -1,0 +1,273 @@
+{
+  "dashboard": {
+    "title": "Portalis Triton Translation Service Dashboard",
+    "tags": ["triton", "translation", "gpu", "inference"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "10s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Translation Request Rate",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(nv_inference_request_success{model=~\"translation_model|interactive_api|batch_processor\"}[5m])) by (model)",
+            "legendFormat": "{{ model }} - success",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(nv_inference_request_failure{model=~\"translation_model|interactive_api|batch_processor\"}[5m])) by (model)",
+            "legendFormat": "{{ model }} - failure",
+            "refId": "B"
+          }
+        ],
+        "yaxes": [
+          {"format": "reqps", "label": "Requests/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 2,
+        "title": "GPU Utilization",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 0, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_GPU_UTIL{kubernetes_namespace=\"portalis-deployment\"}",
+            "legendFormat": "GPU {{ gpu }} on {{ pod }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "GPU Utilization %", "max": 100, "min": 0},
+          {"format": "short"}
+        ],
+        "alert": {
+          "name": "GPU Utilization Alert",
+          "conditions": [
+            {
+              "evaluator": {"params": [90], "type": "gt"},
+              "query": {"params": ["A", "5m", "now"]},
+              "type": "query"
+            }
+          ]
+        }
+      },
+      {
+        "id": 3,
+        "title": "Request Latency (P50, P95, P99)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(nv_inference_request_duration_us_bucket[5m])) by (model, le))",
+            "legendFormat": "{{ model }} - P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(nv_inference_request_duration_us_bucket[5m])) by (model, le))",
+            "legendFormat": "{{ model }} - P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(nv_inference_request_duration_us_bucket[5m])) by (model, le))",
+            "legendFormat": "{{ model }} - P99",
+            "refId": "C"
+          }
+        ],
+        "yaxes": [
+          {"format": "µs", "label": "Latency"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 4,
+        "title": "GPU Memory Usage",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 8, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_FB_USED{kubernetes_namespace=\"portalis-deployment\"} / DCGM_FI_DEV_FB_FREE * 100",
+            "legendFormat": "GPU {{ gpu }} on {{ pod }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Memory %", "max": 100, "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Model Queue Depth",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 16, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "nv_inference_pending_request_count",
+            "legendFormat": "{{ model }} on {{ pod }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Pending Requests"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 6,
+        "title": "Translation Success Rate",
+        "type": "singlestat",
+        "gridPos": {"x": 12, "y": 16, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "sum(rate(nv_inference_request_success[5m])) / (sum(rate(nv_inference_request_success[5m])) + sum(rate(nv_inference_request_failure[5m]))) * 100",
+            "refId": "A"
+          }
+        ],
+        "format": "percent",
+        "thresholds": "90,95",
+        "colors": ["#d44a3a", "#e0b400", "#299c46"]
+      },
+      {
+        "id": 7,
+        "title": "Active Model Instances",
+        "type": "singlestat",
+        "gridPos": {"x": 18, "y": 16, "w": 6, "h": 4},
+        "targets": [
+          {
+            "expr": "count(nv_inference_count{model=~\"translation_model|interactive_api|batch_processor\"})",
+            "refId": "A"
+          }
+        ],
+        "format": "short"
+      },
+      {
+        "id": 8,
+        "title": "Batch Size Distribution",
+        "type": "heatmap",
+        "gridPos": {"x": 0, "y": 24, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(nv_inference_request_duration_us_bucket[5m])) by (le)",
+            "format": "heatmap",
+            "refId": "A"
+          }
+        ],
+        "dataFormat": "tsbuckets"
+      },
+      {
+        "id": 9,
+        "title": "GPU Temperature",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 24, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "DCGM_FI_DEV_GPU_TEMP{kubernetes_namespace=\"portalis-deployment\"}",
+            "legendFormat": "GPU {{ gpu }} on {{ pod }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "celsius", "label": "Temperature", "max": 90},
+          {"format": "short"}
+        ],
+        "alert": {
+          "name": "GPU Temperature Alert",
+          "conditions": [
+            {
+              "evaluator": {"params": [85], "type": "gt"},
+              "query": {"params": ["A", "10m", "now"]},
+              "type": "query"
+            }
+          ]
+        }
+      },
+      {
+        "id": 10,
+        "title": "Model Throughput (LOC/sec)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 32, "w": 24, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(rate(translation_lines_of_code_processed[5m])) by (model)",
+            "legendFormat": "{{ model }}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Lines of Code/sec"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 11,
+        "title": "Cache Hit Rate",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 40, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "rate(translation_cache_hits[5m]) / (rate(translation_cache_hits[5m]) + rate(translation_cache_misses[5m])) * 100",
+            "legendFormat": "Cache Hit Rate",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {"format": "percent", "label": "Hit Rate %", "max": 100, "min": 0},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Error Types Distribution",
+        "type": "piechart",
+        "gridPos": {"x": 12, "y": 40, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(nv_inference_request_failure) by (error_type)",
+            "legendFormat": "{{ error_type }}",
+            "refId": "A"
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "namespace",
+          "type": "query",
+          "query": "label_values(nv_inference_count, kubernetes_namespace)",
+          "current": {"text": "portalis-deployment", "value": "portalis-deployment"}
+        },
+        {
+          "name": "model",
+          "type": "query",
+          "query": "label_values(nv_inference_count{kubernetes_namespace=\"$namespace\"}, model)",
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "pod",
+          "type": "query",
+          "query": "label_values(nv_inference_count{kubernetes_namespace=\"$namespace\"}, pod)",
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "Prometheus",
+          "expr": "changes(kube_deployment_status_replicas{namespace=\"portalis-deployment\"}[5m]) > 0",
+          "titleFormat": "Deployment Change",
+          "textFormat": "Replicas changed"
+        }
+      ]
+    }
+  }
+}

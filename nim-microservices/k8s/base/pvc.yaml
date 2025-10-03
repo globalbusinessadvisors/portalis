@@ -1,0 +1,33 @@
+---
+# PersistentVolumeClaim for models
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: portalis-models-pvc
+  labels:
+    app: portalis-nim
+    component: translation-service
+spec:
+  accessModes:
+    - ReadOnlyMany
+  storageClassName: fast-storage
+  resources:
+    requests:
+      storage: 50Gi
+
+---
+# PersistentVolumeClaim for shared cache (optional)
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: portalis-cache-pvc
+  labels:
+    app: portalis-nim
+    component: translation-service
+spec:
+  accessModes:
+    - ReadWriteMany
+  storageClassName: fast-storage
+  resources:
+    requests:
+      storage: 20Gi

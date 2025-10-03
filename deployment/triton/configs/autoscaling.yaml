@@ -1,0 +1,200 @@
+# Horizontal Pod Autoscaler Configuration for Triton Servers
+# Automatically scales based on GPU utilization and request metrics
+
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: triton-server-hpa
+  namespace: portalis-deployment
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: triton-server
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  # GPU utilization metric
+  - type: Pods
+    pods:
+      metric:
+        name: nvidia_gpu_duty_cycle
+      target:
+        type: AverageValue
+        averageValue: "70"  # Scale when GPU utilization > 70%
+
+  # Request queue depth
+  - type: Pods
+    pods:
+      metric:
+        name: nv_inference_queue_duration_us
+      target:
+        type: AverageValue
+        averageValue: "100000"  # 100ms queue time
+
+  # CPU utilization backup metric
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 75
+
+  # Memory utilization
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300  # Wait 5min before scaling down
+      policies:
+      - type: Percent
+        value: 50  # Scale down by max 50% of current replicas
+        periodSeconds: 60
+      - type: Pods
+        value: 2  # Or max 2 pods
+        periodSeconds: 60
+      selectPolicy: Min  # Use the most conservative policy
+
+    scaleUp:
+      stabilizationWindowSeconds: 60  # Wait 1min before scaling up
+      policies:
+      - type: Percent
+        value: 100  # Scale up by max 100% (double)
+        periodSeconds: 30
+      - type: Pods
+        value: 4  # Or max 4 pods
+        periodSeconds: 30
+      selectPolicy: Max  # Use the most aggressive policy
+
+---
+# Vertical Pod Autoscaler for resource optimization
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: triton-server-vpa
+  namespace: portalis-deployment
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: triton-server
+  updatePolicy:
+    updateMode: "Auto"  # Automatically apply recommendations
+  resourcePolicy:
+    containerPolicies:
+    - containerName: triton-server
+      minAllowed:
+        cpu: 2000m
+        memory: 8Gi
+        nvidia.com/gpu: 1
+      maxAllowed:
+        cpu: 16000m
+        memory: 64Gi
+        nvidia.com/gpu: 4
+      controlledResources:
+      - cpu
+      - memory
+
+---
+# Custom Metrics for GPU-based autoscaling
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: triton-custom-metrics
+  namespace: portalis-deployment
+data:
+  custom-metrics.yaml: |
+    rules:
+    # Translation throughput metric
+    - seriesQuery: 'nv_inference_request_success{namespace="portalis-deployment"}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "^nv_inference_request_success"
+        as: "translation_throughput"
+      metricsQuery: 'rate(nv_inference_request_success{<<.LabelMatchers>>}[2m])'
+
+    # GPU memory utilization
+    - seriesQuery: 'nv_gpu_memory_used_bytes{namespace="portalis-deployment"}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "^nv_gpu_memory_used_bytes"
+        as: "gpu_memory_utilization_percent"
+      metricsQuery: |
+        (nv_gpu_memory_used_bytes{<<.LabelMatchers>>} /
+         nv_gpu_memory_total_bytes{<<.LabelMatchers>>}) * 100
+
+    # Request latency P95
+    - seriesQuery: 'nv_inference_request_duration_us{namespace="portalis-deployment"}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+      name:
+        matches: "^nv_inference_request_duration_us"
+        as: "request_latency_p95"
+      metricsQuery: 'histogram_quantile(0.95, rate(nv_inference_request_duration_us{<<.LabelMatchers>>}[2m]))'
+
+    # Model queue depth
+    - seriesQuery: 'nv_inference_pending_request_count{namespace="portalis-deployment"}'
+      resources:
+        overrides:
+          namespace: {resource: "namespace"}
+          pod: {resource: "pod"}
+          model: {resource: "model"}
+      name:
+        matches: "^nv_inference_pending_request_count"
+        as: "model_queue_depth"
+      metricsQuery: 'avg_over_time(nv_inference_pending_request_count{<<.LabelMatchers>>}[1m])'
+
+---
+# PodDisruptionBudget to ensure availability during scaling
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: triton-server-pdb
+  namespace: portalis-deployment
+spec:
+  minAvailable: 1  # Always keep at least 1 pod running
+  selector:
+    matchLabels:
+      app: triton-server
+  unhealthyPodEvictionPolicy: AlwaysAllow
+
+---
+# Priority Class for Triton pods
+apiVersion: scheduling.k8s.io/v1
+kind: PriorityClass
+metadata:
+  name: triton-high-priority
+value: 1000000
+globalDefault: false
+description: "High priority for Triton inference servers"
+
+---
+# Resource Quota for namespace
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: triton-resource-quota
+  namespace: portalis-deployment
+spec:
+  hard:
+    requests.cpu: "100"
+    requests.memory: "500Gi"
+    requests.nvidia.com/gpu: "20"
+    limits.cpu: "200"
+    limits.memory: "1Ti"
+    limits.nvidia.com/gpu: "40"
+    persistentvolumeclaims: "20"
+    services.loadbalancers: "5"

@@ -1,0 +1,51 @@
+---
+# ServiceMonitor for Prometheus Operator
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: portalis-nim-monitor
+  labels:
+    app: portalis-nim
+    component: translation-service
+    prometheus: kube-prometheus
+spec:
+  selector:
+    matchLabels:
+      app: portalis-nim
+      component: translation-service
+  endpoints:
+  - port: metrics
+    interval: 15s
+    path: /metrics
+    scheme: http
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node
+
+---
+# PodMonitor for more detailed pod metrics
+apiVersion: monitoring.coreos.com/v1
+kind: PodMonitor
+metadata:
+  name: portalis-nim-pod-monitor
+  labels:
+    app: portalis-nim
+    component: translation-service
+spec:
+  selector:
+    matchLabels:
+      app: portalis-nim
+      component: translation-service
+  podMetricsEndpoints:
+  - port: metrics
+    interval: 15s
+    path: /metrics
+    relabelings:
+    - sourceLabels: [__meta_kubernetes_pod_name]
+      targetLabel: pod
+    - sourceLabels: [__meta_kubernetes_pod_node_name]
+      targetLabel: node
+    - sourceLabels: [__meta_kubernetes_namespace]
+      targetLabel: namespace

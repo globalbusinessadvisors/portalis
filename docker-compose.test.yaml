@@ -1,0 +1,177 @@
+version: '3.8'
+
+services:
+  # Triton Inference Server
+  triton:
+    image: nvcr.io/nvidia/tritonserver:23.12-py3
+    container_name: portalis-triton-test
+    ports:
+      - "8000:8000"  # HTTP
+      - "8001:8001"  # gRPC
+      - "8002:8002"  # Metrics
+    volumes:
+      - ./deployment/triton/model_repository:/models
+      - ./deployment/triton/configs:/configs
+    command: >
+      tritonserver
+      --model-repository=/models
+      --strict-model-config=false
+      --log-verbose=1
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/v2/health/ready"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - portalis-test
+
+  # NIM Microservices API
+  nim-api:
+    build:
+      context: ./nim-microservices
+      dockerfile: Dockerfile
+    container_name: portalis-nim-test
+    ports:
+      - "8080:8000"
+    environment:
+      - TRITON_URL=triton:8000
+      - ENABLE_GPU=true
+      - LOG_LEVEL=INFO
+      - MOCK_MODE=false
+    volumes:
+      - ./nim-microservices:/app
+    depends_on:
+      triton:
+        condition: service_healthy
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - portalis-test
+
+  # DGX Cloud Scheduler (Mock)
+  dgx-scheduler:
+    build:
+      context: ./dgx-cloud
+      dockerfile: Dockerfile.scheduler
+    container_name: portalis-dgx-test
+    ports:
+      - "8090:8080"
+    environment:
+      - CLUSTER_SIZE=4
+      - GPU_PER_NODE=8
+      - MOCK_MODE=true
+    volumes:
+      - ./dgx-cloud:/app
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - portalis-test
+
+  # PostgreSQL for test data
+  postgres:
+    image: postgres:16-alpine
+    container_name: portalis-postgres-test
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=portalis_test
+      - POSTGRES_USER=portalis
+      - POSTGRES_PASSWORD=portalis_test_pass
+    volumes:
+      - postgres-test-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U portalis"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - portalis-test
+
+  # Redis for caching and job queues
+  redis:
+    image: redis:7-alpine
+    container_name: portalis-redis-test
+    ports:
+      - "6379:6379"
+    command: redis-server --maxmemory 256mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - portalis-test
+
+  # Test runner
+  pytest:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: portalis-pytest
+    volumes:
+      - .:/workspace/portalis
+      - ./test-reports:/workspace/portalis/test-reports
+      - ./htmlcov:/workspace/portalis/htmlcov
+    environment:
+      - TRITON_URL=triton:8000
+      - NIM_API_URL=http://nim-api:8000
+      - DGX_CLOUD_URL=http://dgx-scheduler:8080
+      - POSTGRES_URL=postgresql://portalis:portalis_test_pass@postgres:5432/portalis_test
+      - REDIS_URL=redis://redis:6379
+      - ENABLE_GPU_TESTS=false
+      - ENABLE_NETWORK_TESTS=true
+      - ENABLE_SLOW_TESTS=true
+      - MOCK_MODE=false
+      - PYTHONPATH=/workspace/portalis
+    depends_on:
+      triton:
+        condition: service_healthy
+      nim-api:
+        condition: service_healthy
+      dgx-scheduler:
+        condition: service_healthy
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      pytest tests/
+      -v
+      --tb=short
+      --cov=.
+      --cov-report=html
+      --cov-report=term
+      --cov-report=xml
+      --html=test-reports/report.html
+      --self-contained-html
+      -m "not gpu and not cuda"
+    networks:
+      - portalis-test
+
+volumes:
+  postgres-test-data:
+    driver: local
+
+networks:
+  portalis-test:
+    driver: bridge

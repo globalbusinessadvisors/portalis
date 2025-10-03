@@ -1,0 +1,156 @@
+name: "translation_model"
+platform: "python"
+max_batch_size: 32
+default_model_filename: "model.py"
+
+input [
+  {
+    name: "python_code"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "translation_options"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+    optional: true
+  }
+]
+
+output [
+  {
+    name: "rust_code"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "confidence_score"
+    data_type: TYPE_FP32
+    dims: [ -1 ]
+  },
+  {
+    name: "metadata"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+
+dynamic_batching {
+  preferred_batch_size: [ 8, 16, 32 ]
+  max_queue_delay_microseconds: 100000
+  preserve_ordering: true
+  priority_levels: 2
+  default_priority_level: 1
+  priority_queue_policy {
+    key: 1
+    value {
+      allow_timeout_override: true
+      timeout_action: REJECT
+      default_timeout_microseconds: 60000000
+      max_queue_size: 128
+    }
+  }
+  priority_queue_policy {
+    key: 2
+    value {
+      allow_timeout_override: true
+      timeout_action: DELAY
+      default_timeout_microseconds: 300000000
+      max_queue_size: 256
+    }
+  }
+}
+
+instance_group [
+  {
+    count: 2
+    kind: KIND_GPU
+    gpus: [ 0 ]
+  },
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 1 ]
+  }
+]
+
+optimization {
+  cuda {
+    graphs: true
+    graph_spec {
+      batch_size: 8
+      input {
+        key: "python_code"
+        value {
+          dim: [ -1 ]
+        }
+      }
+    }
+    graph_spec {
+      batch_size: 16
+      input {
+        key: "python_code"
+        value {
+          dim: [ -1 ]
+        }
+      }
+    }
+    graph_spec {
+      batch_size: 32
+      input {
+        key: "python_code"
+        value {
+          dim: [ -1 ]
+        }
+      }
+    }
+  }
+}
+
+model_warmup [
+  {
+    name: "simple_translation"
+    batch_size: 1
+    inputs {
+      key: "python_code"
+      value {
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+        input_data_file: "warmup/simple_code.dat"
+      }
+    }
+  },
+  {
+    name: "batch_translation"
+    batch_size: 16
+    inputs {
+      key: "python_code"
+      value {
+        data_type: TYPE_STRING
+        dims: [ 16 ]
+        input_data_file: "warmup/batch_code.dat"
+      }
+    }
+  }
+]
+
+parameters: {
+  key: "EXECUTION_ENV_PATH"
+  value: {
+    string_value: "/opt/tritonserver/backends/python/envs/translation_env"
+  }
+}
+
+parameters: {
+  key: "NeMo_MODEL_PATH"
+  value: {
+    string_value: "/models/nemo/translation_model"
+  }
+}
+
+parameters: {
+  key: "CUDA_VISIBLE_DEVICES"
+  value: {
+    string_value: "0,1"
+  }
+}

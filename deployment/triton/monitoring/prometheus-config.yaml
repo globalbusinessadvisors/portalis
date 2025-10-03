@@ -1,0 +1,258 @@
+# Prometheus Configuration for Triton Monitoring
+# Scrapes metrics from Triton servers and NVIDIA GPUs
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: portalis-monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'portalis-production'
+        service: 'triton-inference'
+
+    # Alert manager configuration
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - alertmanager:9093
+
+    # Load alert rules
+    rule_files:
+      - '/etc/prometheus/rules/*.yml'
+
+    # Scrape configurations
+    scrape_configs:
+      # Triton Inference Server metrics
+      - job_name: 'triton-server'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - portalis-deployment
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: triton-server
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_namespace]
+            target_label: namespace
+          - source_labels: [__address__]
+            action: replace
+            regex: ([^:]+)(?::\d+)?
+            replacement: $1:8002
+            target_label: __address__
+        metric_relabel_configs:
+          # Keep only relevant Triton metrics
+          - source_labels: [__name__]
+            regex: 'nv_(inference|gpu|model)_.*'
+            action: keep
+
+      # NVIDIA GPU metrics via DCGM Exporter
+      - job_name: 'dcgm-exporter'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - portalis-deployment
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_label_app]
+            action: keep
+            regex: dcgm-exporter
+          - source_labels: [__meta_kubernetes_pod_name]
+            target_label: pod
+          - source_labels: [__meta_kubernetes_pod_node_name]
+            target_label: node
+
+      # Node exporter for host metrics
+      - job_name: 'node-exporter'
+        kubernetes_sd_configs:
+          - role: node
+        relabel_configs:
+          - source_labels: [__address__]
+            regex: '(.*):10250'
+            replacement: '${1}:9100'
+            target_label: __address__
+
+      # Custom application metrics
+      - job_name: 'portalis-apps'
+        kubernetes_sd_configs:
+          - role: pod
+            namespaces:
+              names:
+                - portalis-deployment
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+            action: keep
+            regex: true
+          - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+            action: replace
+            target_label: __metrics_path__
+            regex: (.+)
+          - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+            action: replace
+            regex: ([^:]+)(?::\d+)?;(\d+)
+            replacement: $1:$2
+            target_label: __address__
+
+  # Alert rules for Triton
+  triton-alerts.yml: |
+    groups:
+      - name: triton_inference_alerts
+        interval: 30s
+        rules:
+          # High error rate
+          - alert: HighInferenceErrorRate
+            expr: |
+              rate(nv_inference_request_failure[5m]) /
+              rate(nv_inference_request_success[5m]) > 0.05
+            for: 5m
+            labels:
+              severity: warning
+              component: triton
+            annotations:
+              summary: "High inference error rate on {{ $labels.pod }}"
+              description: "Error rate is {{ $value | humanizePercentage }} on model {{ $labels.model }}"
+
+          # GPU memory pressure
+          - alert: GPUMemoryPressure
+            expr: |
+              (nv_gpu_memory_used_bytes / nv_gpu_memory_total_bytes) > 0.9
+            for: 10m
+            labels:
+              severity: warning
+              component: gpu
+            annotations:
+              summary: "GPU memory usage high on {{ $labels.pod }}"
+              description: "GPU memory is {{ $value | humanizePercentage }} full"
+
+          # High request latency
+          - alert: HighRequestLatency
+            expr: |
+              histogram_quantile(0.95,
+                rate(nv_inference_request_duration_us[5m])
+              ) > 5000000
+            for: 10m
+            labels:
+              severity: warning
+              component: triton
+            annotations:
+              summary: "High P95 latency on {{ $labels.model }}"
+              description: "P95 latency is {{ $value | humanizeDuration }}"
+
+          # Model queue building up
+          - alert: ModelQueueBacklog
+            expr: nv_inference_pending_request_count > 100
+            for: 5m
+            labels:
+              severity: warning
+              component: triton
+            annotations:
+              summary: "Request queue building up for {{ $labels.model }}"
+              description: "{{ $value }} pending requests in queue"
+
+          # GPU temperature
+          - alert: HighGPUTemperature
+            expr: DCGM_FI_DEV_GPU_TEMP > 85
+            for: 10m
+            labels:
+              severity: critical
+              component: gpu
+            annotations:
+              summary: "GPU temperature critical on {{ $labels.gpu }}"
+              description: "GPU temperature is {{ $value }}°C"
+
+          # Triton server down
+          - alert: TritonServerDown
+            expr: up{job="triton-server"} == 0
+            for: 2m
+            labels:
+              severity: critical
+              component: triton
+            annotations:
+              summary: "Triton server {{ $labels.pod }} is down"
+              description: "Triton server has been down for more than 2 minutes"
+
+          # Low GPU utilization (possible issue)
+          - alert: LowGPUUtilization
+            expr: |
+              avg_over_time(DCGM_FI_DEV_GPU_UTIL[15m]) < 10 and
+              rate(nv_inference_request_success[5m]) > 0
+            for: 15m
+            labels:
+              severity: info
+              component: gpu
+            annotations:
+              summary: "Unusually low GPU utilization on {{ $labels.pod }}"
+              description: "GPU utilization is {{ $value }}% despite active requests"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: portalis-monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:latest
+          args:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus'
+            - '--storage.tsdb.retention.time=30d'
+            - '--storage.tsdb.retention.size=50GB'
+            - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+            - '--web.console.templates=/usr/share/prometheus/consoles'
+            - '--web.enable-lifecycle'
+          ports:
+            - containerPort: 9090
+              name: web
+          volumeMounts:
+            - name: prometheus-config
+              mountPath: /etc/prometheus
+            - name: prometheus-storage
+              mountPath: /prometheus
+          resources:
+            requests:
+              cpu: 2000m
+              memory: 8Gi
+            limits:
+              cpu: 4000m
+              memory: 16Gi
+      volumes:
+        - name: prometheus-config
+          configMap:
+            name: prometheus-config
+        - name: prometheus-storage
+          persistentVolumeClaim:
+            claimName: prometheus-storage
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: portalis-monitoring
+spec:
+  selector:
+    app: prometheus
+  ports:
+    - port: 9090
+      targetPort: 9090
+  type: ClusterIP

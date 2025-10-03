@@ -1,0 +1,29 @@
+apiVersion: v2
+name: portalis-nim
+description: NVIDIA NIM microservice for Python-to-Rust code translation
+type: application
+version: 1.0.0
+appVersion: "1.0.0"
+
+keywords:
+  - nvidia
+  - nim
+  - translation
+  - machine-learning
+  - gpu
+  - nemo
+  - triton
+
+home: https://github.com/portalis/portalis
+sources:
+  - https://github.com/portalis/portalis
+
+maintainers:
+  - name: Portalis Team
+    email: team@portalis.dev
+
+dependencies: []
+
+annotations:
+  category: MachineLearning
+  licenses: Apache-2.0

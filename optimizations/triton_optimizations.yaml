@@ -1,0 +1,325 @@
+# Triton Inference Server Optimization Configuration
+# Optimized for high throughput and low latency translation serving
+
+# Model Configuration
+model_repository: "/models"
+strict_model_config: false
+strict_readiness: false
+
+# Dynamic Batching Configuration - KEY OPTIMIZATION
+dynamic_batching {
+  # Preferred batch sizes for optimal GPU utilization
+  preferred_batch_size: [ 1, 2, 4, 8, 16, 32, 64 ]
+
+  # Maximum queue delay before forcing batch execution
+  max_queue_delay_microseconds: 100000  # 100ms for throughput
+
+  # Preserve ordering within batch
+  preserve_ordering: true
+
+  # Priority levels for different request types
+  priority_levels: 3
+  default_priority_level: 1
+
+  # Default timeout
+  default_queue_policy {
+    timeout_action: REJECT
+    default_timeout_microseconds: 5000000  # 5 seconds
+    allow_timeout_override: true
+  }
+
+  # Priority queue policies
+  priority_queue_policy {
+    key: 1
+    value {
+      timeout_action: DELAY
+      default_timeout_microseconds: 1000000  # 1 second for high priority
+    }
+  }
+
+  priority_queue_policy {
+    key: 2
+    value {
+      timeout_action: DELAY
+      default_timeout_microseconds: 3000000  # 3 seconds for medium priority
+    }
+  }
+
+  priority_queue_policy {
+    key: 3
+    value {
+      timeout_action: REJECT
+      default_timeout_microseconds: 10000000  # 10 seconds for low priority
+    }
+  }
+}
+
+# Model Instance Configuration
+instance_group [
+  {
+    # Use all available GPUs
+    count: 2  # Number of instances per GPU
+    kind: KIND_GPU
+    gpus: [ 0, 1, 2, 3 ]  # Use GPUs 0-3
+
+    # Execution policy
+    host_policy: "gpu_optimization"
+
+    # Rate limiter for resource management
+    rate_limiter {
+      resources [
+        {
+          name: "GPU_MEMORY"
+          global: false
+          count: 8192  # MB per instance
+        },
+        {
+          name: "GPU_COMPUTE"
+          global: false
+          count: 100  # Percentage of compute
+        }
+      ]
+
+      priority: 1
+    }
+  }
+]
+
+# Optimization Configuration
+optimization {
+  # Enable CUDA graphs for reduced kernel launch overhead
+  cuda {
+    graphs: true
+    graph_spec {
+      batch_size: 1
+      input {
+        key: "python_code"
+        value {
+          dim: [ -1 ]
+        }
+      }
+    }
+    graph_spec {
+      batch_size: 8
+    }
+    graph_spec {
+      batch_size: 16
+    }
+    graph_spec {
+      batch_size: 32
+    }
+  }
+
+  # TensorRT optimization
+  execution_accelerators {
+    gpu_execution_accelerator {
+      name: "tensorrt"
+      parameters {
+        key: "precision_mode"
+        value: "FP16"
+      }
+      parameters {
+        key: "max_workspace_size_bytes"
+        value: "4294967296"  # 4GB
+      }
+      parameters {
+        key: "minimum_segment_size"
+        value: "3"
+      }
+      parameters {
+        key: "max_cached_engines"
+        value: "100"
+      }
+    }
+  }
+}
+
+# Model Warmup Configuration
+model_warmup [
+  {
+    name: "warmup_batch_1"
+    batch_size: 1
+    inputs {
+      key: "python_code"
+      value: {
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+        zero_data: true
+      }
+    }
+  },
+  {
+    name: "warmup_batch_8"
+    batch_size: 8
+    inputs {
+      key: "python_code"
+      value: {
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+        zero_data: true
+      }
+    }
+  },
+  {
+    name: "warmup_batch_32"
+    batch_size: 32
+    inputs {
+      key: "python_code"
+      value: {
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+        zero_data: true
+      }
+    }
+  }
+]
+
+# Sequence Batching for Stateful Models (if needed)
+sequence_batching {
+  max_sequence_idle_microseconds: 60000000  # 60 seconds
+
+  control_input [
+    {
+      name: "START"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_START
+          fp32_false_true: [ 0, 1 ]
+        }
+      ]
+    },
+    {
+      name: "READY"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_READY
+          fp32_false_true: [ 0, 1 ]
+        }
+      ]
+    },
+    {
+      name: "END"
+      control [
+        {
+          kind: CONTROL_SEQUENCE_END
+          fp32_false_true: [ 0, 1 ]
+        }
+      ]
+    }
+  ]
+
+  # State management
+  state [
+    {
+      input_name: "PAST_STATE"
+      output_name: "PRESENT_STATE"
+      data_type: TYPE_FP32
+      dims: [ -1, 768 ]  # Hidden state dimension
+    }
+  ]
+
+  oldest {
+    max_candidate_sequences: 100
+    preferred_batch_size: [ 8, 16, 32 ]
+    max_queue_delay_microseconds: 50000  # 50ms
+  }
+}
+
+# Response Cache Configuration
+response_cache {
+  enable: true
+}
+
+# Backend Configuration
+backend: "python"
+
+parameters: {
+  key: "EXECUTION_ENV_PATH"
+  value: {
+    string_value: "/opt/tritonserver/backends/python/envs/translation_env"
+  }
+}
+
+parameters: {
+  key: "NeMo_MODEL_PATH"
+  value: {
+    string_value: "/models/nemo/optimized_translation_model"
+  }
+}
+
+# Performance Tuning Parameters
+parameters: {
+  key: "CUDA_VISIBLE_DEVICES"
+  value: {
+    string_value: "0,1,2,3"
+  }
+}
+
+parameters: {
+  key: "OMP_NUM_THREADS"
+  value: {
+    string_value: "8"
+  }
+}
+
+parameters: {
+  key: "TRITON_ENABLE_NVTX"
+  value: {
+    string_value: "1"
+  }
+}
+
+# Model Version Policy
+version_policy: {
+  latest: {
+    num_versions: 2  # Keep last 2 versions for rollback
+  }
+}
+
+# Metrics Configuration
+default_model_filename: "model.py"
+
+# Input/Output Configuration
+input [
+  {
+    name: "python_code"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "translation_options"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+    optional: true
+  }
+]
+
+output [
+  {
+    name: "rust_code"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "confidence_score"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  },
+  {
+    name: "metadata"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  }
+]
+
+# Advanced Optimizations
+max_batch_size: 64
+
+# CPU and GPU Memory Pool Configuration
+# Reduce allocation overhead
+buffer_manager_thread_count: 8
+pinned_memory_pool_byte_size: 268435456  # 256MB
+
+# Model Control
+model_control_mode: MODE_POLL
+model_poll_period_seconds: 30  # Check for new model versions every 30s

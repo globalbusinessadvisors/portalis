@@ -1,0 +1,108 @@
+# Dockerfile for Portalis Test Suite
+# Multi-stage build for efficient testing
+
+FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04 AS base
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3.10 \
+    python3.10-dev \
+    python3-pip \
+    git \
+    curl \
+    wget \
+    build-essential \
+    libssl-dev \
+    libffi-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create python alias
+RUN ln -s /usr/bin/python3.10 /usr/bin/python
+
+# Upgrade pip
+RUN python -m pip install --upgrade pip setuptools wheel
+
+# Install Rust for WASM compilation
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+ENV PATH="/root/.cargo/bin:${PATH}"
+RUN rustup target add wasm32-unknown-unknown
+
+# Install wasm-pack
+RUN curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+# Set working directory
+WORKDIR /workspace/portalis
+
+# Copy requirements first for better caching
+COPY tests/requirements-test.txt /workspace/portalis/tests/
+COPY nemo-integration/requirements.txt /workspace/portalis/nemo-integration/
+COPY deployment/triton/requirements.txt /workspace/portalis/deployment/triton/
+COPY nim-microservices/requirements.txt /workspace/portalis/nim-microservices/
+COPY dgx-cloud/requirements.txt /workspace/portalis/dgx-cloud/
+
+# Install Python dependencies
+RUN pip install -r tests/requirements-test.txt || true
+RUN pip install -r nemo-integration/requirements.txt || true
+RUN pip install -r deployment/triton/requirements.txt || true
+RUN pip install -r nim-microservices/requirements.txt || true
+RUN pip install -r dgx-cloud/requirements.txt || true
+
+# Copy source code
+COPY . /workspace/portalis/
+
+# Create test reports directory
+RUN mkdir -p /workspace/portalis/test-reports /workspace/portalis/htmlcov
+
+# Set Python path
+ENV PYTHONPATH=/workspace/portalis:/workspace/portalis/nemo-integration/src:/workspace/portalis/nim-microservices/src:/workspace/portalis/dgx-cloud/src
+
+# Default command: run all tests
+CMD ["pytest", "tests/", "-v", "--tb=short", "--cov=.", "--cov-report=html", "--cov-report=term", "--cov-report=xml", "-m", "not gpu and not cuda"]
+
+# Development stage with additional tools
+FROM base AS development
+
+# Install development tools
+RUN pip install \
+    ipython \
+    ipdb \
+    jupyter \
+    black \
+    ruff \
+    mypy
+
+# Expose Jupyter port
+EXPOSE 8888
+
+# GPU testing stage
+FROM base AS gpu
+
+# Install CUDA-specific test dependencies
+RUN pip install \
+    cupy-cuda12x \
+    nvidia-cuda-runtime-cu12
+
+# Enable GPU tests
+ENV ENABLE_GPU_TESTS=true
+
+CMD ["pytest", "tests/", "-v", "--tb=short", "--cov=.", "--cov-report=html", "-m", "gpu or cuda"]
+
+# CI stage - optimized for CI/CD
+FROM base AS ci
+
+# Install CI-specific tools
+RUN pip install \
+    pytest-github-actions-annotate-failures \
+    pytest-md
+
+# Slim down image
+RUN apt-get autoremove -y && apt-get clean && rm -rf /var/lib/apt/lists/*
+
+CMD ["pytest", "tests/", "-v", "--tb=line", "--cov=.", "--cov-report=xml", "--junitxml=test-reports/junit.xml"]
