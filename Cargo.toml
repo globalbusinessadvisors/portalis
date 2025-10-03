@@ -10,6 +10,7 @@ members = [
     "agents/test",
     "agents/packaging",
     "agents/nemo-bridge",
+    "agents/cuda-bridge",
     "orchestration",
     "cli",
 ]

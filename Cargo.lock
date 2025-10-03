@@ -1352,12 +1352,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "portalis-cuda-bridge"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "portalis-core",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "portalis-ingest"
 version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
  "portalis-core",
+ "portalis-cuda-bridge",
  "regex",
  "rustpython-parser",
  "serde",

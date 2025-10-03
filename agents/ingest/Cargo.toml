@@ -7,6 +7,7 @@ authors.workspace = true
 
 [dependencies]
 portalis-core = { path = "../../core" }
+portalis-cuda-bridge = { path = "../cuda-bridge", optional = true }
 tokio.workspace = true
 async-trait.workspace = true
 anyhow.workspace = true
@@ -15,6 +16,10 @@ serde_json.workspace = true
 tracing.workspace = true
 regex = "1.10"
 rustpython-parser.workspace = true
+
+[features]
+default = []
+cuda = ["portalis-cuda-bridge"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }
