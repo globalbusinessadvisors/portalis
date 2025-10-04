@@ -109,7 +109,7 @@ PORTALIS uses a multi-agent architecture where each stage is accelerated by NVID
 - ✅ **Assessment command**: Analyze Python codebases for compatibility
 - ✅ **Planning command**: Generate migration strategies (incremental, bottom-up, top-down, critical-path)
 - ✅ **Health monitoring**: Built-in health checks and status reporting
-- ✅ Multi-format reporting (HTML, JSON, Markdown, PDF)
+- ✅ **Multi-format reporting** (HTML, JSON, Markdown, PDF)
 
 ### Core Platform (Rust)
 - ✅ **RBAC system**: Role-based access control with hierarchical permissions
