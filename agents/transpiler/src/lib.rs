@@ -17,6 +17,7 @@ pub mod stdlib_mappings_comprehensive;
 pub mod wasi_core;
 pub mod wasi_directory;
 pub mod wasi_fs;
+pub mod wasi_filesystem;
 pub mod wasi_fetch;
 pub mod wasi_websocket;
 pub mod wasi_threading;

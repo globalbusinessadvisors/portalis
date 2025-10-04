@@ -418,3 +418,100 @@ def process_data(items: list, threshold: int) -> dict:
     assert!(rust_code.contains("for item in"));
     assert!(rust_code.contains("if item > threshold"));
 }
+
+#[test]
+fn test_translate_file_io_basic() {
+    let source = r#"
+def read_file(filename: str) -> str:
+    f = open(filename)
+    content = f.read()
+    f.close()
+    return content
+"#;
+
+    let parser = PythonParser::new(source, "test.py");
+    let module = parser.parse().expect("Failed to parse");
+
+    let mut ctx = TranslationContext::new();
+    let mut translator = StatementTranslator::new(&mut ctx);
+
+    let rust_code = translator.translate(&module.statements[0]).expect("Failed to translate");
+
+    println!("Generated Rust code:\n{}", rust_code);
+
+    assert!(rust_code.contains("pub fn read_file"));
+    assert!(rust_code.contains("WasiFilesystem::open"));
+    assert!(rust_code.contains("read_to_string"));
+    assert!(rust_code.contains("flush"));
+}
+
+#[test]
+fn test_translate_file_io_with_mode() {
+    let source = r#"
+def write_file(filename: str, content: str):
+    f = open(filename, "w")
+    f.write(content)
+    f.close()
+"#;
+
+    let parser = PythonParser::new(source, "test.py");
+    let module = parser.parse().expect("Failed to parse");
+
+    let mut ctx = TranslationContext::new();
+    let mut translator = StatementTranslator::new(&mut ctx);
+
+    let rust_code = translator.translate(&module.statements[0]).expect("Failed to translate");
+
+    println!("Generated Rust code:\n{}", rust_code);
+
+    assert!(rust_code.contains("pub fn write_file"));
+    assert!(rust_code.contains("WasiFilesystem::open_with_mode"));
+    assert!(rust_code.contains("write_all"));
+}
+
+#[test]
+fn test_translate_file_io_with_statement() {
+    let source = r#"
+def process_file(filename: str) -> str:
+    with open(filename, "r") as f:
+        return f.read()
+"#;
+
+    let parser = PythonParser::new(source, "test.py");
+    let module = parser.parse().expect("Failed to parse");
+
+    let mut ctx = TranslationContext::new();
+    let mut translator = StatementTranslator::new(&mut ctx);
+
+    let rust_code = translator.translate(&module.statements[0]).expect("Failed to translate");
+
+    println!("Generated Rust code:\n{}", rust_code);
+
+    assert!(rust_code.contains("pub fn process_file"));
+    assert!(rust_code.contains("WasiFilesystem::open_with_mode"));
+    assert!(rust_code.contains("let f ="));
+    // RAII pattern should automatically close the file when f goes out of scope
+}
+
+#[test]
+fn test_translate_file_io_append() {
+    let source = r#"
+def append_to_file(filename: str, line: str):
+    with open(filename, "a") as f:
+        f.write(line)
+"#;
+
+    let parser = PythonParser::new(source, "test.py");
+    let module = parser.parse().expect("Failed to parse");
+
+    let mut ctx = TranslationContext::new();
+    let mut translator = StatementTranslator::new(&mut ctx);
+
+    let rust_code = translator.translate(&module.statements[0]).expect("Failed to translate");
+
+    println!("Generated Rust code:\n{}", rust_code);
+
+    assert!(rust_code.contains("pub fn append_to_file"));
+    assert!(rust_code.contains("WasiFilesystem::open_with_mode"));
+    assert!(rust_code.contains("\"a\""));
+}

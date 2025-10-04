@@ -405,8 +405,19 @@ impl<'a> ExpressionTranslator<'a> {
                 format!("/* getattr({}) */", args_str)
             }
             "open" => {
-                // File I/O
-                format!("std::fs::File::open({})?", self.translate(&args[0])?)
+                // File I/O - use WasiFilesystem for cross-platform support
+                if args.len() >= 2 {
+                    // Has mode parameter
+                    let path = self.translate(&args[0])?;
+                    let mode = self.translate(&args[1])?;
+
+                    // Determine operation based on mode
+                    // Mode can be: "r", "w", "a", "r+", "w+", "a+", "rb", "wb", etc.
+                    format!("WasiFilesystem::open_with_mode({}, {})?", path, mode)
+                } else {
+                    // Default mode is read
+                    format!("WasiFilesystem::open({})?", self.translate(&args[0])?)
+                }
             }
             // Regular function call
             _ => format!("{}({})", name, args_str),
@@ -455,6 +466,17 @@ impl<'a> ExpressionTranslator<'a> {
             "union" => "union".to_string(),
             "intersection" => "intersection".to_string(),
             "difference" => "difference".to_string(),
+
+            // File methods
+            "read" => "read_to_string".to_string(),
+            "write" => "write_all".to_string(),
+            "close" => "flush".to_string(),
+            "readline" => "read_line".to_string(),
+            "readlines" => "lines".to_string(),
+            "writelines" => "write_all".to_string(),
+            "seek" => "seek".to_string(),
+            "tell" => "stream_position".to_string(),
+            "flush" => "flush".to_string(),
 
             // Default: keep the same
             _ => method.to_string(),
