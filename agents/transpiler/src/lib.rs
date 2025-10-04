@@ -6,6 +6,7 @@ mod code_generator;
 pub mod class_translator;
 pub mod python_ast;
 pub mod python_to_rust;
+pub mod python_parser;
 pub mod simple_parser;
 pub mod indented_parser;
 pub mod feature_translator;

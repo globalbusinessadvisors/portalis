@@ -97,10 +97,16 @@ pub enum PyExpr {
         op: CmpOp,
         right: Box<PyExpr>,
     },
-    /// Await expression
-    Await {
-        value: Box<PyExpr>,
+    /// Boolean operation: and, or
+    BoolOp {
+        op: BoolOp,
+        left: Box<PyExpr>,
+        right: Box<PyExpr>,
     },
+    /// Await expression: await expr
+    Await(Box<PyExpr>),
+    /// Yield expression: yield expr
+    Yield(Option<Box<PyExpr>>),
 }
 
 /// Binary operators
@@ -145,12 +151,39 @@ pub enum CmpOp {
     NotIn, // not in
 }
 
+/// Boolean operators
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum BoolOp {
+    And, // and
+    Or,  // or
+}
+
 /// Comprehension clause: for x in iterable if condition
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct Comprehension {
-    pub target: String,
+    pub target: PyExpr,
     pub iter: PyExpr,
     pub ifs: Vec<PyExpr>,
+}
+
+/// Function parameter with type annotation
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub struct FunctionParam {
+    pub name: String,
+    pub type_annotation: Option<TypeAnnotation>,
+    pub default_value: Option<PyExpr>,
+}
+
+/// Type annotation for variables and function parameters
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+pub enum TypeAnnotation {
+    /// Simple type name: int, str, bool
+    Name(String),
+    /// Generic type: List[int], Dict[str, int]
+    Generic {
+        base: Box<TypeAnnotation>,
+        args: Vec<TypeAnnotation>,
+    },
 }
 
 /// Python statement types
@@ -158,29 +191,36 @@ pub struct Comprehension {
 pub enum PyStmt {
     /// Expression statement
     Expr(PyExpr),
-    /// Assignment: x = 42 or chained: x = y = z = 42
+    /// Assignment: x = 42
     Assign {
-        targets: Vec<String>,  // Support multiple targets for chained assignment
+        target: PyExpr,
         value: PyExpr,
-        type_hint: Option<String>,
     },
     /// Augmented assignment: x += 1
     AugAssign {
-        target: String,
+        target: PyExpr,
         op: BinOp,
         value: PyExpr,
+    },
+    /// Annotated assignment: x: int = 42
+    AnnAssign {
+        target: PyExpr,
+        annotation: TypeAnnotation,
+        value: Option<PyExpr>,
     },
     /// Function definition
     FunctionDef {
         name: String,
-        args: Vec<Arg>,
+        params: Vec<FunctionParam>,
         body: Vec<PyStmt>,
-        return_type: Option<String>,
-        decorators: Vec<String>,
+        return_type: Option<TypeAnnotation>,
+        decorators: Vec<PyExpr>,
         is_async: bool,
     },
     /// Return statement
-    Return(Option<PyExpr>),
+    Return {
+        value: Option<PyExpr>,
+    },
     /// If statement
     If {
         test: PyExpr,
@@ -193,9 +233,9 @@ pub enum PyStmt {
         body: Vec<PyStmt>,
         orelse: Vec<PyStmt>,
     },
-    /// For loop (supports tuple unpacking: for i, item in ...)
+    /// For loop
     For {
-        targets: Vec<String>,  // Can be ["i"] or ["i", "item"] for unpacking
+        target: PyExpr,
         iter: PyExpr,
         body: Vec<PyStmt>,
         orelse: Vec<PyStmt>,
@@ -209,20 +249,19 @@ pub enum PyStmt {
     /// Class definition
     ClassDef {
         name: String,
-        bases: Vec<String>,
+        bases: Vec<PyExpr>,
         body: Vec<PyStmt>,
-        decorators: Vec<String>,
+        decorators: Vec<PyExpr>,
     },
     /// Import statement: import module [as alias]
     Import {
-        names: Vec<String>,
-        aliases: Vec<Option<String>>,
+        modules: Vec<(String, Option<String>)>,
     },
     /// From import: from module import name [as alias]
     ImportFrom {
-        module: String,
-        names: Vec<String>,
-        aliases: Vec<Option<String>>,
+        module: Option<String>,
+        names: Vec<(String, Option<String>)>,
+        level: usize,
     },
     /// Assert statement: assert condition, message
     Assert {
@@ -238,12 +277,24 @@ pub enum PyStmt {
     },
     /// Raise statement
     Raise {
-        exc: Option<PyExpr>,
+        exception: Option<PyExpr>,
     },
     /// With statement (context manager)
     With {
         items: Vec<WithItem>,
         body: Vec<PyStmt>,
+    },
+    /// Delete statement: del x
+    Delete {
+        targets: Vec<PyExpr>,
+    },
+    /// Global declaration: global x, y
+    Global {
+        names: Vec<String>,
+    },
+    /// Nonlocal declaration: nonlocal x, y
+    Nonlocal {
+        names: Vec<String>,
     },
 }
 
@@ -251,13 +302,13 @@ pub enum PyStmt {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct WithItem {
     pub context_expr: PyExpr,
-    pub optional_vars: Option<String>,
+    pub optional_vars: Option<PyExpr>,
 }
 
 /// Exception handler for try-except
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct ExceptHandler {
-    pub exc_type: Option<String>,
+    pub exception_type: Option<PyExpr>,
     pub name: Option<String>,
     pub body: Vec<PyStmt>,
 }
@@ -273,16 +324,23 @@ pub struct Arg {
 /// Python module (top-level)
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 pub struct PyModule {
-    pub body: Vec<PyStmt>,
+    pub statements: Vec<PyStmt>,
 }
 
 impl PyModule {
     pub fn new() -> Self {
-        Self { body: vec![] }
+        Self {
+            statements: vec![],
+        }
     }
 
     pub fn add_stmt(&mut self, stmt: PyStmt) {
-        self.body.push(stmt);
+        self.statements.push(stmt);
+    }
+
+    // Alias for compatibility
+    pub fn body(&self) -> &[PyStmt] {
+        &self.statements
     }
 }
 
@@ -311,14 +369,13 @@ mod tests {
     #[test]
     fn test_simple_assignment() {
         let module = PyModule {
-            body: vec![PyStmt::Assign {
-                targets: vec!["x".to_string()],
+            statements: vec![PyStmt::Assign {
+                target: PyExpr::Name("x".to_string()),
                 value: PyExpr::Literal(PyLiteral::Int(42)),
-                type_hint: None,
             }],
         };
 
-        assert_eq!(module.body.len(), 1);
+        assert_eq!(module.statements.len(), 1);
     }
 
     #[test]
@@ -343,32 +400,34 @@ mod tests {
     fn test_function_definition() {
         let func = PyStmt::FunctionDef {
             name: "add".to_string(),
-            args: vec![
-                Arg {
+            params: vec![
+                FunctionParam {
                     name: "a".to_string(),
-                    type_hint: Some("int".to_string()),
-                    default: None,
+                    type_annotation: Some(TypeAnnotation::Name("int".to_string())),
+                    default_value: None,
                 },
-                Arg {
+                FunctionParam {
                     name: "b".to_string(),
-                    type_hint: Some("int".to_string()),
-                    default: None,
+                    type_annotation: Some(TypeAnnotation::Name("int".to_string())),
+                    default_value: None,
                 },
             ],
-            body: vec![PyStmt::Return(Some(PyExpr::BinOp {
-                left: Box::new(PyExpr::Name("a".to_string())),
-                op: BinOp::Add,
-                right: Box::new(PyExpr::Name("b".to_string())),
-            }))],
-            return_type: Some("int".to_string()),
+            body: vec![PyStmt::Return {
+                value: Some(PyExpr::BinOp {
+                    left: Box::new(PyExpr::Name("a".to_string())),
+                    op: BinOp::Add,
+                    right: Box::new(PyExpr::Name("b".to_string())),
+                }),
+            }],
+            return_type: Some(TypeAnnotation::Name("int".to_string())),
             decorators: vec![],
             is_async: false,
         };
 
         match func {
-            PyStmt::FunctionDef { name, args, .. } => {
+            PyStmt::FunctionDef { name, params, .. } => {
                 assert_eq!(name, "add");
-                assert_eq!(args.len(), 2);
+                assert_eq!(params.len(), 2);
             }
             _ => panic!("Expected FunctionDef"),
         }
