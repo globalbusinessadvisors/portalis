@@ -31,7 +31,7 @@ portalis-nemo-bridge = { path = "../nemo-bridge", optional = true }
 tokio.workspace = true
 async-trait.workspace = true
 tracing.workspace = true
-reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
+reqwest = { version = "0.12", features = ["json", "rustls-tls"], default-features = false }
 # WebSocket support
 tokio-tungstenite = { version = "0.21", features = ["native-tls"] }
 futures-util = "0.3"
