@@ -7,6 +7,8 @@ pub mod class_translator;
 pub mod python_ast;
 pub mod python_to_rust;
 pub mod python_parser;
+pub mod expression_translator;
+pub mod statement_translator;
 pub mod simple_parser;
 pub mod indented_parser;
 pub mod feature_translator;
