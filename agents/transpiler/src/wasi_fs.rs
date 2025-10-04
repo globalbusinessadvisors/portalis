@@ -10,6 +10,11 @@
 use std::path::{Path, PathBuf};
 use anyhow::{Result, Context};
 
+// Re-export directory operations
+pub use crate::wasi_directory::{
+    WasiDirectory, WasiDir, DirEntry, DirIterator, FileStat, FileType, Prestat, PrestatType
+};
+
 /// Unified File handle that works across platforms
 pub struct WasiFile {
     #[cfg(not(target_arch = "wasm32"))]
@@ -230,25 +235,37 @@ impl WasiFs {
 
     /// Create a directory
     pub fn create_dir<P: AsRef<Path>>(path: P) -> Result<()> {
-        #[cfg(not(target_arch = "wasm32"))]
-        {
-            std::fs::create_dir(path.as_ref())
-                .context("Failed to create directory")
-        }
+        WasiDirectory::create_dir(path)
+    }
 
-        #[cfg(all(target_arch = "wasm32", feature = "wasi"))]
-        {
-            let path_str = path.as_ref().to_str()
-                .context("Invalid path encoding")?;
-            wasi::create_dir(path_str)
-                .map_err(|e| anyhow::anyhow!("WASI create_dir failed: {:?}", e))
-        }
+    /// Create a directory and all parent directories (like mkdir -p)
+    pub fn create_dir_all<P: AsRef<Path>>(path: P) -> Result<()> {
+        WasiDirectory::create_dir_all(path)
+    }
 
-        #[cfg(all(target_arch = "wasm32", not(feature = "wasi")))]
-        {
-            // Browser: create virtual directory
-            Ok(())
-        }
+    /// Remove an empty directory
+    pub fn remove_dir<P: AsRef<Path>>(path: P) -> Result<()> {
+        WasiDirectory::remove_dir(path)
+    }
+
+    /// Remove a directory and all its contents
+    pub fn remove_dir_all<P: AsRef<Path>>(path: P) -> Result<()> {
+        WasiDirectory::remove_dir_all(path)
+    }
+
+    /// Read directory entries
+    pub fn read_dir<P: AsRef<Path>>(path: P) -> Result<Vec<DirEntry>> {
+        WasiDirectory::read_dir(path)
+    }
+
+    /// List directory contents (just names)
+    pub fn list_dir<P: AsRef<Path>>(path: P) -> Result<Vec<String>> {
+        WasiDirectory::list_dir(path)
+    }
+
+    /// Get file/directory metadata
+    pub fn metadata<P: AsRef<Path>>(path: P) -> Result<FileStat> {
+        WasiDirectory::metadata(path)
     }
 
     /// Remove a file

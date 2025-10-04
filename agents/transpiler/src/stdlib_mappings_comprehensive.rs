@@ -1364,6 +1364,1456 @@ pub fn init_critical_mappings() -> Vec<(ModuleMapping, Vec<FunctionMapping>)> {
         ],
     ));
 
+    // ========== Additional High-Priority Modules (50+ new mappings) ==========
+
+    // abc - Abstract base classes
+    mappings.push((
+        ModuleMapping {
+            python_module: "abc".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Maps to Rust trait system".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "ABC".to_string(),
+                rust_equiv: "trait".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Define trait with abstract methods".to_string()),
+            },
+            FunctionMapping {
+                python_name: "abstractmethod".to_string(),
+                rust_equiv: "trait_method".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Define method without default implementation in trait".to_string()),
+            },
+        ],
+    ));
+
+    // contextlib - Context managers
+    mappings.push((
+        ModuleMapping {
+            python_module: "contextlib".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Maps to RAII pattern with Drop trait".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "contextmanager".to_string(),
+                rust_equiv: "Drop::drop".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Use RAII pattern - cleanup in Drop implementation".to_string()),
+            },
+            FunctionMapping {
+                python_name: "closing".to_string(),
+                rust_equiv: "Drop::drop".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Automatic via Drop trait".to_string()),
+            },
+        ],
+    ));
+
+    // concurrent.futures - Concurrent execution
+    mappings.push((
+        ModuleMapping {
+            python_module: "concurrent.futures".to_string(),
+            rust_crate: Some("rayon".to_string()),
+            rust_use: "rayon".to_string(),
+            dependencies: vec!["tokio".to_string()],
+            version: "1".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresJsInterop,
+            notes: Some("Use rayon for thread pools, tokio for async futures".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "ThreadPoolExecutor".to_string(),
+                rust_equiv: "rayon::ThreadPool::new".to_string(),
+                requires_use: Some("rayon::ThreadPoolBuilder".to_string()),
+                wasm_compatible: WasmCompatibility::Incompatible,
+                transform_notes: Some("Use wasm-bindgen-rayon in WASM".to_string()),
+            },
+            FunctionMapping {
+                python_name: "ProcessPoolExecutor".to_string(),
+                rust_equiv: "rayon::ThreadPool::new".to_string(),
+                requires_use: Some("rayon::ThreadPoolBuilder".to_string()),
+                wasm_compatible: WasmCompatibility::Incompatible,
+                transform_notes: Some("No process support in WASM, use threads".to_string()),
+            },
+            FunctionMapping {
+                python_name: "Future".to_string(),
+                rust_equiv: "tokio::task::JoinHandle".to_string(),
+                requires_use: Some("tokio::task".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresJsInterop,
+                transform_notes: Some("Use tokio futures".to_string()),
+            },
+        ],
+    ));
+
+    // multiprocessing - Process-based parallelism
+    mappings.push((
+        ModuleMapping {
+            python_module: "multiprocessing".to_string(),
+            rust_crate: Some("rayon".to_string()),
+            rust_use: "rayon".to_string(),
+            dependencies: vec![],
+            version: "1".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("Use rayon for thread-based parallelism, no process support in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "Pool".to_string(),
+                rust_equiv: "rayon::ThreadPool::new".to_string(),
+                requires_use: Some("rayon::ThreadPoolBuilder".to_string()),
+                wasm_compatible: WasmCompatibility::Incompatible,
+                transform_notes: Some("Thread-based only, not multiprocess".to_string()),
+            },
+            FunctionMapping {
+                python_name: "Process".to_string(),
+                rust_equiv: "std::thread::spawn".to_string(),
+                requires_use: Some("std::thread".to_string()),
+                wasm_compatible: WasmCompatibility::Incompatible,
+                transform_notes: Some("Use threads instead of processes".to_string()),
+            },
+        ],
+    ));
+
+    // random - Random number generation (comprehensive)
+    mappings.push((
+        ModuleMapping {
+            python_module: "random".to_string(),
+            rust_crate: Some("rand".to_string()),
+            rust_use: "rand".to_string(),
+            dependencies: vec!["getrandom".to_string()],
+            version: "0.8".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresJsInterop,
+            notes: Some("Requires getrandom with js feature in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "random".to_string(),
+                rust_equiv: "rand::random::<f64>".to_string(),
+                requires_use: Some("rand".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresJsInterop,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "randint".to_string(),
+                rust_equiv: "rand::thread_rng().gen_range".to_string(),
+                requires_use: Some("rand::Rng".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresJsInterop,
+                transform_notes: Some("gen_range(start..=end)".to_string()),
+            },
+            FunctionMapping {
+                python_name: "choice".to_string(),
+                rust_equiv: "rand::seq::SliceRandom::choose".to_string(),
+                requires_use: Some("rand::seq::SliceRandom".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresJsInterop,
+                transform_notes: Some("Call .choose(&mut rng) on slice".to_string()),
+            },
+            FunctionMapping {
+                python_name: "shuffle".to_string(),
+                rust_equiv: "rand::seq::SliceRandom::shuffle".to_string(),
+                requires_use: Some("rand::seq::SliceRandom".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresJsInterop,
+                transform_notes: Some("Call .shuffle(&mut rng) on slice".to_string()),
+            },
+        ],
+    ));
+
+    // re - Regular expressions (comprehensive)
+    mappings.push((
+        ModuleMapping {
+            python_module: "re".to_string(),
+            rust_crate: Some("regex".to_string()),
+            rust_use: "regex".to_string(),
+            dependencies: vec![],
+            version: "1".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Full regex support in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "compile".to_string(),
+                rust_equiv: "Regex::new".to_string(),
+                requires_use: Some("regex::Regex".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "match".to_string(),
+                rust_equiv: "Regex::is_match".to_string(),
+                requires_use: Some("regex::Regex".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "search".to_string(),
+                rust_equiv: "Regex::find".to_string(),
+                requires_use: Some("regex::Regex".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "findall".to_string(),
+                rust_equiv: "Regex::find_iter".to_string(),
+                requires_use: Some("regex::Regex".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Returns iterator, collect to vector".to_string()),
+            },
+            FunctionMapping {
+                python_name: "sub".to_string(),
+                rust_equiv: "Regex::replace_all".to_string(),
+                requires_use: Some("regex::Regex".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // os - Operating system interface (comprehensive)
+    mappings.push((
+        ModuleMapping {
+            python_module: "os".to_string(),
+            rust_crate: None,
+            rust_use: "std::env, std::fs".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresWasi,
+            notes: Some("Most filesystem operations require WASI".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "getcwd".to_string(),
+                rust_equiv: "std::env::current_dir".to_string(),
+                requires_use: Some("std::env".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "getenv".to_string(),
+                rust_equiv: "std::env::var".to_string(),
+                requires_use: Some("std::env".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: Some("Returns Result, not Option".to_string()),
+            },
+            FunctionMapping {
+                python_name: "listdir".to_string(),
+                rust_equiv: "std::fs::read_dir".to_string(),
+                requires_use: Some("std::fs".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: Some("Returns iterator of DirEntry".to_string()),
+            },
+            FunctionMapping {
+                python_name: "mkdir".to_string(),
+                rust_equiv: "std::fs::create_dir".to_string(),
+                requires_use: Some("std::fs".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "remove".to_string(),
+                rust_equiv: "std::fs::remove_file".to_string(),
+                requires_use: Some("std::fs".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "rename".to_string(),
+                rust_equiv: "std::fs::rename".to_string(),
+                requires_use: Some("std::fs".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // os.path - Path operations
+    mappings.push((
+        ModuleMapping {
+            python_module: "os.path".to_string(),
+            rust_crate: None,
+            rust_use: "std::path::Path".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresWasi,
+            notes: Some("Path manipulation works, filesystem access needs WASI".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "join".to_string(),
+                rust_equiv: "Path::join".to_string(),
+                requires_use: Some("std::path::Path".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "exists".to_string(),
+                rust_equiv: "Path::exists".to_string(),
+                requires_use: Some("std::path::Path".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "basename".to_string(),
+                rust_equiv: "Path::file_name".to_string(),
+                requires_use: Some("std::path::Path".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "dirname".to_string(),
+                rust_equiv: "Path::parent".to_string(),
+                requires_use: Some("std::path::Path".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // sys - System-specific parameters
+    mappings.push((
+        ModuleMapping {
+            python_module: "sys".to_string(),
+            rust_crate: None,
+            rust_use: "std::env".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Partial,
+            notes: Some("Limited in WASM, some features unavailable".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "argv".to_string(),
+                rust_equiv: "std::env::args".to_string(),
+                requires_use: Some("std::env".to_string()),
+                wasm_compatible: WasmCompatibility::Incompatible,
+                transform_notes: Some("Not available in browser WASM".to_string()),
+            },
+            FunctionMapping {
+                python_name: "exit".to_string(),
+                rust_equiv: "std::process::exit".to_string(),
+                requires_use: Some("std::process".to_string()),
+                wasm_compatible: WasmCompatibility::Incompatible,
+                transform_notes: Some("Use panic! or return from main in WASM".to_string()),
+            },
+            FunctionMapping {
+                python_name: "platform".to_string(),
+                rust_equiv: "std::env::consts::OS".to_string(),
+                requires_use: Some("std::env::consts".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Returns 'wasm32' in WASM".to_string()),
+            },
+        ],
+    ));
+
+    // json - JSON encoder/decoder (comprehensive)
+    mappings.push((
+        ModuleMapping {
+            python_module: "json".to_string(),
+            rust_crate: Some("serde_json".to_string()),
+            rust_use: "serde_json".to_string(),
+            dependencies: vec!["serde".to_string()],
+            version: "1".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Full JSON support in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "dumps".to_string(),
+                rust_equiv: "serde_json::to_string".to_string(),
+                requires_use: Some("serde_json".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Requires Serialize trait".to_string()),
+            },
+            FunctionMapping {
+                python_name: "loads".to_string(),
+                rust_equiv: "serde_json::from_str".to_string(),
+                requires_use: Some("serde_json".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Requires Deserialize trait".to_string()),
+            },
+            FunctionMapping {
+                python_name: "dump".to_string(),
+                rust_equiv: "serde_json::to_writer".to_string(),
+                requires_use: Some("serde_json".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Writes to any writer".to_string()),
+            },
+            FunctionMapping {
+                python_name: "load".to_string(),
+                rust_equiv: "serde_json::from_reader".to_string(),
+                requires_use: Some("serde_json".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Reads from any reader".to_string()),
+            },
+        ],
+    ));
+
+    // string - String operations
+    mappings.push((
+        ModuleMapping {
+            python_module: "string".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("String methods are built into Rust String type".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "ascii_letters".to_string(),
+                rust_equiv: "('a'..='z').chain('A'..='Z')".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Build from char ranges".to_string()),
+            },
+            FunctionMapping {
+                python_name: "digits".to_string(),
+                rust_equiv: "('0'..='9')".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Char range for digits".to_string()),
+            },
+        ],
+    ));
+
+    // traceback - Print or retrieve stack traceback
+    mappings.push((
+        ModuleMapping {
+            python_module: "traceback".to_string(),
+            rust_crate: Some("backtrace".to_string()),
+            rust_use: "backtrace".to_string(),
+            dependencies: vec![],
+            version: "0.3".to_string(),
+            wasm_compatible: WasmCompatibility::Partial,
+            notes: Some("Limited stack trace support in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "print_exc".to_string(),
+                rust_equiv: "eprintln!(\"{:?}\", err)".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Use Debug formatting for errors".to_string()),
+            },
+            FunctionMapping {
+                python_name: "format_exc".to_string(),
+                rust_equiv: "format!(\"{:?}\", err)".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // warnings - Warning control
+    mappings.push((
+        ModuleMapping {
+            python_module: "warnings".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use tracing or log crate for warnings".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "warn".to_string(),
+                rust_equiv: "tracing::warn!".to_string(),
+                requires_use: Some("tracing".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Use logging/tracing macros".to_string()),
+            },
+        ],
+    ));
+
+    // weakref - Weak references
+    mappings.push((
+        ModuleMapping {
+            python_module: "weakref".to_string(),
+            rust_crate: None,
+            rust_use: "std::rc::Weak, std::sync::Weak".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use Weak<T> from std::rc or std::sync".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "ref".to_string(),
+                rust_equiv: "Rc::downgrade".to_string(),
+                requires_use: Some("std::rc::{Rc, Weak}".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Creates weak reference from Rc".to_string()),
+            },
+        ],
+    ));
+
+    // http - HTTP modules
+    mappings.push((
+        ModuleMapping {
+            python_module: "http".to_string(),
+            rust_crate: Some("http".to_string()),
+            rust_use: "http".to_string(),
+            dependencies: vec![],
+            version: "0.2".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("HTTP types, use reqwest for actual HTTP requests".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "HTTPStatus".to_string(),
+                rust_equiv: "http::StatusCode".to_string(),
+                requires_use: Some("http::StatusCode".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // urllib.parse - URL parsing
+    mappings.push((
+        ModuleMapping {
+            python_module: "urllib.parse".to_string(),
+            rust_crate: Some("url".to_string()),
+            rust_use: "url".to_string(),
+            dependencies: vec![],
+            version: "2".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Full URL parsing in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "urlparse".to_string(),
+                rust_equiv: "Url::parse".to_string(),
+                requires_use: Some("url::Url".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "urlencode".to_string(),
+                rust_equiv: "url::form_urlencoded::Serializer".to_string(),
+                requires_use: Some("url::form_urlencoded".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "quote".to_string(),
+                rust_equiv: "urlencoding::encode".to_string(),
+                requires_use: Some("urlencoding".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Requires urlencoding crate".to_string()),
+            },
+        ],
+    ));
+
+    // html - HTML manipulation
+    mappings.push((
+        ModuleMapping {
+            python_module: "html".to_string(),
+            rust_crate: Some("html-escape".to_string()),
+            rust_use: "html_escape".to_string(),
+            dependencies: vec![],
+            version: "0.2".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("HTML escaping/unescaping".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "escape".to_string(),
+                rust_equiv: "html_escape::encode_text".to_string(),
+                requires_use: Some("html_escape".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "unescape".to_string(),
+                rust_equiv: "html_escape::decode_html_entities".to_string(),
+                requires_use: Some("html_escape".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // html.parser - HTML/XHTML parser
+    mappings.push((
+        ModuleMapping {
+            python_module: "html.parser".to_string(),
+            rust_crate: Some("scraper".to_string()),
+            rust_use: "scraper".to_string(),
+            dependencies: vec![],
+            version: "0.17".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("HTML parsing and selection".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "HTMLParser".to_string(),
+                rust_equiv: "scraper::Html::parse_document".to_string(),
+                requires_use: Some("scraper::Html".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // statistics - Mathematical statistics
+    mappings.push((
+        ModuleMapping {
+            python_module: "statistics".to_string(),
+            rust_crate: Some("statistical".to_string()),
+            rust_use: "statistical".to_string(),
+            dependencies: vec![],
+            version: "1".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Statistical functions, fully WASM compatible".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "mean".to_string(),
+                rust_equiv: "statistical::mean".to_string(),
+                requires_use: Some("statistical".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "median".to_string(),
+                rust_equiv: "statistical::median".to_string(),
+                requires_use: Some("statistical".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "stdev".to_string(),
+                rust_equiv: "statistical::standard_deviation".to_string(),
+                requires_use: Some("statistical".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // binascii - Binary/ASCII conversions
+    mappings.push((
+        ModuleMapping {
+            python_module: "binascii".to_string(),
+            rust_crate: Some("hex".to_string()),
+            rust_use: "hex".to_string(),
+            dependencies: vec![],
+            version: "0.4".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Binary to ASCII conversions".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "hexlify".to_string(),
+                rust_equiv: "hex::encode".to_string(),
+                requires_use: Some("hex".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "unhexlify".to_string(),
+                rust_equiv: "hex::decode".to_string(),
+                requires_use: Some("hex".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // hmac - Keyed-hashing for message authentication
+    mappings.push((
+        ModuleMapping {
+            python_module: "hmac".to_string(),
+            rust_crate: Some("hmac".to_string()),
+            rust_use: "hmac".to_string(),
+            dependencies: vec!["sha2".to_string()],
+            version: "0.12".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("HMAC implementation".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "new".to_string(),
+                rust_equiv: "Hmac::<Sha256>::new_from_slice".to_string(),
+                requires_use: Some("hmac::{Hmac, Mac}".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Use with sha2::Sha256".to_string()),
+            },
+        ],
+    ));
+
+    // crypt - Password hashing
+    mappings.push((
+        ModuleMapping {
+            python_module: "crypt".to_string(),
+            rust_crate: Some("bcrypt".to_string()),
+            rust_use: "bcrypt".to_string(),
+            dependencies: vec![],
+            version: "0.15".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use bcrypt or argon2 for password hashing".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "crypt".to_string(),
+                rust_equiv: "bcrypt::hash".to_string(),
+                requires_use: Some("bcrypt".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // getpass - Portable password input
+    mappings.push((
+        ModuleMapping {
+            python_module: "getpass".to_string(),
+            rust_crate: Some("rpassword".to_string()),
+            rust_use: "rpassword".to_string(),
+            dependencies: vec![],
+            version: "7".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("Terminal input not available in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "getpass".to_string(),
+                rust_equiv: "rpassword::read_password".to_string(),
+                requires_use: Some("rpassword".to_string()),
+                wasm_compatible: WasmCompatibility::Incompatible,
+                transform_notes: Some("Only works in native terminal".to_string()),
+            },
+        ],
+    ));
+
+    // platform - Access to platform identifying data
+    mappings.push((
+        ModuleMapping {
+            python_module: "platform".to_string(),
+            rust_crate: Some("platforms".to_string()),
+            rust_use: "platforms".to_string(),
+            dependencies: vec![],
+            version: "3".to_string(),
+            wasm_compatible: WasmCompatibility::Partial,
+            notes: Some("Platform detection, limited in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "system".to_string(),
+                rust_equiv: "std::env::consts::OS".to_string(),
+                requires_use: Some("std::env::consts".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "machine".to_string(),
+                rust_equiv: "std::env::consts::ARCH".to_string(),
+                requires_use: Some("std::env::consts".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // locale - Internationalization services
+    mappings.push((
+        ModuleMapping {
+            python_module: "locale".to_string(),
+            rust_crate: Some("sys-locale".to_string()),
+            rust_use: "sys_locale".to_string(),
+            dependencies: vec![],
+            version: "0.3".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresJsInterop,
+            notes: Some("Locale detection, limited in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "getlocale".to_string(),
+                rust_equiv: "sys_locale::get_locale".to_string(),
+                requires_use: Some("sys_locale".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresJsInterop,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // gettext - Multilingual internationalization
+    mappings.push((
+        ModuleMapping {
+            python_module: "gettext".to_string(),
+            rust_crate: Some("gettext".to_string()),
+            rust_use: "gettext".to_string(),
+            dependencies: vec![],
+            version: "0.4".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("i18n support".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "gettext".to_string(),
+                rust_equiv: "gettext::gettext".to_string(),
+                requires_use: Some("gettext".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // pprint - Data pretty printer
+    mappings.push((
+        ModuleMapping {
+            python_module: "pprint".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use Debug formatting with {:#?}".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "pprint".to_string(),
+                rust_equiv: "println!(\"{:#?}\", value)".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Pretty-print with Debug trait".to_string()),
+            },
+        ],
+    ));
+
+    // reprlib - Alternate repr() implementation
+    mappings.push((
+        ModuleMapping {
+            python_module: "reprlib".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use Debug or Display traits".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "repr".to_string(),
+                rust_equiv: "format!(\"{:?}\", value)".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // tokenize - Tokenizer for Python source
+    mappings.push((
+        ModuleMapping {
+            python_module: "tokenize".to_string(),
+            rust_crate: Some("logos".to_string()),
+            rust_use: "logos".to_string(),
+            dependencies: vec![],
+            version: "0.13".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use logos for tokenization".to_string()),
+        },
+        vec![],
+    ));
+
+    // ast - Abstract Syntax Trees
+    mappings.push((
+        ModuleMapping {
+            python_module: "ast".to_string(),
+            rust_crate: Some("syn".to_string()),
+            rust_use: "syn".to_string(),
+            dependencies: vec![],
+            version: "2".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use syn for Rust AST parsing".to_string()),
+        },
+        vec![],
+    ));
+
+    // dis - Disassembler
+    mappings.push((
+        ModuleMapping {
+            python_module: "dis".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("No direct equivalent in Rust".to_string()),
+        },
+        vec![],
+    ));
+
+    // inspect - Inspect live objects
+    mappings.push((
+        ModuleMapping {
+            python_module: "inspect".to_string(),
+            rust_crate: None,
+            rust_use: "std::any".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Partial,
+            notes: Some("Limited reflection via Any trait".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "getmembers".to_string(),
+                rust_equiv: "std::any::type_name".to_string(),
+                requires_use: Some("std::any".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Limited introspection in Rust".to_string()),
+            },
+        ],
+    ));
+
+    // code - Interpreter base classes
+    mappings.push((
+        ModuleMapping {
+            python_module: "code".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("No interpreter in compiled Rust".to_string()),
+        },
+        vec![],
+    ));
+
+    // operator - Standard operators as functions
+    mappings.push((
+        ModuleMapping {
+            python_module: "operator".to_string(),
+            rust_crate: None,
+            rust_use: "std::ops".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use operator traits from std::ops".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "add".to_string(),
+                rust_equiv: "std::ops::Add::add".to_string(),
+                requires_use: Some("std::ops::Add".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Or use + operator directly".to_string()),
+            },
+            FunctionMapping {
+                python_name: "mul".to_string(),
+                rust_equiv: "std::ops::Mul::mul".to_string(),
+                requires_use: Some("std::ops::Mul".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Or use * operator directly".to_string()),
+            },
+        ],
+    ));
+
+    // pdb - Python debugger
+    mappings.push((
+        ModuleMapping {
+            python_module: "pdb".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("Use rust-gdb or lldb for debugging".to_string()),
+        },
+        vec![],
+    ));
+
+    // profile/cProfile - Profiling
+    mappings.push((
+        ModuleMapping {
+            python_module: "cProfile".to_string(),
+            rust_crate: Some("pprof".to_string()),
+            rust_use: "pprof".to_string(),
+            dependencies: vec![],
+            version: "0.13".to_string(),
+            wasm_compatible: WasmCompatibility::Partial,
+            notes: Some("Profiling support, limited in WASM".to_string()),
+        },
+        vec![],
+    ));
+
+    // timeit - Measure execution time
+    mappings.push((
+        ModuleMapping {
+            python_module: "timeit".to_string(),
+            rust_crate: Some("criterion".to_string()),
+            rust_use: "criterion".to_string(),
+            dependencies: vec![],
+            version: "0.5".to_string(),
+            wasm_compatible: WasmCompatibility::Partial,
+            notes: Some("Benchmarking framework".to_string()),
+        },
+        vec![],
+    ));
+
+    // mmap - Memory-mapped file support
+    mappings.push((
+        ModuleMapping {
+            python_module: "mmap".to_string(),
+            rust_crate: Some("memmap2".to_string()),
+            rust_use: "memmap2".to_string(),
+            dependencies: vec![],
+            version: "0.9".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("Memory mapping not available in WASM".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "mmap".to_string(),
+                rust_equiv: "memmap2::Mmap::map".to_string(),
+                requires_use: Some("memmap2::Mmap".to_string()),
+                wasm_compatible: WasmCompatibility::Incompatible,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // readline - GNU readline interface
+    mappings.push((
+        ModuleMapping {
+            python_module: "readline".to_string(),
+            rust_crate: Some("rustyline".to_string()),
+            rust_use: "rustyline".to_string(),
+            dependencies: vec![],
+            version: "13".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("Terminal readline not available in WASM".to_string()),
+        },
+        vec![],
+    ));
+
+    // shelve - Python object persistence
+    mappings.push((
+        ModuleMapping {
+            python_module: "shelve".to_string(),
+            rust_crate: Some("sled".to_string()),
+            rust_use: "sled".to_string(),
+            dependencies: vec!["serde".to_string()],
+            version: "0.34".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresWasi,
+            notes: Some("Key-value store, needs filesystem".to_string()),
+        },
+        vec![],
+    ));
+
+    // dbm - Database interfaces
+    mappings.push((
+        ModuleMapping {
+            python_module: "dbm".to_string(),
+            rust_crate: Some("sled".to_string()),
+            rust_use: "sled".to_string(),
+            dependencies: vec![],
+            version: "0.34".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresWasi,
+            notes: Some("Embedded database".to_string()),
+        },
+        vec![],
+    ));
+
+    // sqlite3 - DB-API 2.0 interface
+    mappings.push((
+        ModuleMapping {
+            python_module: "sqlite3".to_string(),
+            rust_crate: Some("rusqlite".to_string()),
+            rust_use: "rusqlite".to_string(),
+            dependencies: vec![],
+            version: "0.30".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresWasi,
+            notes: Some("SQLite embedded database, needs WASI filesystem".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "connect".to_string(),
+                rust_equiv: "rusqlite::Connection::open".to_string(),
+                requires_use: Some("rusqlite::Connection".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // bz2 - Bzip2 compression
+    mappings.push((
+        ModuleMapping {
+            python_module: "bz2".to_string(),
+            rust_crate: Some("bzip2".to_string()),
+            rust_use: "bzip2".to_string(),
+            dependencies: vec![],
+            version: "0.4".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Compression/decompression".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "compress".to_string(),
+                rust_equiv: "bzip2::write::BzEncoder::new".to_string(),
+                requires_use: Some("bzip2::write::BzEncoder".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // lzma - LZMA compression
+    mappings.push((
+        ModuleMapping {
+            python_module: "lzma".to_string(),
+            rust_crate: Some("xz2".to_string()),
+            rust_use: "xz2".to_string(),
+            dependencies: vec![],
+            version: "0.1".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("LZMA/XZ compression".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "compress".to_string(),
+                rust_equiv: "xz2::write::XzEncoder::new".to_string(),
+                requires_use: Some("xz2::write::XzEncoder".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // tarfile - Tar archive reading/writing
+    mappings.push((
+        ModuleMapping {
+            python_module: "tarfile".to_string(),
+            rust_crate: Some("tar".to_string()),
+            rust_use: "tar".to_string(),
+            dependencies: vec![],
+            version: "0.4".to_string(),
+            wasm_compatible: WasmCompatibility::Partial,
+            notes: Some("Works with in-memory data, file I/O needs WASI".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "TarFile".to_string(),
+                rust_equiv: "tar::Archive::new".to_string(),
+                requires_use: Some("tar::Archive".to_string()),
+                wasm_compatible: WasmCompatibility::Partial,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // filecmp - File and directory comparisons
+    mappings.push((
+        ModuleMapping {
+            python_module: "filecmp".to_string(),
+            rust_crate: None,
+            rust_use: "std::fs".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresWasi,
+            notes: Some("Use std::fs to read and compare".to_string()),
+        },
+        vec![],
+    ));
+
+    // fileinput - Iterate over lines from multiple input streams
+    mappings.push((
+        ModuleMapping {
+            python_module: "fileinput".to_string(),
+            rust_crate: None,
+            rust_use: "std::io::BufRead".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresWasi,
+            notes: Some("Use BufReader with chained readers".to_string()),
+        },
+        vec![],
+    ));
+
+    // linecache - Random access to text lines
+    mappings.push((
+        ModuleMapping {
+            python_module: "linecache".to_string(),
+            rust_crate: None,
+            rust_use: "std::fs".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresWasi,
+            notes: Some("Read file and index lines manually".to_string()),
+        },
+        vec![],
+    ));
+
+    // shutil - High-level file operations
+    mappings.push((
+        ModuleMapping {
+            python_module: "shutil".to_string(),
+            rust_crate: Some("fs_extra".to_string()),
+            rust_use: "fs_extra".to_string(),
+            dependencies: vec![],
+            version: "1".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresWasi,
+            notes: Some("Extended filesystem operations".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "copy".to_string(),
+                rust_equiv: "std::fs::copy".to_string(),
+                requires_use: Some("std::fs".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "rmtree".to_string(),
+                rust_equiv: "std::fs::remove_dir_all".to_string(),
+                requires_use: Some("std::fs".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: None,
+            },
+            FunctionMapping {
+                python_name: "move".to_string(),
+                rust_equiv: "std::fs::rename".to_string(),
+                requires_use: Some("std::fs".to_string()),
+                wasm_compatible: WasmCompatibility::RequiresWasi,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // pty - Pseudo-terminal utilities
+    mappings.push((
+        ModuleMapping {
+            python_module: "pty".to_string(),
+            rust_crate: Some("nix".to_string()),
+            rust_use: "nix::pty".to_string(),
+            dependencies: vec![],
+            version: "0.27".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("PTY not available in WASM".to_string()),
+        },
+        vec![],
+    ));
+
+    // select - I/O multiplexing
+    mappings.push((
+        ModuleMapping {
+            python_module: "select".to_string(),
+            rust_crate: Some("mio".to_string()),
+            rust_use: "mio".to_string(),
+            dependencies: vec![],
+            version: "0.8".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("Use async I/O instead in WASM".to_string()),
+        },
+        vec![],
+    ));
+
+    // selectors - High-level I/O multiplexing
+    mappings.push((
+        ModuleMapping {
+            python_module: "selectors".to_string(),
+            rust_crate: Some("mio".to_string()),
+            rust_use: "mio".to_string(),
+            dependencies: vec![],
+            version: "0.8".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("Use async I/O instead".to_string()),
+        },
+        vec![],
+    ));
+
+    // sched - Event scheduler
+    mappings.push((
+        ModuleMapping {
+            python_module: "sched".to_string(),
+            rust_crate: Some("tokio".to_string()),
+            rust_use: "tokio::time".to_string(),
+            dependencies: vec![],
+            version: "1".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresJsInterop,
+            notes: Some("Use tokio timers for scheduling".to_string()),
+        },
+        vec![],
+    ));
+
+    // ctypes - Foreign function library
+    mappings.push((
+        ModuleMapping {
+            python_module: "ctypes".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Incompatible,
+            notes: Some("Native code is Rust, use FFI crate for C interop".to_string()),
+        },
+        vec![],
+    ));
+
+    // numbers - Numeric abstract base classes
+    mappings.push((
+        ModuleMapping {
+            python_module: "numbers".to_string(),
+            rust_crate: Some("num-traits".to_string()),
+            rust_use: "num_traits".to_string(),
+            dependencies: vec![],
+            version: "0.2".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Numeric traits".to_string()),
+        },
+        vec![],
+    ));
+
+    // cmath - Mathematical functions for complex numbers
+    mappings.push((
+        ModuleMapping {
+            python_module: "cmath".to_string(),
+            rust_crate: Some("num-complex".to_string()),
+            rust_use: "num_complex".to_string(),
+            dependencies: vec![],
+            version: "0.4".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Complex number arithmetic".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "sqrt".to_string(),
+                rust_equiv: "Complex::sqrt".to_string(),
+                requires_use: Some("num_complex::Complex".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: None,
+            },
+        ],
+    ));
+
+    // array - Efficient arrays of numeric values
+    mappings.push((
+        ModuleMapping {
+            python_module: "array".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use Vec<T> or arrays [T; N]".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "array".to_string(),
+                rust_equiv: "Vec::new".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Vec<T> for dynamic, [T; N] for fixed size".to_string()),
+            },
+        ],
+    ));
+
+    // bisect - Array bisection algorithm
+    mappings.push((
+        ModuleMapping {
+            python_module: "bisect".to_string(),
+            rust_crate: None,
+            rust_use: "".to_string(),
+            dependencies: vec![],
+            version: "*".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Use binary_search on slices".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "bisect_left".to_string(),
+                rust_equiv: "slice::binary_search".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Returns Result with Ok(index) or Err(insert_index)".to_string()),
+            },
+        ],
+    ));
+
+    // calendar - General calendar-related functions
+    mappings.push((
+        ModuleMapping {
+            python_module: "calendar".to_string(),
+            rust_crate: Some("chrono".to_string()),
+            rust_use: "chrono".to_string(),
+            dependencies: vec![],
+            version: "0.4".to_string(),
+            wasm_compatible: WasmCompatibility::RequiresJsInterop,
+            notes: Some("Use chrono for date/time calculations".to_string()),
+        },
+        vec![],
+    ));
+
+    // codecs - Codec registry and base classes
+    mappings.push((
+        ModuleMapping {
+            python_module: "codecs".to_string(),
+            rust_crate: Some("encoding_rs".to_string()),
+            rust_use: "encoding_rs".to_string(),
+            dependencies: vec![],
+            version: "0.8".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Character encoding/decoding".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "encode".to_string(),
+                rust_equiv: "String::as_bytes".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("UTF-8 by default, use encoding_rs for others".to_string()),
+            },
+            FunctionMapping {
+                python_name: "decode".to_string(),
+                rust_equiv: "String::from_utf8".to_string(),
+                requires_use: None,
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Use encoding_rs for non-UTF8".to_string()),
+            },
+        ],
+    ));
+
+    // unicodedata - Unicode database
+    mappings.push((
+        ModuleMapping {
+            python_module: "unicodedata".to_string(),
+            rust_crate: Some("unicode-normalization".to_string()),
+            rust_use: "unicode_normalization".to_string(),
+            dependencies: vec!["unicode-segmentation".to_string()],
+            version: "0.1".to_string(),
+            wasm_compatible: WasmCompatibility::Full,
+            notes: Some("Unicode normalization and properties".to_string()),
+        },
+        vec![
+            FunctionMapping {
+                python_name: "normalize".to_string(),
+                rust_equiv: "unicode_normalization::UnicodeNormalization::nfc".to_string(),
+                requires_use: Some("unicode_normalization::UnicodeNormalization".to_string()),
+                wasm_compatible: WasmCompatibility::Full,
+                transform_notes: Some("Use .nfc(), .nfd(), .nfkc(), .nfkd()".to_string()),
+            },
+        ],
+    ));
+
     mappings
 }
 
@@ -1401,4 +2851,340 @@ pub struct StdlibCoverageStats {
     pub requires_wasi: usize,
     pub requires_js_interop: usize,
     pub incompatible: usize,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_total_mappings_count() {
+        let mappings = init_critical_mappings();
+        assert!(mappings.len() >= 100, "Should have at least 100 stdlib mappings, got {}", mappings.len());
+    }
+
+    #[test]
+    fn test_coverage_stats() {
+        let stats = get_coverage_stats();
+        assert!(stats.mapped_modules >= 100, "Should have mapped at least 100 modules");
+        assert!(stats.full_wasm_compat > 0, "Should have some fully WASM compatible modules");
+    }
+
+    // Test new module mappings
+    #[test]
+    fn test_abc_module() {
+        let mappings = init_critical_mappings();
+        let abc = mappings.iter().find(|(m, _)| m.python_module == "abc");
+        assert!(abc.is_some(), "abc module should be mapped");
+        let (module, funcs) = abc.unwrap();
+        assert_eq!(module.wasm_compatible, WasmCompatibility::Full);
+        assert!(funcs.len() > 0);
+    }
+
+    #[test]
+    fn test_contextlib_module() {
+        let mappings = init_critical_mappings();
+        let contextlib = mappings.iter().find(|(m, _)| m.python_module == "contextlib");
+        assert!(contextlib.is_some(), "contextlib module should be mapped");
+        assert_eq!(contextlib.unwrap().0.wasm_compatible, WasmCompatibility::Full);
+    }
+
+    #[test]
+    fn test_concurrent_futures_module() {
+        let mappings = init_critical_mappings();
+        let concurrent = mappings.iter().find(|(m, _)| m.python_module == "concurrent.futures");
+        assert!(concurrent.is_some(), "concurrent.futures module should be mapped");
+        let (module, funcs) = concurrent.unwrap();
+        assert_eq!(module.rust_crate, Some("rayon".to_string()));
+        assert!(funcs.len() >= 3, "Should have ThreadPoolExecutor, ProcessPoolExecutor, Future mappings");
+    }
+
+    #[test]
+    fn test_multiprocessing_module() {
+        let mappings = init_critical_mappings();
+        let mp = mappings.iter().find(|(m, _)| m.python_module == "multiprocessing");
+        assert!(mp.is_some(), "multiprocessing module should be mapped");
+        assert_eq!(mp.unwrap().0.wasm_compatible, WasmCompatibility::Incompatible);
+    }
+
+    #[test]
+    fn test_random_module_comprehensive() {
+        let mappings = init_critical_mappings();
+        let random = mappings.iter().find(|(m, _)| m.python_module == "random");
+        assert!(random.is_some(), "random module should be mapped");
+        let (module, funcs) = random.unwrap();
+        assert_eq!(module.rust_crate, Some("rand".to_string()));
+        assert!(funcs.len() >= 4, "Should have random, randint, choice, shuffle");
+
+        // Check specific functions
+        let randint = funcs.iter().find(|f| f.python_name == "randint");
+        assert!(randint.is_some());
+        assert_eq!(randint.unwrap().requires_use, Some("rand::Rng".to_string()));
+    }
+
+    #[test]
+    fn test_re_module_comprehensive() {
+        let mappings = init_critical_mappings();
+        let re = mappings.iter().find(|(m, _)| m.python_module == "re");
+        assert!(re.is_some(), "re module should be mapped");
+        let (module, funcs) = re.unwrap();
+        assert_eq!(module.rust_crate, Some("regex".to_string()));
+        assert!(funcs.len() >= 5, "Should have compile, match, search, findall, sub");
+        assert_eq!(module.wasm_compatible, WasmCompatibility::Full);
+    }
+
+    #[test]
+    fn test_os_module_comprehensive() {
+        let mappings = init_critical_mappings();
+        let os = mappings.iter().find(|(m, _)| m.python_module == "os");
+        assert!(os.is_some(), "os module should be mapped");
+        let (module, funcs) = os.unwrap();
+        assert_eq!(module.wasm_compatible, WasmCompatibility::RequiresWasi);
+        assert!(funcs.len() >= 6, "Should have getcwd, getenv, listdir, mkdir, remove, rename");
+    }
+
+    #[test]
+    fn test_os_path_module() {
+        let mappings = init_critical_mappings();
+        let os_path = mappings.iter().find(|(m, _)| m.python_module == "os.path");
+        assert!(os_path.is_some(), "os.path module should be mapped");
+        let (_, funcs) = os_path.unwrap();
+        assert!(funcs.len() >= 4, "Should have join, exists, basename, dirname");
+    }
+
+    #[test]
+    fn test_sys_module_comprehensive() {
+        let mappings = init_critical_mappings();
+        let sys = mappings.iter().find(|(m, _)| m.python_module == "sys");
+        assert!(sys.is_some(), "sys module should be mapped");
+        let (module, funcs) = sys.unwrap();
+        assert_eq!(module.wasm_compatible, WasmCompatibility::Partial);
+        assert!(funcs.len() >= 3, "Should have argv, exit, platform");
+    }
+
+    #[test]
+    fn test_json_module_comprehensive() {
+        let mappings = init_critical_mappings();
+        let json = mappings.iter().find(|(m, _)| m.python_module == "json");
+        assert!(json.is_some(), "json module should be mapped");
+        let (module, funcs) = json.unwrap();
+        assert_eq!(module.rust_crate, Some("serde_json".to_string()));
+        assert!(funcs.len() >= 4, "Should have dumps, loads, dump, load");
+        assert_eq!(module.wasm_compatible, WasmCompatibility::Full);
+    }
+
+    #[test]
+    fn test_statistics_module() {
+        let mappings = init_critical_mappings();
+        let stats = mappings.iter().find(|(m, _)| m.python_module == "statistics");
+        assert!(stats.is_some(), "statistics module should be mapped");
+        let (module, funcs) = stats.unwrap();
+        assert_eq!(module.rust_crate, Some("statistical".to_string()));
+        assert_eq!(module.wasm_compatible, WasmCompatibility::Full);
+        assert!(funcs.len() >= 3, "Should have mean, median, stdev");
+    }
+
+    #[test]
+    fn test_urllib_parse_module() {
+        let mappings = init_critical_mappings();
+        let url_parse = mappings.iter().find(|(m, _)| m.python_module == "urllib.parse");
+        assert!(url_parse.is_some(), "urllib.parse module should be mapped");
+        let (module, funcs) = url_parse.unwrap();
+        assert_eq!(module.rust_crate, Some("url".to_string()));
+        assert!(funcs.len() >= 3, "Should have urlparse, urlencode, quote");
+    }
+
+    #[test]
+    fn test_html_modules() {
+        let mappings = init_critical_mappings();
+
+        let html = mappings.iter().find(|(m, _)| m.python_module == "html");
+        assert!(html.is_some(), "html module should be mapped");
+
+        let html_parser = mappings.iter().find(|(m, _)| m.python_module == "html.parser");
+        assert!(html_parser.is_some(), "html.parser module should be mapped");
+        assert_eq!(html_parser.unwrap().0.rust_crate, Some("scraper".to_string()));
+    }
+
+    #[test]
+    fn test_crypto_modules() {
+        let mappings = init_critical_mappings();
+
+        let hmac = mappings.iter().find(|(m, _)| m.python_module == "hmac");
+        assert!(hmac.is_some(), "hmac module should be mapped");
+        assert_eq!(hmac.unwrap().0.wasm_compatible, WasmCompatibility::Full);
+
+        let crypt = mappings.iter().find(|(m, _)| m.python_module == "crypt");
+        assert!(crypt.is_some(), "crypt module should be mapped");
+        assert_eq!(crypt.unwrap().0.rust_crate, Some("bcrypt".to_string()));
+    }
+
+    #[test]
+    fn test_compression_modules() {
+        let mappings = init_critical_mappings();
+
+        let bz2 = mappings.iter().find(|(m, _)| m.python_module == "bz2");
+        assert!(bz2.is_some(), "bz2 module should be mapped");
+        assert_eq!(bz2.unwrap().0.wasm_compatible, WasmCompatibility::Full);
+
+        let lzma = mappings.iter().find(|(m, _)| m.python_module == "lzma");
+        assert!(lzma.is_some(), "lzma module should be mapped");
+
+        let tarfile = mappings.iter().find(|(m, _)| m.python_module == "tarfile");
+        assert!(tarfile.is_some(), "tarfile module should be mapped");
+    }
+
+    #[test]
+    fn test_database_modules() {
+        let mappings = init_critical_mappings();
+
+        let sqlite = mappings.iter().find(|(m, _)| m.python_module == "sqlite3");
+        assert!(sqlite.is_some(), "sqlite3 module should be mapped");
+        assert_eq!(sqlite.unwrap().0.rust_crate, Some("rusqlite".to_string()));
+
+        let shelve = mappings.iter().find(|(m, _)| m.python_module == "shelve");
+        assert!(shelve.is_some(), "shelve module should be mapped");
+
+        let dbm = mappings.iter().find(|(m, _)| m.python_module == "dbm");
+        assert!(dbm.is_some(), "dbm module should be mapped");
+    }
+
+    #[test]
+    fn test_unicode_modules() {
+        let mappings = init_critical_mappings();
+
+        let unicodedata = mappings.iter().find(|(m, _)| m.python_module == "unicodedata");
+        assert!(unicodedata.is_some(), "unicodedata module should be mapped");
+        assert_eq!(unicodedata.unwrap().0.wasm_compatible, WasmCompatibility::Full);
+
+        let codecs = mappings.iter().find(|(m, _)| m.python_module == "codecs");
+        assert!(codecs.is_some(), "codecs module should be mapped");
+    }
+
+    #[test]
+    fn test_system_modules() {
+        let mappings = init_critical_mappings();
+
+        let platform = mappings.iter().find(|(m, _)| m.python_module == "platform");
+        assert!(platform.is_some(), "platform module should be mapped");
+
+        let locale = mappings.iter().find(|(m, _)| m.python_module == "locale");
+        assert!(locale.is_some(), "locale module should be mapped");
+
+        let gettext = mappings.iter().find(|(m, _)| m.python_module == "gettext");
+        assert!(gettext.is_some(), "gettext module should be mapped");
+    }
+
+    #[test]
+    fn test_debugging_profiling_modules() {
+        let mappings = init_critical_mappings();
+
+        let traceback = mappings.iter().find(|(m, _)| m.python_module == "traceback");
+        assert!(traceback.is_some(), "traceback module should be mapped");
+
+        let warnings = mappings.iter().find(|(m, _)| m.python_module == "warnings");
+        assert!(warnings.is_some(), "warnings module should be mapped");
+
+        let pdb = mappings.iter().find(|(m, _)| m.python_module == "pdb");
+        assert!(pdb.is_some(), "pdb module should be mapped");
+
+        let cprofile = mappings.iter().find(|(m, _)| m.python_module == "cProfile");
+        assert!(cprofile.is_some(), "cProfile module should be mapped");
+
+        let timeit = mappings.iter().find(|(m, _)| m.python_module == "timeit");
+        assert!(timeit.is_some(), "timeit module should be mapped");
+    }
+
+    #[test]
+    fn test_ast_parsing_modules() {
+        let mappings = init_critical_mappings();
+
+        let tokenize = mappings.iter().find(|(m, _)| m.python_module == "tokenize");
+        assert!(tokenize.is_some(), "tokenize module should be mapped");
+
+        let ast = mappings.iter().find(|(m, _)| m.python_module == "ast");
+        assert!(ast.is_some(), "ast module should be mapped");
+
+        let inspect = mappings.iter().find(|(m, _)| m.python_module == "inspect");
+        assert!(inspect.is_some(), "inspect module should be mapped");
+    }
+
+    #[test]
+    fn test_number_modules() {
+        let mappings = init_critical_mappings();
+
+        let cmath = mappings.iter().find(|(m, _)| m.python_module == "cmath");
+        assert!(cmath.is_some(), "cmath module should be mapped");
+        assert_eq!(cmath.unwrap().0.rust_crate, Some("num-complex".to_string()));
+
+        let numbers = mappings.iter().find(|(m, _)| m.python_module == "numbers");
+        assert!(numbers.is_some(), "numbers module should be mapped");
+
+        let array = mappings.iter().find(|(m, _)| m.python_module == "array");
+        assert!(array.is_some(), "array module should be mapped");
+
+        let bisect = mappings.iter().find(|(m, _)| m.python_module == "bisect");
+        assert!(bisect.is_some(), "bisect module should be mapped");
+    }
+
+    #[test]
+    fn test_file_operations() {
+        let mappings = init_critical_mappings();
+
+        let shutil = mappings.iter().find(|(m, _)| m.python_module == "shutil");
+        assert!(shutil.is_some(), "shutil module should be mapped");
+        let (_, funcs) = shutil.unwrap();
+        assert!(funcs.len() >= 3, "Should have copy, rmtree, move");
+
+        let filecmp = mappings.iter().find(|(m, _)| m.python_module == "filecmp");
+        assert!(filecmp.is_some(), "filecmp module should be mapped");
+    }
+
+    #[test]
+    fn test_wasm_compatibility_categories() {
+        let stats = get_coverage_stats();
+
+        // Verify we have modules in each category
+        assert!(stats.full_wasm_compat > 0, "Should have fully compatible modules");
+        assert!(stats.partial_wasm_compat > 0, "Should have partially compatible modules");
+        assert!(stats.requires_wasi > 0, "Should have WASI-dependent modules");
+        assert!(stats.requires_js_interop > 0, "Should have JS interop modules");
+        assert!(stats.incompatible > 0, "Should have incompatible modules");
+
+        // Total should equal sum of categories
+        let total_categories = stats.full_wasm_compat + stats.partial_wasm_compat +
+                               stats.requires_wasi + stats.requires_js_interop +
+                               stats.incompatible;
+        assert_eq!(total_categories, stats.mapped_modules,
+                   "All modules should be categorized by WASM compatibility");
+    }
+
+    #[test]
+    fn test_all_mappings_have_rust_use() {
+        let mappings = init_critical_mappings();
+        for (module, _) in mappings {
+            // rust_use can be empty for some modules (like abc, contextlib) that map to Rust concepts
+            // but we should have either rust_use or a note explaining why not
+            if module.rust_use.is_empty() {
+                assert!(module.notes.is_some(),
+                       "Module {} has no rust_use and no notes explaining why",
+                       module.python_module);
+            }
+        }
+    }
+
+    #[test]
+    fn test_function_mappings_completeness() {
+        let mappings = init_critical_mappings();
+
+        // Modules that should have function mappings
+        let modules_with_funcs = vec!["math", "random", "re", "os", "json", "collections"];
+
+        for module_name in modules_with_funcs {
+            let module = mappings.iter().find(|(m, _)| m.python_module == module_name);
+            assert!(module.is_some(), "Module {} should exist", module_name);
+            let (_, funcs) = module.unwrap();
+            assert!(!funcs.is_empty(), "Module {} should have function mappings", module_name);
+        }
+    }
 }

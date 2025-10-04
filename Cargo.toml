@@ -35,3 +35,46 @@ chrono = "0.4"
 rustpython-parser = "0.3"
 regex = "1.0"
 tempfile = "3.8"
+
+# Workspace-level profile configurations for build optimization
+# These apply to all workspace members
+
+[profile.dev]
+opt-level = 0
+debug = true
+incremental = true
+
+[profile.release]
+opt-level = 3
+debug = false
+lto = "thin"
+codegen-units = 16
+strip = "debuginfo"
+
+# Size-optimized profile for WASM (Target: <500KB)
+[profile.wasm-size]
+inherits = "release"
+opt-level = "z"          # Optimize for size
+lto = true               # Fat LTO for maximum optimization
+codegen-units = 1        # Single codegen unit for better optimization
+panic = "abort"          # Abort on panic (smaller binary)
+strip = true             # Strip all symbols
+overflow-checks = false  # Disable overflow checks for size
+
+# Performance-optimized profile
+[profile.wasm-perf]
+inherits = "release"
+opt-level = 3
+lto = "thin"
+codegen-units = 16
+
+# Minimum size profile (experimental, may be slower)
+[profile.min-size]
+inherits = "wasm-size"
+opt-level = "z"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true
+overflow-checks = false
+debug-assertions = false

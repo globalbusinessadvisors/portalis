@@ -4,7 +4,7 @@
 
 use portalis_ingest::{IngestAgent, IngestInput, ProjectParser};
 use portalis_analysis::DependencyResolver;
-use portalis_transpiler::{TranspilerAgent, TranspilerInput, ClassTranslator};
+use portalis_transpiler::{TranspilerAgent, TranspilerInput};
 use portalis_orchestration::{WorkspaceGenerator, WorkspaceConfig, CrateInfo, ExternalDependency};
 use portalis_core::Agent;
 use std::path::{Path, PathBuf};
@@ -22,10 +22,17 @@ async fn test_end_to_end_library_translation() {
     println!("=== Phase 2 End-to-End Integration Test ===\n");
 
     // Test project already exists at examples/test_project
-    let test_project_path = Path::new("examples/test_project");
+    // Try workspace root first, then relative path
+    let test_project_path = if Path::new("../examples/test_project").exists() {
+        Path::new("../examples/test_project")
+    } else if Path::new("../../examples/test_project").exists() {
+        Path::new("../../examples/test_project")
+    } else {
+        Path::new("examples/test_project")
+    };
 
     if !test_project_path.exists() {
-        println!("Test project not found, skipping integration test");
+        println!("Test project not found at {:?}, skipping integration test", test_project_path);
         return;
     }
 

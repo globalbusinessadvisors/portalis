@@ -2,7 +2,7 @@
 //!
 //! Translates Python file I/O to WASM-compatible Rust code using WASI
 
-use crate::wasi_fs::{WasiFs, WasiPath};
+use crate::wasi_fs::{WasiFs, WasiPath, WasiDirectory};
 
 /// Translate Python's open() to Rust
 pub fn translate_open(filename: &str, mode: &str) -> String {
@@ -59,10 +59,28 @@ pub fn translate_pathlib_operation(operation: &str, args: &[&str]) -> String {
             format!("portalis_transpiler::wasi_fs::WasiFs::write({}, {})", path, content)
         }
         "mkdir" => {
-            format!("portalis_transpiler::wasi_fs::WasiFs::create_dir({})", args.get(0).unwrap_or(&"path"))
+            let parents = args.get(1).unwrap_or(&"false");
+            if *parents == "true" || *parents == "parents=True" {
+                format!("portalis_transpiler::wasi_fs::WasiFs::create_dir_all({})", args.get(0).unwrap_or(&"path"))
+            } else {
+                format!("portalis_transpiler::wasi_fs::WasiFs::create_dir({})", args.get(0).unwrap_or(&"path"))
+            }
         }
-        "unlink" | "rmdir" => {
+        "rmdir" => {
+            format!("portalis_transpiler::wasi_fs::WasiFs::remove_dir({})", args.get(0).unwrap_or(&"path"))
+        }
+        "unlink" => {
             format!("portalis_transpiler::wasi_fs::WasiFs::remove_file({})", args.get(0).unwrap_or(&"path"))
+        }
+        "iterdir" => {
+            format!("portalis_transpiler::wasi_fs::WasiFs::read_dir({}).unwrap_or_default()", args.get(0).unwrap_or(&"path"))
+        }
+        "glob" | "rglob" => {
+            // Basic glob support - would need more sophisticated pattern matching
+            format!("portalis_transpiler::wasi_fs::WasiFs::list_dir({}).unwrap_or_default()", args.get(0).unwrap_or(&"path"))
+        }
+        "stat" => {
+            format!("portalis_transpiler::wasi_fs::WasiFs::metadata({})", args.get(0).unwrap_or(&"path"))
         }
         "joinpath" | "join" => {
             let base = args.get(0).unwrap_or(&"path");

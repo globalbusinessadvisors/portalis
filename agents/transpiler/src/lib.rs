@@ -11,11 +11,31 @@ pub mod indented_parser;
 pub mod feature_translator;
 pub mod stdlib_mapper;
 pub mod stdlib_mappings_comprehensive;
+pub mod wasi_core;
+pub mod wasi_directory;
 pub mod wasi_fs;
+pub mod wasi_fetch;
+pub mod wasi_websocket;
+pub mod wasi_threading;
+pub mod wasi_async_runtime;
+pub mod web_workers;
 pub mod py_to_rust_fs;
+pub mod py_to_rust_http;
+pub mod py_to_rust_asyncio;
 pub mod import_analyzer;
 pub mod cargo_generator;
 pub mod external_packages;
+pub mod dependency_graph;
+pub mod dependency_resolver;
+pub mod version_compatibility;
+pub mod build_optimizer;
+pub mod dead_code_eliminator;
+pub mod code_splitter;
+pub mod wasm_bundler;
+pub mod npm_package_generator;
+pub mod typescript_generator;
+pub mod multi_target_builder;
+pub mod advanced_features;
 
 // WASM bindings (only compile for wasm32 target)
 #[cfg(target_arch = "wasm32")]

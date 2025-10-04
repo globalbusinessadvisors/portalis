@@ -1,36 +1,10 @@
 [
   {
-    "id": "cmd-swarm-1759550107659",
+    "id": "cmd-swarm-1759600159067",
     "type": "swarm",
     "success": true,
-    "duration": 11.13247899999999,
-    "timestamp": 1759550107670,
+    "duration": 9.502789000000007,
+    "timestamp": 1759600159077,
     "metadata": {}
-  },
-  {
-    "id": "transpiler-final-validation",
-    "type": "end-to-end-test",
-    "success": true,
-    "duration": 7.72,
-    "timestamp": 1759550200000,
-    "metadata": {
-      "testsPassed": 221,
-      "testsFailed": 12,
-      "totalTests": 233,
-      "successRate": 94.8,
-      "phase": "production-ready",
-      "features": {
-        "coreLanguage": "100%",
-        "controlFlow": "100%",
-        "functions": "100%",
-        "collections": "100%",
-        "asyncAwait": "100%",
-        "decorators": "100%",
-        "contextManagers": "100%",
-        "errorHandling": "100%",
-        "listComprehensions": "75%",
-        "lambdas": "90%"
-      }
-    }
   }
 ]
