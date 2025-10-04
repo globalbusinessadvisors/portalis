@@ -339,7 +339,7 @@ impl DeadCodeEliminator {
     /// Analyze Rust code for dead code
     pub fn analyze_rust_code(code: &str) -> DeadCodeAnalysis {
         let mut unused_functions = Vec::new();
-        let mut unused_types = Vec::new();
+        let unused_types = Vec::new();
         let mut unused_imports = Vec::new();
 
         // Simple heuristic analysis (in production, use proper AST parsing)

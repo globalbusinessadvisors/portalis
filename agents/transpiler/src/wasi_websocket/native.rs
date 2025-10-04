@@ -45,9 +45,6 @@ impl NativeWebSocket {
         }
 
         // Build connection request
-        let mut request = config.url.clone();
-
-        // Add subprotocols if specified
         // Note: tokio-tungstenite doesn't directly support subprotocols in the URL
         // They need to be added via headers in the handshake request
         // For now, we'll connect without subprotocols and add support later

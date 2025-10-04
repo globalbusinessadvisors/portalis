@@ -346,6 +346,7 @@ impl TranspilerAgent {
     }
 
     /// Fallback generate (old implementation)
+    #[allow(dead_code)]
     #[cfg(not(target_arch = "wasm32"))]
     fn generate_function_old(&self, func: &serde_json::Value) -> Result<String> {
         let name = func.get("name")

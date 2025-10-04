@@ -98,6 +98,7 @@ pub struct WasiDir {
     path: PathBuf,
     #[cfg(not(target_arch = "wasm32"))]
     entries: Vec<DirEntry>,
+    #[allow(dead_code)]
     cursor: u64,
 }
 
@@ -435,7 +436,7 @@ impl WasiDirectory {
     }
 
     /// Get preopened directory information (WASI fd_prestat_get)
-    pub fn prestat_get(fd: u32) -> Result<Prestat> {
+    pub fn prestat_get(_fd: u32) -> Result<Prestat> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             // Not applicable for native code
@@ -460,7 +461,7 @@ impl WasiDirectory {
     }
 
     /// Get preopened directory name (WASI fd_prestat_dir_name)
-    pub fn prestat_dir_name(fd: u32) -> Result<String> {
+    pub fn prestat_dir_name(_fd: u32) -> Result<String> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             Err(anyhow!("Prestat only available in WASI environment"))
@@ -501,6 +502,7 @@ impl WasiDirectory {
             .map_err(|e| anyhow!("WASI remove_file failed: {:?}", e))
     }
 
+    #[allow(dead_code)]
     #[cfg(not(all(target_arch = "wasm32", feature = "wasi")))]
     fn remove_file<P: AsRef<Path>>(path: P) -> Result<()> {
         std::fs::remove_file(path.as_ref())
@@ -510,6 +512,7 @@ impl WasiDirectory {
 
 /// Iterator for directory entries
 pub struct DirIterator {
+    #[allow(dead_code)]
     dir: WasiDir,
     entries: Vec<DirEntry>,
     index: usize,

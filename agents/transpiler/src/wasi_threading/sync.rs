@@ -60,7 +60,7 @@ impl<T> WasiMutex<T> {
     }
 
     /// Lock the mutex, blocking until acquired
-    pub fn lock(&self) -> MutexGuard<T> {
+    pub fn lock(&self) -> MutexGuard<'_, T> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.inner.lock()
@@ -73,7 +73,7 @@ impl<T> WasiMutex<T> {
     }
 
     /// Try to lock the mutex without blocking
-    pub fn try_lock(&self) -> Option<MutexGuard<T>> {
+    pub fn try_lock(&self) -> Option<MutexGuard<'_, T>> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.inner.try_lock()
@@ -87,7 +87,7 @@ impl<T> WasiMutex<T> {
 
     /// Try to lock with a timeout
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn try_lock_for(&self, timeout: Duration) -> Option<MutexGuard<T>> {
+    pub fn try_lock_for(&self, timeout: Duration) -> Option<MutexGuard<'_, T>> {
         self.inner.try_lock_for(timeout)
     }
 
@@ -164,7 +164,7 @@ impl<T> WasiRwLock<T> {
     }
 
     /// Acquire a read lock
-    pub fn read(&self) -> RwLockReadGuard<T> {
+    pub fn read(&self) -> RwLockReadGuard<'_, T> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.inner.read()
@@ -177,7 +177,7 @@ impl<T> WasiRwLock<T> {
     }
 
     /// Acquire a write lock
-    pub fn write(&self) -> RwLockWriteGuard<T> {
+    pub fn write(&self) -> RwLockWriteGuard<'_, T> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.inner.write()
@@ -190,7 +190,7 @@ impl<T> WasiRwLock<T> {
     }
 
     /// Try to acquire a read lock without blocking
-    pub fn try_read(&self) -> Option<RwLockReadGuard<T>> {
+    pub fn try_read(&self) -> Option<RwLockReadGuard<'_, T>> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.inner.try_read()
@@ -203,7 +203,7 @@ impl<T> WasiRwLock<T> {
     }
 
     /// Try to acquire a write lock without blocking
-    pub fn try_write(&self) -> Option<RwLockWriteGuard<T>> {
+    pub fn try_write(&self) -> Option<RwLockWriteGuard<'_, T>> {
         #[cfg(not(target_arch = "wasm32"))]
         {
             self.inner.try_write()

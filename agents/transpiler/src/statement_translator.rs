@@ -9,7 +9,7 @@
 //! - Type inference and propagation
 //! - Lifetime management assistance
 
-use crate::expression_translator::{ExpressionTranslator, TranslationContext, RustType};
+use crate::expression_translator::{ExpressionTranslator, TranslationContext};
 use crate::python_ast::*;
 use crate::{Error, Result};
 
@@ -496,7 +496,7 @@ impl<'a> StatementTranslator<'a> {
         &mut self,
         module: Option<&String>,
         names: &[(String, Option<String>)],
-        level: usize,
+        _level: usize,
     ) -> Result<String> {
         let mut code = String::new();
 

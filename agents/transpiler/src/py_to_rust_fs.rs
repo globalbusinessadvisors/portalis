@@ -2,7 +2,6 @@
 //!
 //! Translates Python file I/O to WASM-compatible Rust code using WASI
 
-use crate::wasi_fs::{WasiFs, WasiPath, WasiDirectory};
 
 /// Translate Python's open() to Rust
 pub fn translate_open(filename: &str, mode: &str) -> String {

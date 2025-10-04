@@ -8,7 +8,7 @@
 //! 5. Split point detection based on usage patterns
 
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 /// Code splitting strategy
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -502,7 +502,7 @@ impl CodeSplitter {
         // Use size-based splitting as the automatic strategy
         if original_size > 500 * 1024 {
             // Large bundle - use aggressive splitting
-            let mut splitter = Self::with_config(
+            let splitter = Self::with_config(
                 SplittingStrategy::BySize,
                 LazyLoadConfig::aggressive(),
             );

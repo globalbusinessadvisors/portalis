@@ -8,7 +8,6 @@
 //! 5. Multi-target bundle generation (web, nodejs, bundler)
 
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
 
 /// Deployment target platform
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]

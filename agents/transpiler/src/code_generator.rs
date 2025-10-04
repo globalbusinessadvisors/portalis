@@ -77,7 +77,7 @@ impl CodeGenerator {
         Some(rust_type.to_string())
     }
 
-    fn generate_function_body(&mut self, name: &str, params: &[Value], return_type: &str) -> Result<String> {
+    fn generate_function_body(&mut self, name: &str, _params: &[Value], return_type: &str) -> Result<String> {
         // Pattern-based code generation for known functions
         match name {
             "add" => Ok(format!("{}a + b\n", self.indent())),

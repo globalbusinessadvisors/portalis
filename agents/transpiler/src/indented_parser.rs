@@ -183,7 +183,7 @@ impl IndentedPythonParser {
         let line = &self.lines[self.current_line].clone();
 
         // Handle both "if" and "elif"
-        let (condition_str, is_elif) = if line.content.starts_with("elif ") {
+        let (condition_str, _is_elif) = if line.content.starts_with("elif ") {
             (line.content[5..line.content.len() - 1].trim(), true)
         } else {
             (line.content[3..line.content.len() - 1].trim(), false)

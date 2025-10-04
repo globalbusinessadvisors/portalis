@@ -289,7 +289,7 @@ impl AdvancedFeaturesTranslator {
     /// Translate *args to Rust
     pub fn translate_args_kwargs(params: &[Parameter]) -> (String, String) {
         let mut regular_params = Vec::new();
-        let mut args_handling = String::new();
+        let args_handling = String::new();
 
         for param in params {
             if param.is_args {

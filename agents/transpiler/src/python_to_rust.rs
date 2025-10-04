@@ -580,7 +580,7 @@ impl PythonToRustTranslator {
 
             PyStmt::ClassDef {
                 name,
-                bases,
+                bases: _,
                 body,
                 decorators: _,
             } => {
@@ -785,7 +785,7 @@ impl PythonToRustTranslator {
                     }
 
                     // For now, just add comments for except blocks
-                    for (i, handler) in handlers.iter().enumerate() {
+                    for (_i, handler) in handlers.iter().enumerate() {
                         if let Some(exc_type_expr) = &handler.exception_type {
                             let exc_type = self.translate_expr(exc_type_expr)?;
                             code.push_str(&format!("{}// except {}\n", self.indent(), exc_type));

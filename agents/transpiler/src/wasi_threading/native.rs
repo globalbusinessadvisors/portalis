@@ -7,19 +7,23 @@ use std::sync::Arc;
 use parking_lot::{Mutex, RwLock};
 
 /// Native mutex implementation using parking_lot
+#[allow(dead_code)]
 pub type NativeMutex<T> = Arc<Mutex<T>>;
 
 /// Native RwLock implementation using parking_lot
+#[allow(dead_code)]
 pub type NativeRwLock<T> = Arc<RwLock<T>>;
 
 /// Platform-specific thread utilities
+#[allow(dead_code)]
 pub struct NativeThreadUtils;
 
+#[allow(dead_code)]
 impl NativeThreadUtils {
     /// Set thread priority (platform-specific)
     #[cfg(target_os = "linux")]
     pub fn set_priority(priority: super::ThreadPriority) -> std::io::Result<()> {
-        use libc::{pthread_self, pthread_setschedprio, SCHED_OTHER};
+        use libc::{pthread_self, pthread_setschedprio};
 
         let priority_value = match priority {
             super::ThreadPriority::Low => -10,

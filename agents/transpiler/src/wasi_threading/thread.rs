@@ -3,7 +3,6 @@
 //! Provides thread creation, joining, and management across platforms.
 
 use anyhow::{Result, Context, anyhow};
-use std::sync::Arc;
 use std::time::Duration;
 use super::ThreadingError;
 
@@ -357,7 +356,7 @@ pub fn thread_park() {
 
 /// Unpark a thread by its handle
 #[cfg(not(target_arch = "wasm32"))]
-pub fn thread_unpark<T>(handle: &ThreadHandle<T>) {
+pub fn thread_unpark<T>(_handle: &ThreadHandle<T>) {
     // Note: This is a simplified API
     // In real implementation, we'd need to store Thread objects
 }

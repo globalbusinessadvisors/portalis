@@ -173,6 +173,7 @@ pub struct DependencyGraph {
     external_registry: ExternalPackageRegistry,
 
     /// Tracked usage of imported symbols
+    #[allow(dead_code)]
     symbol_usage: HashMap<String, HashSet<String>>,
 }
 

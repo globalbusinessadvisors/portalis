@@ -7,7 +7,7 @@
 //!
 //! This module bridges Python's WebSocket operations to WASM-compatible implementations.
 
-use anyhow::{Result, Context, anyhow};
+use anyhow::{Result, anyhow};
 use std::sync::{Arc, Mutex};
 use std::collections::VecDeque;
 

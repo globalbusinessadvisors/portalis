@@ -3,7 +3,6 @@
 //! Provides concurrent queues, stacks, priority queues, and deques.
 
 use anyhow::{Result, anyhow};
-use std::sync::Arc;
 use std::collections::{BinaryHeap, VecDeque};
 use std::cmp::Ordering;
 use super::{WasiMutex, WasiCondvar, ThreadingError};

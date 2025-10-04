@@ -172,6 +172,7 @@ pub struct ThreadPool {
     #[cfg(target_arch = "wasm32")]
     task_queue: Arc<WasiQueue<WorkItem>>,
 
+    #[allow(dead_code)]
     config: ThreadPoolConfig,
     is_shutdown: Arc<parking_lot::Mutex<bool>>,
 }

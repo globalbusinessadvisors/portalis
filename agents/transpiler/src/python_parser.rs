@@ -11,7 +11,7 @@
 
 use crate::python_ast::*;
 use crate::{Error, Result};
-use rustpython_parser::{ast, parse_program, parse_expression, Mode};
+use rustpython_parser::{ast, Parse};
 use std::path::Path;
 
 /// Main Python parser that wraps rustpython-parser
@@ -73,7 +73,7 @@ impl PythonParser {
     /// Parse the source code into a Python module
     pub fn parse(&self) -> Result<PyModule> {
         // Parse using rustpython-parser
-        let parsed = parse_program(&self.source, &self.filename).map_err(|e| {
+        let parsed = ast::Suite::parse(&self.source, &self.filename).map_err(|e| {
             Error::Parse(format!("rustpython-parser error: {:?}", e))
         })?;
 
@@ -84,7 +84,7 @@ impl PythonParser {
 
     /// Parse a single expression
     pub fn parse_expression(&self) -> Result<PyExpr> {
-        let parsed = parse_expression(&self.source, &self.filename).map_err(|e| {
+        let parsed = ast::Expr::parse(&self.source, &self.filename).map_err(|e| {
             Error::Parse(format!("rustpython-parser error: {:?}", e))
         })?;
 
@@ -94,7 +94,7 @@ impl PythonParser {
 
     /// Parse a single statement
     pub fn parse_statement(&self) -> Result<PyStmt> {
-        let parsed = parse_program(&self.source, &self.filename).map_err(|e| {
+        let parsed = ast::Suite::parse(&self.source, &self.filename).map_err(|e| {
             Error::Parse(format!("rustpython-parser error: {:?}", e))
         })?;
 
@@ -132,7 +132,9 @@ impl PythonParser {
 
 /// AST converter from rustpython AST to our internal AST
 struct AstConverter {
+    #[allow(dead_code)]
     source: String,
+    #[allow(dead_code)]
     filename: String,
 }
 
@@ -145,6 +147,7 @@ impl AstConverter {
     }
 
     /// Convert a module from rustpython Mod enum
+    #[allow(dead_code)]
     fn convert_module_from_mod(&mut self, mod_ast: ast::Mod) -> Result<PyModule> {
         match mod_ast {
             ast::Mod::Module(module) => self.convert_module(&module.body),
@@ -420,25 +423,24 @@ impl AstConverter {
                 let mut handlers = Vec::new();
                 for handler in &try_stmt.handlers {
                     // ExceptHandler is a tuple variant in rustpython_parser
-                    if let ast::ExceptHandler::ExceptHandler(handler_data) = handler {
-                        let exception_type = handler_data.type_
-                            .as_ref()
-                            .map(|expr| self.convert_expr(expr))
-                            .transpose()?;
+                    let ast::ExceptHandler::ExceptHandler(handler_data) = handler;
+                    let exception_type = handler_data.type_
+                        .as_ref()
+                        .map(|expr| self.convert_expr(expr))
+                        .transpose()?;
 
-                        let handler_name = handler_data.name.as_ref().map(|id| id.to_string());
+                    let handler_name = handler_data.name.as_ref().map(|id| id.to_string());
 
-                        let mut handler_body = Vec::new();
-                        for stmt in &handler_data.body {
-                            handler_body.push(self.convert_stmt(stmt)?);
-                        }
-
-                        handlers.push(ExceptHandler {
-                            exception_type,
-                            name: handler_name,
-                            body: handler_body,
-                        });
+                    let mut handler_body = Vec::new();
+                    for stmt in &handler_data.body {
+                        handler_body.push(self.convert_stmt(stmt)?);
                     }
+
+                    handlers.push(ExceptHandler {
+                        exception_type,
+                        name: handler_name,
+                        body: handler_body,
+                    });
                 }
 
                 let mut orelse = Vec::new();

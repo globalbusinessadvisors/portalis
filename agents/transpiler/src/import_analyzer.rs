@@ -18,7 +18,7 @@ use crate::stdlib_mapper::{StdlibMapper, WasmCompatibility};
 use crate::external_packages::ExternalPackageRegistry;
 use rustpython_parser::{ast, Parse};
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 /// Represents a detected Python import with full AST information
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]

@@ -9,7 +9,7 @@
 
 use std::path::{Path, PathBuf};
 use std::io::{self, Read, Write, Seek, SeekFrom};
-use anyhow::{Result, Context, anyhow};
+use anyhow::{Result, Context};
 
 #[cfg(all(target_arch = "wasm32", not(feature = "wasi")))]
 use wasm_bindgen::prelude::*;
@@ -34,6 +34,7 @@ pub struct WasiFile {
 #[cfg(not(target_arch = "wasm32"))]
 struct NativeFile {
     file: std::fs::File,
+    #[allow(dead_code)]
     path: PathBuf,
 }
 

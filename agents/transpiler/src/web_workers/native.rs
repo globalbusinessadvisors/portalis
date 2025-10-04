@@ -163,6 +163,7 @@ pub struct RayonWorkerPool {
     pool: rayon::ThreadPool,
 }
 
+#[allow(dead_code)]
 impl RayonWorkerPool {
     /// Create a new rayon worker pool
     pub fn new(num_threads: usize) -> Result<Self, WorkerError> {

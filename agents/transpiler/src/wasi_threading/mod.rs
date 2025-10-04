@@ -53,8 +53,7 @@
 //! });
 //! ```
 
-use anyhow::{Result, Context, anyhow};
-use std::sync::Arc;
+use anyhow::Result;
 use std::time::Duration;
 
 // Re-export platform-specific modules
@@ -129,6 +128,7 @@ pub enum ThreadingError {
 /// Thread-local storage key
 #[cfg(not(target_arch = "wasm32"))]
 pub struct ThreadLocal<T: Send + 'static> {
+    #[allow(dead_code)]
     inner: std::thread::LocalKey<std::cell::RefCell<Option<T>>>,
 }
 

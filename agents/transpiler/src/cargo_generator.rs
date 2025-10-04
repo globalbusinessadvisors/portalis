@@ -8,9 +8,8 @@
 //! - Features for optional functionality
 
 use crate::import_analyzer::{ImportAnalysis, RustDependency};
-use crate::stdlib_mapper::WasmCompatibility;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 /// Cargo.toml generator configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -22,7 +22,7 @@
 //! let response = WasiFetch::fetch(request).await?;
 //! ```
 
-use anyhow::{Result, Context, anyhow};
+use anyhow::{Result, Context};
 use serde::{Serialize, Deserialize};
 use std::collections::HashMap;
 use std::time::Duration;

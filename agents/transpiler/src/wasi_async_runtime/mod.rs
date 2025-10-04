@@ -50,7 +50,7 @@
 //! }
 //! ```
 
-use anyhow::{Result, Context, anyhow};
+use anyhow::Result;
 use std::future::Future;
 use std::pin::Pin;
 use std::time::Duration;

@@ -8,7 +8,6 @@
 //!
 //! This module provides comprehensive translation for Python's asyncio ecosystem.
 
-use std::collections::HashMap;
 
 /// Main asyncio translation mapper
 pub struct AsyncioMapper;
