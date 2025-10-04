@@ -1,7 +1,7 @@
 # Dockerfile for Portalis Test Suite
 # Multi-stage build for efficient testing
 
-FROM nvidia/cuda:12.3.0-runtime-ubuntu22.04 AS base
+FROM nvidia/cuda:13.0.1-runtime-ubuntu22.04 AS base
 
 # Set environment variables
 ENV DEBIAN_FRONTEND=noninteractive \
