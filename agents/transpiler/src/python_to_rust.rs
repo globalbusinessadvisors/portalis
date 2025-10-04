@@ -317,7 +317,7 @@ impl PythonToRustTranslator {
         code.push_str("#![allow(unused)]\n\n");
 
         // Translate statements
-        for stmt in &module.body {
+        for stmt in &module.statements {
             code.push_str(&self.translate_stmt(stmt)?);
         }
 
@@ -333,47 +333,46 @@ impl PythonToRustTranslator {
             }
 
             PyStmt::Assign {
-                targets,
+                target,
                 value,
-                type_hint,
             } => {
                 let value_code = self.translate_expr(value)?;
 
-                // Infer type if no hint provided
-                let rust_type = if let Some(hint) = type_hint {
-                    self.python_type_to_rust(hint)
-                } else {
-                    self.type_inference.infer_expr(value)
-                };
-
+                // Infer type from value
+                let rust_type = self.type_inference.infer_expr(value);
                 let type_str = rust_type.to_rust_str();
 
-                // Generate assignment for all targets
-                let mut result = String::new();
-                for target in targets {
-                    // Record type for future reference
-                    self.type_inference
-                        .record_type(target.clone(), rust_type.clone());
+                // Get target name (simplified - assumes Name expression)
+                let target_name = match target {
+                    PyExpr::Name(name) => name.clone(),
+                    _ => {
+                        return Err(Error::CodeGeneration(
+                            "Complex assignment targets not yet supported".to_string()
+                        ))
+                    }
+                };
 
-                    result.push_str(&format!(
-                        "{}let {}: {} = {};\n",
-                        self.indent(),
-                        target,
-                        type_str,
-                        value_code
-                    ));
-                }
+                // Record type for future reference
+                self.type_inference
+                    .record_type(target_name.clone(), rust_type.clone());
 
-                Ok(result)
+                Ok(format!(
+                    "{}let {}: {} = {};\n",
+                    self.indent(),
+                    target_name,
+                    type_str,
+                    value_code
+                ))
             }
 
             PyStmt::AugAssign { target, op, value } => {
+                let target_code = self.translate_expr(target)?;
                 let value_code = self.translate_expr(value)?;
                 let op_str = self.binop_to_rust(*op);
                 Ok(format!(
                     "{}{} {}= {};\n",
                     self.indent(),
-                    target,
+                    target_code,
                     op_str,
                     value_code
                 ))
@@ -381,7 +380,7 @@ impl PythonToRustTranslator {
 
             PyStmt::FunctionDef {
                 name,
-                args,
+                params,
                 body,
                 return_type,
                 decorators,
@@ -402,22 +401,22 @@ impl PythonToRustTranslator {
                 code.push_str(&format!("{}pub {}fn {}(", self.indent(), async_keyword, name));
 
                 // Parameters
-                let params: Vec<String> = args
+                let param_strs: Vec<String> = params
                     .iter()
-                    .map(|arg| {
-                        let rust_type = if let Some(hint) = &arg.type_hint {
-                            self.python_type_to_rust(hint)
+                    .map(|param| {
+                        let rust_type = if let Some(annotation) = &param.type_annotation {
+                            self.type_annotation_to_rust(annotation)
                         } else {
                             RustType::Unknown
                         };
-                        format!("{}: {}", arg.name, rust_type.to_rust_str())
+                        format!("{}: {}", param.name, rust_type.to_rust_str())
                     })
                     .collect();
-                code.push_str(&params.join(", "));
+                code.push_str(&param_strs.join(", "));
 
                 // Return type
-                let ret_type = if let Some(hint) = return_type {
-                    self.python_type_to_rust(hint)
+                let ret_type = if let Some(annotation) = return_type {
+                    self.type_annotation_to_rust(annotation)
                 } else {
                     RustType::Unit
                 };
@@ -435,8 +434,8 @@ impl PythonToRustTranslator {
                 Ok(code)
             }
 
-            PyStmt::Return(expr) => {
-                if let Some(e) = expr {
+            PyStmt::Return { value } => {
+                if let Some(e) = value {
                     let expr_code = self.translate_expr(e)?;
                     Ok(format!("{}return {};\n", self.indent(), expr_code))
                 } else {
@@ -520,22 +519,23 @@ impl PythonToRustTranslator {
                 Ok(code)
             }
 
-            PyStmt::For { targets, iter, body, orelse } => {
+            PyStmt::For { target, iter, body, orelse } => {
                 let mut code = String::new();
                 // Translate the iterator expression (range() is already handled in translate_expr)
                 let rust_iter = self.translate_expr(iter)?;
 
-                // Format targets - single or tuple unpacking
-                let rust_target = if targets.len() == 1 {
-                    // Single target
-                    let target = &targets[0];
-                    // Register loop variable type (assume i32 for range iterations)
-                    self.type_inference.type_map.insert(target.clone(), RustType::I32);
-                    target.clone()
-                } else {
-                    // Multiple targets - tuple unpacking
-                    let target_str = targets.join(", ");
-                    format!("({})", target_str)
+                // Get target name (simplified - assumes Name expression)
+                let rust_target = match target {
+                    PyExpr::Name(name) => {
+                        // Register loop variable type (assume i32 for range iterations)
+                        self.type_inference.type_map.insert(name.clone(), RustType::I32);
+                        name.clone()
+                    }
+                    _ => {
+                        return Err(Error::CodeGeneration(
+                            "Complex for loop targets not yet supported".to_string()
+                        ))
+                    }
                 };
 
                 // For-else requires a flag to track if loop completed normally
@@ -601,12 +601,14 @@ impl PythonToRustTranslator {
                         if func_name == "__init__" {
                             // Extract self.x = ... assignments
                             for init_stmt in func_body {
-                                if let PyStmt::Assign { targets, value, .. } = init_stmt {
-                                    for target in targets {
-                                        if target.starts_with("self.") {
-                                            let attr_name = &target[5..];
-                                            let attr_type = self.type_inference.infer_expr(value);
-                                            attributes.push((attr_name.to_string(), attr_type));
+                                if let PyStmt::Assign { target, value } = init_stmt {
+                                    // Extract attribute name from target expression
+                                    if let PyExpr::Attribute { value: obj, attr } = target {
+                                        if let PyExpr::Name(name) = obj.as_ref() {
+                                            if name == "self" {
+                                                let attr_type = self.type_inference.infer_expr(value);
+                                                attributes.push((attr.clone(), attr_type));
+                                            }
                                         }
                                     }
                                 }
@@ -636,7 +638,7 @@ impl PythonToRustTranslator {
                 for stmt in body {
                     if let PyStmt::FunctionDef {
                         name: func_name,
-                        args,
+                        params,
                         body: func_body,
                         return_type,
                         ..
@@ -648,19 +650,19 @@ impl PythonToRustTranslator {
                             code.push_str(&format!("{}pub fn new(", self.indent()));
 
                             // Parameters (skip self)
-                            let params: Vec<String> = args
+                            let param_strs: Vec<String> = params
                                 .iter()
-                                .filter(|arg| arg.name != "self")
-                                .map(|arg| {
-                                    let rust_type = if let Some(hint) = &arg.type_hint {
-                                        self.python_type_to_rust(hint)
+                                .filter(|param| param.name != "self")
+                                .map(|param| {
+                                    let rust_type = if let Some(annotation) = &param.type_annotation {
+                                        self.type_annotation_to_rust(annotation)
                                     } else {
                                         RustType::Unknown
                                     };
-                                    format!("{}: {}", arg.name, rust_type.to_rust_str())
+                                    format!("{}: {}", param.name, rust_type.to_rust_str())
                                 })
                                 .collect();
-                            code.push_str(&params.join(", "));
+                            code.push_str(&param_strs.join(", "));
                             code.push_str(&format!(") -> Self {{\n"));
 
                             // Body: create struct
@@ -679,26 +681,26 @@ impl PythonToRustTranslator {
                             code.push_str(&format!("{}pub fn {}(", self.indent(), func_name));
 
                             // Parameters (including &self or &mut self)
-                            let params: Vec<String> = args
+                            let param_strs: Vec<String> = params
                                 .iter()
-                                .map(|arg| {
-                                    if arg.name == "self" {
+                                .map(|param| {
+                                    if param.name == "self" {
                                         "&self".to_string()
                                     } else {
-                                        let rust_type = if let Some(hint) = &arg.type_hint {
-                                            self.python_type_to_rust(hint)
+                                        let rust_type = if let Some(annotation) = &param.type_annotation {
+                                            self.type_annotation_to_rust(annotation)
                                         } else {
                                             RustType::Unknown
                                         };
-                                        format!("{}: {}", arg.name, rust_type.to_rust_str())
+                                        format!("{}: {}", param.name, rust_type.to_rust_str())
                                     }
                                 })
                                 .collect();
-                            code.push_str(&params.join(", "));
+                            code.push_str(&param_strs.join(", "));
 
                             // Return type
                             let ret_type = if let Some(hint) = return_type {
-                                self.python_type_to_rust(hint)
+                                self.type_annotation_to_rust(hint)
                             } else {
                                 RustType::Unit
                             };
@@ -784,7 +786,8 @@ impl PythonToRustTranslator {
 
                     // For now, just add comments for except blocks
                     for (i, handler) in handlers.iter().enumerate() {
-                        if let Some(exc_type) = &handler.exc_type {
+                        if let Some(exc_type_expr) = &handler.exception_type {
+                            let exc_type = self.translate_expr(exc_type_expr)?;
                             code.push_str(&format!("{}// except {}\n", self.indent(), exc_type));
                         } else {
                             code.push_str(&format!("{}// except (bare)\n", self.indent()));
@@ -795,8 +798,8 @@ impl PythonToRustTranslator {
                 Ok(code)
             }
 
-            PyStmt::Raise { exc } => {
-                if let Some(e) = exc {
+            PyStmt::Raise { exception } => {
+                if let Some(e) = exception {
                     let exc_code = self.translate_expr(e)?;
                     Ok(format!("{}panic!(\"{{:?}}\", {});\n", self.indent(), exc_code))
                 } else {
@@ -804,13 +807,15 @@ impl PythonToRustTranslator {
                 }
             }
 
-            PyStmt::Import { names: _, aliases: _ } => {
+            PyStmt::Import { modules: _ } => {
                 // Import statements are handled at module level
+                // modules is Vec<(String, Option<String>)> - (module_name, optional_alias)
                 Ok(String::new())
             }
 
-            PyStmt::ImportFrom { module: _, names: _, aliases: _ } => {
+            PyStmt::ImportFrom { module: _, names: _, level: _ } => {
                 // From-import statements are handled at module level
+                // module is Option<String>, names is Vec<(String, Option<String>)>, level is usize
                 Ok(String::new())
             }
 
@@ -830,12 +835,13 @@ impl PythonToRustTranslator {
                         || context_code.contains("File::create");
 
                     if let Some(var) = &item.optional_vars {
+                        let var_name = self.translate_expr(var)?;
                         if is_file_like {
                             // File operations: let var = File::open(...)?;
                             code.push_str(&format!(
                                 "{}let mut {} = {};\n",
                                 self.indent(),
-                                var,
+                                var_name,
                                 context_code
                             ));
                         } else {
@@ -843,7 +849,7 @@ impl PythonToRustTranslator {
                             code.push_str(&format!(
                                 "{}let {} = {};\n",
                                 self.indent(),
-                                var,
+                                var_name,
                                 context_code
                             ));
                         }
@@ -890,7 +896,7 @@ impl PythonToRustTranslator {
 
             PyExpr::Name(name) => Ok(name.clone()),
 
-            PyExpr::Await { value } => {
+            PyExpr::Await(value) => {
                 let value_code = self.translate_expr(value)?;
                 Ok(format!("{}.await", value_code))
             }
@@ -1356,13 +1362,14 @@ impl PythonToRustTranslator {
                 };
 
                 // Build the iterator chain
-                let mut code = format!("{}.map(|{}| {})", rust_iter, comp.target, element_code);
+                let target_var = self.translate_expr(&comp.target)?;
+                let mut code = format!("{}.map(|{}| {})", rust_iter, target_var, element_code);
 
                 // Add filter if there are conditions
                 if !comp.ifs.is_empty() {
                     for condition in &comp.ifs {
                         let condition_code = self.translate_expr(condition)?;
-                        code = format!("{}.filter(|{}| {})", code, comp.target, condition_code);
+                        code = format!("{}.filter(|{}| {})", code, target_var, condition_code);
                     }
                 }
 
@@ -1447,7 +1454,42 @@ impl PythonToRustTranslator {
         }
     }
 
-    /// Convert Python type hint to Rust type
+    /// Convert TypeAnnotation to Rust type
+    fn type_annotation_to_rust(&self, annotation: &TypeAnnotation) -> RustType {
+        match annotation {
+            TypeAnnotation::Name(name) => self.python_type_to_rust(name),
+            TypeAnnotation::Generic { base, args } => {
+                // Handle generic types like List[int], Dict[str, int]
+                let base_type = if let TypeAnnotation::Name(name) = base.as_ref() {
+                    name.as_str()
+                } else {
+                    return RustType::Unknown;
+                };
+
+                match base_type {
+                    "List" | "list" => {
+                        if let Some(inner) = args.first() {
+                            let inner_type = self.type_annotation_to_rust(inner);
+                            RustType::Vec(Box::new(inner_type))
+                        } else {
+                            RustType::Vec(Box::new(RustType::Unknown))
+                        }
+                    }
+                    "Optional" | "Option" => {
+                        if let Some(inner) = args.first() {
+                            let inner_type = self.type_annotation_to_rust(inner);
+                            RustType::Option(Box::new(inner_type))
+                        } else {
+                            RustType::Option(Box::new(RustType::Unknown))
+                        }
+                    }
+                    _ => RustType::Unknown,
+                }
+            }
+        }
+    }
+
+    /// Convert Python type hint string to Rust type
     fn python_type_to_rust(&self, hint: &str) -> RustType {
         match hint {
             "int" => RustType::I32,
@@ -1459,8 +1501,22 @@ impl PythonToRustTranslator {
     }
 
     /// Translate Python decorator to Rust attribute
-    fn translate_decorator(&self, decorator: &str) -> String {
-        match decorator {
+    fn translate_decorator(&self, decorator: &PyExpr) -> String {
+        // Extract decorator name from expression
+        let decorator_name = match decorator {
+            PyExpr::Name(name) => name.as_str(),
+            PyExpr::Call { func, .. } => {
+                // For decorator calls like @lru_cache(maxsize=128)
+                if let PyExpr::Name(name) = func.as_ref() {
+                    name.as_str()
+                } else {
+                    return String::new();
+                }
+            }
+            _ => return String::new(),
+        };
+
+        match decorator_name {
             // Common Python decorators -> Rust attributes
             "staticmethod" => "#[allow(non_snake_case)]".to_string(),
             "classmethod" => "#[allow(non_snake_case)]".to_string(),
@@ -1475,7 +1531,7 @@ impl PythonToRustTranslator {
             "unittest.mock.patch" => "// Mock decorator".to_string(),
             _ => {
                 // For unknown decorators, add as comment
-                format!("// @{}", decorator)
+                format!("// @{}", decorator_name)
             }
         }
     }
@@ -1496,10 +1552,9 @@ mod tests {
         let mut translator = PythonToRustTranslator::new();
 
         let module = PyModule {
-            body: vec![PyStmt::Assign {
-                targets: vec!["x".to_string()],
+            statements: vec![PyStmt::Assign {
+                target: PyExpr::Name("x".to_string()),
                 value: PyExpr::Literal(PyLiteral::Int(42)),
-                type_hint: None,
             }],
         };
 
@@ -1512,26 +1567,28 @@ mod tests {
         let mut translator = PythonToRustTranslator::new();
 
         let module = PyModule {
-            body: vec![PyStmt::FunctionDef {
+            statements: vec![PyStmt::FunctionDef {
                 name: "add".to_string(),
-                args: vec![
-                    Arg {
+                params: vec![
+                    FunctionParam {
                         name: "a".to_string(),
-                        type_hint: Some("int".to_string()),
-                        default: None,
+                        type_annotation: Some(TypeAnnotation::Name("int".to_string())),
+                        default_value: None,
                     },
-                    Arg {
+                    FunctionParam {
                         name: "b".to_string(),
-                        type_hint: Some("int".to_string()),
-                        default: None,
+                        type_annotation: Some(TypeAnnotation::Name("int".to_string())),
+                        default_value: None,
                     },
                 ],
-                body: vec![PyStmt::Return(Some(PyExpr::BinOp {
-                    left: Box::new(PyExpr::Name("a".to_string())),
-                    op: BinOp::Add,
-                    right: Box::new(PyExpr::Name("b".to_string())),
-                }))],
-                return_type: Some("int".to_string()),
+                body: vec![PyStmt::Return {
+                    value: Some(PyExpr::BinOp {
+                        left: Box::new(PyExpr::Name("a".to_string())),
+                        op: BinOp::Add,
+                        right: Box::new(PyExpr::Name("b".to_string())),
+                    })
+                }],
+                return_type: Some(TypeAnnotation::Name("int".to_string())),
                 decorators: vec![],
                 is_async: false,
             }],

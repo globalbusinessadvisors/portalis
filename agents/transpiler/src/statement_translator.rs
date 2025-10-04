@@ -15,7 +15,6 @@ use crate::{Error, Result};
 
 /// Generic statement translator
 pub struct StatementTranslator<'a> {
-    ctx: &'a mut TranslationContext,
     expr_translator: ExpressionTranslator<'a>,
 }
 
@@ -23,9 +22,13 @@ impl<'a> StatementTranslator<'a> {
     pub fn new(ctx: &'a mut TranslationContext) -> Self {
         let expr_translator = ExpressionTranslator::new(ctx);
         Self {
-            ctx,
             expr_translator,
         }
+    }
+
+    /// Get mutable access to the context through the expression translator
+    fn ctx(&mut self) -> &mut TranslationContext {
+        self.expr_translator.ctx_mut()
     }
 
     /// Translate any Python statement to Rust
@@ -58,9 +61,9 @@ impl<'a> StatementTranslator<'a> {
                 body,
                 orelse,
             } => self.translate_for(target, iter, body, orelse),
-            PyStmt::Pass => Ok(format!("{}// pass\n", self.ctx.indent())),
-            PyStmt::Break => Ok(format!("{}break;\n", self.ctx.indent())),
-            PyStmt::Continue => Ok(format!("{}continue;\n", self.ctx.indent())),
+            PyStmt::Pass => Ok(format!("{}// pass\n", self.ctx().indent())),
+            PyStmt::Break => Ok(format!("{}break;\n", self.ctx().indent())),
+            PyStmt::Continue => Ok(format!("{}continue;\n", self.ctx().indent())),
             PyStmt::ClassDef {
                 name,
                 bases,
@@ -100,7 +103,7 @@ impl<'a> StatementTranslator<'a> {
     /// Translate expression statement
     fn translate_expr_stmt(&mut self, expr: &PyExpr) -> Result<String> {
         let expr_rust = self.expr_translator.translate(expr)?;
-        Ok(format!("{}{};\n", self.ctx.indent(), expr_rust))
+        Ok(format!("{}{};\n", self.ctx().indent(), expr_rust))
     }
 
     /// Translate assignment
@@ -118,11 +121,11 @@ impl<'a> StatementTranslator<'a> {
 
         // Infer type from value
         let inferred_type = self.expr_translator.infer_type(value);
-        self.ctx.set_type(target_name.clone(), inferred_type);
+        self.ctx().set_type(target_name.clone(), inferred_type);
 
         Ok(format!(
             "{}let mut {} = {};\n",
-            self.ctx.indent(),
+            self.ctx().indent(),
             target_name,
             value_rust
         ))
@@ -154,7 +157,7 @@ impl<'a> StatementTranslator<'a> {
 
         Ok(format!(
             "{}{} {} {};\n",
-            self.ctx.indent(),
+            self.ctx().indent(),
             target_rust,
             op_str,
             value_rust
@@ -183,7 +186,7 @@ impl<'a> StatementTranslator<'a> {
             let value_rust = self.expr_translator.translate(value)?;
             Ok(format!(
                 "{}let mut {}: {} = {};\n",
-                self.ctx.indent(),
+                self.ctx().indent(),
                 target_name,
                 type_str,
                 value_rust
@@ -192,7 +195,7 @@ impl<'a> StatementTranslator<'a> {
             // Declaration without initialization (not common in Rust)
             Ok(format!(
                 "{}// let {}: {}; (uninitialized)\n",
-                self.ctx.indent(),
+                self.ctx().indent(),
                 target_name,
                 type_str
             ))
@@ -214,7 +217,7 @@ impl<'a> StatementTranslator<'a> {
         // Handle decorators (as comments for now)
         for decorator in decorators {
             let dec_str = self.expr_translator.translate(decorator)?;
-            code.push_str(&format!("{}// @{}\n", self.ctx.indent(), dec_str));
+            code.push_str(&format!("{}// @{}\n", self.ctx().indent(), dec_str));
         }
 
         // Function signature
@@ -228,7 +231,7 @@ impl<'a> StatementTranslator<'a> {
 
         code.push_str(&format!(
             "{}pub {}fn {}({}){} {{\n",
-            self.ctx.indent(),
+            self.ctx().indent(),
             async_str,
             name,
             params_str,
@@ -236,11 +239,11 @@ impl<'a> StatementTranslator<'a> {
         ));
 
         // Function body
-        self.ctx.indent_level += 1;
+        self.ctx().indent_level += 1;
         code.push_str(&self.translate_block(body)?);
-        self.ctx.indent_level -= 1;
+        self.ctx().indent_level -= 1;
 
-        code.push_str(&format!("{}}}\n", self.ctx.indent()));
+        code.push_str(&format!("{}}}\n", self.ctx().indent()));
 
         Ok(code)
     }
@@ -298,9 +301,9 @@ impl<'a> StatementTranslator<'a> {
     fn translate_return(&mut self, value: Option<&PyExpr>) -> Result<String> {
         if let Some(expr) = value {
             let expr_rust = self.expr_translator.translate(expr)?;
-            Ok(format!("{}return {};\n", self.ctx.indent(), expr_rust))
+            Ok(format!("{}return {};\n", self.ctx().indent(), expr_rust))
         } else {
-            Ok(format!("{}return;\n", self.ctx.indent()))
+            Ok(format!("{}return;\n", self.ctx().indent()))
         }
     }
 
@@ -309,45 +312,45 @@ impl<'a> StatementTranslator<'a> {
         let mut code = String::new();
 
         let test_rust = self.expr_translator.translate(test)?;
-        code.push_str(&format!("{}if {} {{\n", self.ctx.indent(), test_rust));
+        code.push_str(&format!("{}if {} {{\n", self.ctx().indent(), test_rust));
 
-        self.ctx.indent_level += 1;
+        self.ctx().indent_level += 1;
         code.push_str(&self.translate_block(body)?);
-        self.ctx.indent_level -= 1;
+        self.ctx().indent_level -= 1;
 
         if !orelse.is_empty() {
             // Check if orelse is another if statement (elif)
             if orelse.len() == 1 {
                 if let PyStmt::If { test, body, orelse: nested_else } = &orelse[0] {
                     // This is an elif
-                    code.push_str(&format!("{}}} else ", self.ctx.indent()));
+                    code.push_str(&format!("{}}} else ", self.ctx().indent()));
                     let elif_test = self.expr_translator.translate(test)?;
                     code.push_str(&format!("if {} {{\n", elif_test));
 
-                    self.ctx.indent_level += 1;
+                    self.ctx().indent_level += 1;
                     code.push_str(&self.translate_block(body)?);
-                    self.ctx.indent_level -= 1;
+                    self.ctx().indent_level -= 1;
 
                     if !nested_else.is_empty() {
-                        code.push_str(&format!("{}}} else {{\n", self.ctx.indent()));
-                        self.ctx.indent_level += 1;
+                        code.push_str(&format!("{}}} else {{\n", self.ctx().indent()));
+                        self.ctx().indent_level += 1;
                         code.push_str(&self.translate_block(nested_else)?);
-                        self.ctx.indent_level -= 1;
+                        self.ctx().indent_level -= 1;
                     }
 
-                    code.push_str(&format!("{}}}\n", self.ctx.indent()));
+                    code.push_str(&format!("{}}}\n", self.ctx().indent()));
                     return Ok(code);
                 }
             }
 
             // Regular else block
-            code.push_str(&format!("{}}} else {{\n", self.ctx.indent()));
-            self.ctx.indent_level += 1;
+            code.push_str(&format!("{}}} else {{\n", self.ctx().indent()));
+            self.ctx().indent_level += 1;
             code.push_str(&self.translate_block(orelse)?);
-            self.ctx.indent_level -= 1;
+            self.ctx().indent_level -= 1;
         }
 
-        code.push_str(&format!("{}}}\n", self.ctx.indent()));
+        code.push_str(&format!("{}}}\n", self.ctx().indent()));
 
         Ok(code)
     }
@@ -357,17 +360,17 @@ impl<'a> StatementTranslator<'a> {
         let mut code = String::new();
 
         let test_rust = self.expr_translator.translate(test)?;
-        code.push_str(&format!("{}while {} {{\n", self.ctx.indent(), test_rust));
+        code.push_str(&format!("{}while {} {{\n", self.ctx().indent(), test_rust));
 
-        self.ctx.indent_level += 1;
+        self.ctx().indent_level += 1;
         code.push_str(&self.translate_block(body)?);
-        self.ctx.indent_level -= 1;
+        self.ctx().indent_level -= 1;
 
-        code.push_str(&format!("{}}}\n", self.ctx.indent()));
+        code.push_str(&format!("{}}}\n", self.ctx().indent()));
 
         // Python's while-else is rare and complex in Rust
         if !orelse.is_empty() {
-            code.push_str(&format!("{}// while-else block:\n", self.ctx.indent()));
+            code.push_str(&format!("{}// while-else block:\n", self.ctx().indent()));
             code.push_str(&self.translate_block(orelse)?);
         }
 
@@ -397,20 +400,20 @@ impl<'a> StatementTranslator<'a> {
 
         code.push_str(&format!(
             "{}for {} in {} {{\n",
-            self.ctx.indent(),
+            self.ctx().indent(),
             target_name,
             iter_rust
         ));
 
-        self.ctx.indent_level += 1;
+        self.ctx().indent_level += 1;
         code.push_str(&self.translate_block(body)?);
-        self.ctx.indent_level -= 1;
+        self.ctx().indent_level -= 1;
 
-        code.push_str(&format!("{}}}\n", self.ctx.indent()));
+        code.push_str(&format!("{}}}\n", self.ctx().indent()));
 
         // Python's for-else is rare and complex in Rust
         if !orelse.is_empty() {
-            code.push_str(&format!("{}// for-else block:\n", self.ctx.indent()));
+            code.push_str(&format!("{}// for-else block:\n", self.ctx().indent()));
             code.push_str(&self.translate_block(orelse)?);
         }
 
@@ -430,7 +433,7 @@ impl<'a> StatementTranslator<'a> {
         // Decorators as comments
         for decorator in decorators {
             let dec_str = self.expr_translator.translate(decorator)?;
-            code.push_str(&format!("{}// @{}\n", self.ctx.indent(), dec_str));
+            code.push_str(&format!("{}// @{}\n", self.ctx().indent(), dec_str));
         }
 
         // Base classes as comment
@@ -439,36 +442,36 @@ impl<'a> StatementTranslator<'a> {
                 bases.iter().map(|b| self.expr_translator.translate(b)).collect();
             code.push_str(&format!(
                 "{}// Inherits from: {}\n",
-                self.ctx.indent(),
+                self.ctx().indent(),
                 bases_strs?.join(", ")
             ));
         }
 
-        code.push_str(&format!("{}pub struct {} {{\n", self.ctx.indent(), name));
+        code.push_str(&format!("{}pub struct {} {{\n", self.ctx().indent(), name));
 
         // Extract fields from __init__ if present
-        self.ctx.indent_level += 1;
+        self.ctx().indent_level += 1;
 
         // For now, simple struct with fields from body
-        code.push_str(&format!("{}// TODO: Add fields\n", self.ctx.indent()));
+        code.push_str(&format!("{}// TODO: Add fields\n", self.ctx().indent()));
 
-        self.ctx.indent_level -= 1;
-        code.push_str(&format!("{}}}\n\n", self.ctx.indent()));
+        self.ctx().indent_level -= 1;
+        code.push_str(&format!("{}}}\n\n", self.ctx().indent()));
 
         // Implementation block for methods
-        code.push_str(&format!("{}impl {} {{\n", self.ctx.indent(), name));
+        code.push_str(&format!("{}impl {} {{\n", self.ctx().indent(), name));
 
-        self.ctx.indent_level += 1;
+        self.ctx().indent_level += 1;
         code.push_str(&self.translate_block(body)?);
-        self.ctx.indent_level -= 1;
+        self.ctx().indent_level -= 1;
 
-        code.push_str(&format!("{}}}\n", self.ctx.indent()));
+        code.push_str(&format!("{}}}\n", self.ctx().indent()));
 
         Ok(code)
     }
 
     /// Translate import statement
-    fn translate_import(&self, modules: &[(String, Option<String>)]) -> Result<String> {
+    fn translate_import(&mut self, modules: &[(String, Option<String>)]) -> Result<String> {
         let mut code = String::new();
 
         for (module, alias) in modules {
@@ -476,12 +479,12 @@ impl<'a> StatementTranslator<'a> {
             if let Some(alias_name) = alias {
                 code.push_str(&format!(
                     "{}use {} as {};\n",
-                    self.ctx.indent(),
+                    self.ctx().indent(),
                     module_path,
                     alias_name
                 ));
             } else {
-                code.push_str(&format!("{}use {};\n", self.ctx.indent(), module_path));
+                code.push_str(&format!("{}use {};\n", self.ctx().indent(), module_path));
             }
         }
 
@@ -490,7 +493,7 @@ impl<'a> StatementTranslator<'a> {
 
     /// Translate from import statement
     fn translate_import_from(
-        &self,
+        &mut self,
         module: Option<&String>,
         names: &[(String, Option<String>)],
         level: usize,
@@ -507,7 +510,7 @@ impl<'a> StatementTranslator<'a> {
             if let Some(alias_name) = alias {
                 code.push_str(&format!(
                     "{}use {}::{} as {};\n",
-                    self.ctx.indent(),
+                    self.ctx().indent(),
                     module_path,
                     name,
                     alias_name
@@ -515,7 +518,7 @@ impl<'a> StatementTranslator<'a> {
             } else {
                 code.push_str(&format!(
                     "{}use {}::{};\n",
-                    self.ctx.indent(),
+                    self.ctx().indent(),
                     module_path,
                     name
                 ));
@@ -533,12 +536,12 @@ impl<'a> StatementTranslator<'a> {
             let msg_rust = self.expr_translator.translate(msg_expr)?;
             Ok(format!(
                 "{}assert!({}, {});\n",
-                self.ctx.indent(),
+                self.ctx().indent(),
                 test_rust,
                 msg_rust
             ))
         } else {
-            Ok(format!("{}assert!({});\n", self.ctx.indent(), test_rust))
+            Ok(format!("{}assert!({});\n", self.ctx().indent(), test_rust))
         }
     }
 
@@ -553,52 +556,52 @@ impl<'a> StatementTranslator<'a> {
         let mut code = String::new();
 
         // Rust doesn't have try-except, use Result<T, E> pattern
-        code.push_str(&format!("{}// Try block (converted to Result pattern)\n", self.ctx.indent()));
-        code.push_str(&format!("{}match (|| -> Result<(), Box<dyn std::error::Error>> {{\n", self.ctx.indent()));
+        code.push_str(&format!("{}// Try block (converted to Result pattern)\n", self.ctx().indent()));
+        code.push_str(&format!("{}match (|| -> Result<(), Box<dyn std::error::Error>> {{\n", self.ctx().indent()));
 
-        self.ctx.indent_level += 1;
+        self.ctx().indent_level += 1;
         code.push_str(&self.translate_block(body)?);
-        code.push_str(&format!("{}Ok(())\n", self.ctx.indent()));
-        self.ctx.indent_level -= 1;
+        code.push_str(&format!("{}Ok(())\n", self.ctx().indent()));
+        self.ctx().indent_level -= 1;
 
-        code.push_str(&format!("{}}})() {{\n", self.ctx.indent()));
+        code.push_str(&format!("{}}})() {{\n", self.ctx().indent()));
 
-        self.ctx.indent_level += 1;
+        self.ctx().indent_level += 1;
 
         // Exception handlers
         if !handlers.is_empty() {
-            code.push_str(&format!("{}Err(e) => {{\n", self.ctx.indent()));
-            self.ctx.indent_level += 1;
+            code.push_str(&format!("{}Err(e) => {{\n", self.ctx().indent()));
+            self.ctx().indent_level += 1;
 
             for handler in handlers {
                 if let Some(exc_type) = &handler.exception_type {
                     let exc_type_str = self.expr_translator.translate(exc_type)?;
-                    code.push_str(&format!("{}// Handle {} exception\n", self.ctx.indent(), exc_type_str));
+                    code.push_str(&format!("{}// Handle {} exception\n", self.ctx().indent(), exc_type_str));
                 }
                 code.push_str(&self.translate_block(&handler.body)?);
             }
 
-            self.ctx.indent_level -= 1;
-            code.push_str(&format!("{}}},\n", self.ctx.indent()));
+            self.ctx().indent_level -= 1;
+            code.push_str(&format!("{}}},\n", self.ctx().indent()));
         }
 
         // Else block (executed if no exception)
         if !orelse.is_empty() {
-            code.push_str(&format!("{}Ok(_) => {{\n", self.ctx.indent()));
-            self.ctx.indent_level += 1;
+            code.push_str(&format!("{}Ok(_) => {{\n", self.ctx().indent()));
+            self.ctx().indent_level += 1;
             code.push_str(&self.translate_block(orelse)?);
-            self.ctx.indent_level -= 1;
-            code.push_str(&format!("{}}}\n", self.ctx.indent()));
+            self.ctx().indent_level -= 1;
+            code.push_str(&format!("{}}}\n", self.ctx().indent()));
         } else {
-            code.push_str(&format!("{}Ok(_) => {{}}\n", self.ctx.indent()));
+            code.push_str(&format!("{}Ok(_) => {{}}\n", self.ctx().indent()));
         }
 
-        self.ctx.indent_level -= 1;
-        code.push_str(&format!("{}}}\n", self.ctx.indent()));
+        self.ctx().indent_level -= 1;
+        code.push_str(&format!("{}}}\n", self.ctx().indent()));
 
         // Finally block
         if !finalbody.is_empty() {
-            code.push_str(&format!("{}// Finally block\n", self.ctx.indent()));
+            code.push_str(&format!("{}// Finally block\n", self.ctx().indent()));
             code.push_str(&self.translate_block(finalbody)?);
         }
 
@@ -611,11 +614,11 @@ impl<'a> StatementTranslator<'a> {
             let exc_rust = self.expr_translator.translate(exc)?;
             Ok(format!(
                 "{}return Err(Box::new({}));\n",
-                self.ctx.indent(),
+                self.ctx().indent(),
                 exc_rust
             ))
         } else {
-            Ok(format!("{}return Err(Box::new(/* re-raise */));\n", self.ctx.indent()))
+            Ok(format!("{}return Err(Box::new(/* re-raise */));\n", self.ctx().indent()))
         }
     }
 
@@ -632,18 +635,18 @@ impl<'a> StatementTranslator<'a> {
                     PyExpr::Name(name) => name,
                     _ => return Err(Error::CodeGeneration("Complex with targets not supported".to_string())),
                 };
-                code.push_str(&format!("{}let {} = {};\n", self.ctx.indent(), var_name, ctx_expr));
+                code.push_str(&format!("{}let {} = {};\n", self.ctx().indent(), var_name, ctx_expr));
             } else {
-                code.push_str(&format!("{}let _ctx = {};\n", self.ctx.indent(), ctx_expr));
+                code.push_str(&format!("{}let _ctx = {};\n", self.ctx().indent(), ctx_expr));
             }
         }
 
         // With body
-        code.push_str(&format!("{}{{\n", self.ctx.indent()));
-        self.ctx.indent_level += 1;
+        code.push_str(&format!("{}{{\n", self.ctx().indent()));
+        self.ctx().indent_level += 1;
         code.push_str(&self.translate_block(body)?);
-        self.ctx.indent_level -= 1;
-        code.push_str(&format!("{}}}\n", self.ctx.indent()));
+        self.ctx().indent_level -= 1;
+        code.push_str(&format!("{}}}\n", self.ctx().indent()));
 
         Ok(code)
     }
@@ -656,7 +659,7 @@ impl<'a> StatementTranslator<'a> {
             let target_rust = self.expr_translator.translate(target)?;
             code.push_str(&format!(
                 "{}// del {} (Rust uses drop/RAII)\n",
-                self.ctx.indent(),
+                self.ctx().indent(),
                 target_rust
             ));
         }
@@ -665,19 +668,19 @@ impl<'a> StatementTranslator<'a> {
     }
 
     /// Translate global declaration
-    fn translate_global(&self, names: &[String]) -> Result<String> {
+    fn translate_global(&mut self, names: &[String]) -> Result<String> {
         Ok(format!(
             "{}// global {}\n",
-            self.ctx.indent(),
+            self.ctx().indent(),
             names.join(", ")
         ))
     }
 
     /// Translate nonlocal declaration
-    fn translate_nonlocal(&self, names: &[String]) -> Result<String> {
+    fn translate_nonlocal(&mut self, names: &[String]) -> Result<String> {
         Ok(format!(
             "{}// nonlocal {}\n",
-            self.ctx.indent(),
+            self.ctx().indent(),
             names.join(", ")
         ))
     }

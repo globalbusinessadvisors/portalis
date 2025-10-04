@@ -61,7 +61,7 @@ impl PythonParser {
     pub fn from_file(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref();
         let source = std::fs::read_to_string(path).map_err(|e| {
-            Error::ParseError(format!("Failed to read file {:?}: {}", path, e))
+            Error::Parse(format!("Failed to read file {:?}: {}", path, e))
         })?;
 
         Ok(Self::new(
@@ -74,18 +74,18 @@ impl PythonParser {
     pub fn parse(&self) -> Result<PyModule> {
         // Parse using rustpython-parser
         let parsed = parse_program(&self.source, &self.filename).map_err(|e| {
-            Error::ParseError(format!("rustpython-parser error: {:?}", e))
+            Error::Parse(format!("rustpython-parser error: {:?}", e))
         })?;
 
         // Convert to our internal AST representation
         let mut converter = AstConverter::new(&self.source, &self.filename);
-        converter.convert_module_from_mod(parsed)
+        converter.convert_module(&parsed)
     }
 
     /// Parse a single expression
     pub fn parse_expression(&self) -> Result<PyExpr> {
         let parsed = parse_expression(&self.source, &self.filename).map_err(|e| {
-            Error::ParseError(format!("rustpython-parser error: {:?}", e))
+            Error::Parse(format!("rustpython-parser error: {:?}", e))
         })?;
 
         let mut converter = AstConverter::new(&self.source, &self.filename);
@@ -95,20 +95,17 @@ impl PythonParser {
     /// Parse a single statement
     pub fn parse_statement(&self) -> Result<PyStmt> {
         let parsed = parse_program(&self.source, &self.filename).map_err(|e| {
-            Error::ParseError(format!("rustpython-parser error: {:?}", e))
+            Error::Parse(format!("rustpython-parser error: {:?}", e))
         })?;
 
         let mut converter = AstConverter::new(&self.source, &self.filename);
 
-        // Extract first statement from Module
-        if let ast::Mod::Module(module) = parsed {
-            if module.body.is_empty() {
-                return Err(Error::ParseError("No statements found".to_string()));
-            }
-            converter.convert_stmt(&module.body[0])
-        } else {
-            Err(Error::ParseError("Expected module".to_string()))
+        // Extract first statement from parsed statements
+        if parsed.is_empty() {
+            return Err(Error::Parse("No statements found".to_string()));
         }
+
+        converter.convert_stmt(&parsed[0])
     }
 
     /// Get source code snippet for error reporting
@@ -157,7 +154,7 @@ impl AstConverter {
                 module.add_stmt(PyStmt::Expr(converted_expr));
                 Ok(module)
             }
-            _ => Err(Error::ParseError("Unsupported module type".to_string())),
+            _ => Err(Error::Parse("Unsupported module type".to_string())),
         }
     }
 
@@ -292,7 +289,7 @@ impl AstConverter {
                 // Python allows multiple targets: a = b = c = 42
                 // We'll simplify to single target for now
                 if assign.targets.is_empty() {
-                    return Err(Error::ParseError("Assignment with no targets".to_string()));
+                    return Err(Error::Parse("Assignment with no targets".to_string()));
                 }
 
                 let target = self.convert_expr(&assign.targets[0])?;
@@ -409,7 +406,7 @@ impl AstConverter {
                 Ok(PyStmt::ImportFrom {
                     module,
                     names,
-                    level: import.level.unwrap_or(0) as usize,
+                    level: import.level.map(|i| i.to_usize()).unwrap_or(0),
                 })
             }
 
@@ -422,24 +419,26 @@ impl AstConverter {
 
                 let mut handlers = Vec::new();
                 for handler in &try_stmt.handlers {
-                    let exception_type = handler
-                        .typ
-                        .as_ref()
-                        .map(|expr| self.convert_expr(expr))
-                        .transpose()?;
+                    // ExceptHandler is a tuple variant in rustpython_parser
+                    if let ast::ExceptHandler::ExceptHandler(handler_data) = handler {
+                        let exception_type = handler_data.type_
+                            .as_ref()
+                            .map(|expr| self.convert_expr(expr))
+                            .transpose()?;
 
-                    let name = handler.name.as_ref().map(|s| s.to_string());
+                        let handler_name = handler_data.name.as_ref().map(|id| id.to_string());
 
-                    let mut handler_body = Vec::new();
-                    for stmt in &handler.body {
-                        handler_body.push(self.convert_stmt(stmt)?);
+                        let mut handler_body = Vec::new();
+                        for stmt in &handler_data.body {
+                            handler_body.push(self.convert_stmt(stmt)?);
+                        }
+
+                        handlers.push(ExceptHandler {
+                            exception_type,
+                            name: handler_name,
+                            body: handler_body,
+                        });
                     }
-
-                    handlers.push(ExceptHandler {
-                        exception_type,
-                        name,
-                        body: handler_body,
-                    });
                 }
 
                 let mut orelse = Vec::new();
@@ -548,7 +547,7 @@ impl AstConverter {
                 })
             }
 
-            _ => Err(Error::ParseError(format!(
+            _ => Err(Error::Parse(format!(
                 "Unsupported statement type: {:?}",
                 stmt
             ))),
@@ -566,7 +565,7 @@ impl AstConverter {
                         if let Ok(val) = i.try_into() {
                             PyLiteral::Int(val)
                         } else {
-                            return Err(Error::ParseError(format!(
+                            return Err(Error::Parse(format!(
                                 "Integer literal too large: {}",
                                 i
                             )));
@@ -578,7 +577,7 @@ impl AstConverter {
                     ast::Constant::None => PyLiteral::None,
                     ast::Constant::Bytes(b) => PyLiteral::Bytes(b.clone()),
                     _ => {
-                        return Err(Error::ParseError(format!(
+                        return Err(Error::Parse(format!(
                             "Unsupported constant type: {:?}",
                             constant.value
                         )))
@@ -646,23 +645,20 @@ impl AstConverter {
 
                 // Check if it's a slice
                 if let ast::Expr::Slice(slice) = &*subscript.slice {
-                    let lower = slice
-                        .lower
-                        .as_ref()
-                        .map(|expr| Box::new(self.convert_expr(expr)))
-                        .transpose()?;
+                    let lower = match &slice.lower {
+                        Some(expr) => Some(Box::new(self.convert_expr(expr)?)),
+                        None => None,
+                    };
 
-                    let upper = slice
-                        .upper
-                        .as_ref()
-                        .map(|expr| Box::new(self.convert_expr(expr)))
-                        .transpose()?;
+                    let upper = match &slice.upper {
+                        Some(expr) => Some(Box::new(self.convert_expr(expr)?)),
+                        None => None,
+                    };
 
-                    let step = slice
-                        .step
-                        .as_ref()
-                        .map(|expr| Box::new(self.convert_expr(expr)))
-                        .transpose()?;
+                    let step = match &slice.step {
+                        Some(expr) => Some(Box::new(self.convert_expr(expr)?)),
+                        None => None,
+                    };
 
                     Ok(PyExpr::Slice {
                         value,
@@ -703,6 +699,7 @@ impl AstConverter {
                 let keys = dict
                     .keys
                     .iter()
+                    .filter_map(|opt_expr| opt_expr.as_ref())
                     .map(|expr| self.convert_expr(expr))
                     .collect::<Result<Vec<_>>>()?;
 
@@ -757,7 +754,7 @@ impl AstConverter {
                     .args
                     .args
                     .iter()
-                    .map(|arg| arg.arg.to_string())
+                    .map(|arg| arg.def.arg.to_string())
                     .collect();
 
                 let body = Box::new(self.convert_expr(&lambda.body)?);
@@ -772,7 +769,7 @@ impl AstConverter {
                 // Python allows chained comparisons: a < b < c
                 // For simplicity, we'll handle the first comparison only
                 if compare.ops.is_empty() || compare.comparators.is_empty() {
-                    return Err(Error::ParseError("Empty comparison".to_string()));
+                    return Err(Error::Parse("Empty comparison".to_string()));
                 }
 
                 let op = self.convert_cmpop(&compare.ops[0]);
@@ -784,7 +781,7 @@ impl AstConverter {
             // Boolean operation (and, or)
             ast::Expr::BoolOp(boolop) => {
                 if boolop.values.len() < 2 {
-                    return Err(Error::ParseError("BoolOp with less than 2 values".to_string()));
+                    return Err(Error::Parse("BoolOp with less than 2 values".to_string()));
                 }
 
                 let op = match boolop.op {
@@ -806,16 +803,15 @@ impl AstConverter {
 
             // Yield expression
             ast::Expr::Yield(yield_expr) => {
-                let value = yield_expr
-                    .value
-                    .as_ref()
-                    .map(|expr| Box::new(self.convert_expr(expr)))
-                    .transpose()?;
+                let value = match &yield_expr.value {
+                    Some(expr) => Some(Box::new(self.convert_expr(expr)?)),
+                    None => None,
+                };
 
                 Ok(PyExpr::Yield(value))
             }
 
-            _ => Err(Error::ParseError(format!(
+            _ => Err(Error::Parse(format!(
                 "Unsupported expression type: {:?}",
                 expr
             ))),
@@ -827,8 +823,9 @@ impl AstConverter {
         let mut params = Vec::new();
 
         for arg in &args.args {
-            let name = arg.arg.to_string();
+            let name = arg.def.arg.to_string();
             let type_annotation = arg
+                .def
                 .annotation
                 .as_ref()
                 .map(|expr| self.convert_type_annotation(expr))
@@ -860,7 +857,7 @@ impl AstConverter {
                         args,
                     })
                 } else {
-                    Err(Error::ParseError("Complex generic type".to_string()))
+                    Err(Error::Parse("Complex generic type".to_string()))
                 }
             }
 

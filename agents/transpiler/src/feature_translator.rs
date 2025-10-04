@@ -76,13 +76,18 @@ impl FeatureTranslator {
     fn extract_imports(&self, module: &PyModule) -> Vec<String> {
         let mut imports = Vec::new();
 
-        for stmt in &module.body {
+        for stmt in &module.statements {
             match stmt {
-                PyStmt::Import { names, aliases: _ } => {
-                    imports.extend(names.clone());
+                PyStmt::Import { modules } => {
+                    // modules is Vec<(String, Option<String>)>
+                    for (name, _alias) in modules {
+                        imports.push(name.clone());
+                    }
                 }
-                PyStmt::ImportFrom { module, names: _, aliases: _ } => {
-                    imports.push(module.clone());
+                PyStmt::ImportFrom { module, .. } => {
+                    if let Some(mod_name) = module {
+                        imports.push(mod_name.clone());
+                    }
                 }
                 _ => {}
             }
@@ -95,20 +100,26 @@ impl FeatureTranslator {
     fn extract_aliases(&self, module: &PyModule) -> HashMap<String, String> {
         let mut aliases = HashMap::new();
 
-        for stmt in &module.body {
+        for stmt in &module.statements {
             match stmt {
-                PyStmt::Import { names, aliases: alias_vec } => {
-                    for (i, name) in names.iter().enumerate() {
-                        if let Some(Some(alias)) = alias_vec.get(i) {
+                PyStmt::Import { modules } => {
+                    // modules is Vec<(String, Option<String>)>
+                    for (name, alias_opt) in modules {
+                        if let Some(alias) = alias_opt {
                             aliases.insert(alias.clone(), name.clone());
                         }
                     }
                 }
-                PyStmt::ImportFrom { module, names, aliases: alias_vec } => {
-                    for (i, name) in names.iter().enumerate() {
-                        if let Some(Some(alias)) = alias_vec.get(i) {
+                PyStmt::ImportFrom { module, names, .. } => {
+                    // names is Vec<(String, Option<String>)>
+                    for (name, alias_opt) in names {
+                        if let Some(alias) = alias_opt {
                             // For from imports, alias maps to module.name
-                            aliases.insert(alias.clone(), format!("{}.{}", module, name));
+                            if let Some(mod_name) = module {
+                                aliases.insert(alias.clone(), format!("{}.{}", mod_name, name));
+                            } else {
+                                aliases.insert(alias.clone(), name.clone());
+                            }
                         }
                     }
                 }

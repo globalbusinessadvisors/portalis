@@ -119,6 +119,11 @@ impl<'a> ExpressionTranslator<'a> {
         Self { ctx }
     }
 
+    /// Get mutable access to the translation context
+    pub fn ctx_mut(&mut self) -> &mut TranslationContext {
+        self.ctx
+    }
+
     /// Translate any Python expression to Rust
     pub fn translate(&mut self, expr: &PyExpr) -> Result<String> {
         match expr {
@@ -646,7 +651,7 @@ impl<'a> ExpressionTranslator<'a> {
     }
 
     /// Infer the type of an expression (simple version)
-    fn infer_type(&self, expr: &PyExpr) -> RustType {
+    pub fn infer_type(&self, expr: &PyExpr) -> RustType {
         match expr {
             PyExpr::Literal(lit) => match lit {
                 PyLiteral::Int(_) => RustType::I64,

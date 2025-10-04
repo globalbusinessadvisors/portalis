@@ -111,7 +111,7 @@ impl SimplePythonParser {
                             let value = self.parse_expr(value_str)?;
 
                             return Ok(Some(PyStmt::AugAssign {
-                                target: actual_target,
+                                target: PyExpr::Name(actual_target),
                                 op,
                                 value,
                             }));
@@ -121,9 +121,8 @@ impl SimplePythonParser {
                     // Simple assignment
                     let value = self.parse_expr(value_str)?;
                     return Ok(Some(PyStmt::Assign {
-                        targets: vec![target],
+                        target: PyExpr::Name(target),
                         value,
-                        type_hint: None,
                     }));
                 }
             }
@@ -311,11 +310,10 @@ mod tests {
         let mut parser = SimplePythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
-            PyStmt::Assign { targets, value, .. } => {
-                assert_eq!(targets.len(), 1);
-                assert_eq!(targets[0], "x");
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
+            PyStmt::Assign { target, value } => {
+                assert_eq!(*target, PyExpr::Name("x".to_string()));
                 assert_eq!(*value, PyExpr::Literal(PyLiteral::Int(42)));
             }
             _ => panic!("Expected assignment"),
@@ -328,8 +326,8 @@ mod tests {
         let mut parser = SimplePythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::Assign { value, .. } => {
                 assert_eq!(*value, PyExpr::Literal(PyLiteral::Float(3.14)));
             }
@@ -343,8 +341,8 @@ mod tests {
         let mut parser = SimplePythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::Assign { value, .. } => {
                 assert_eq!(
                     *value,
@@ -361,8 +359,8 @@ mod tests {
         let mut parser = SimplePythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::Assign { value, .. } => {
                 assert_eq!(*value, PyExpr::Literal(PyLiteral::Bool(true)));
             }
@@ -376,10 +374,10 @@ mod tests {
         let mut parser = SimplePythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::AugAssign { target, op, value } => {
-                assert_eq!(target, "x");
+                assert_eq!(*target, PyExpr::Name("x".to_string()));
                 assert_eq!(*op, BinOp::Add);
                 assert_eq!(*value, PyExpr::Literal(PyLiteral::Int(5)));
             }
@@ -393,8 +391,8 @@ mod tests {
         let mut parser = SimplePythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::Expr(PyExpr::Call { func, args, .. }) => {
                 assert_eq!(**func, PyExpr::Name("print".to_string()));
                 assert_eq!(args.len(), 1);
@@ -409,7 +407,7 @@ mod tests {
         let mut parser = SimplePythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1); // Only the assignment, comments skipped
+        assert_eq!(module.statements.len(), 1); // Only the assignment, comments skipped
     }
 
     #[test]
@@ -418,8 +416,8 @@ mod tests {
         let mut parser = SimplePythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::Assign { value, .. } => match value {
                 PyExpr::BinOp { left, op, right } => {
                     assert_eq!(**left, PyExpr::Literal(PyLiteral::Int(2)));

@@ -19,7 +19,7 @@ struct Line {
 pub struct IndentedPythonParser {
     lines: Vec<Line>,
     current_line: usize,
-    pending_decorators: Vec<String>,
+    pending_decorators: Vec<PyExpr>,
 }
 
 impl IndentedPythonParser {
@@ -140,7 +140,7 @@ impl IndentedPythonParser {
             } else {
                 None
             };
-            return Ok(Some(PyStmt::Raise { exc }));
+            return Ok(Some(PyStmt::Raise { exception: exc }));
         }
 
         // Return statement
@@ -151,7 +151,7 @@ impl IndentedPythonParser {
             } else {
                 None
             };
-            return Ok(Some(PyStmt::Return(expr)));
+            return Ok(Some(PyStmt::Return { value: expr }));
         }
 
         // Assert statement
@@ -259,8 +259,8 @@ impl IndentedPythonParser {
         if let Some(in_pos) = for_content.find(" in ") {
             let target_str = for_content[..in_pos].trim();
 
-            // Parse targets - handle tuple unpacking
-            let targets = if target_str.contains(',') {
+            // Parse target - handle tuple unpacking
+            let target = if target_str.contains(',') {
                 // Tuple unpacking: "i, item" or "(i, item)"
                 let clean_str = if target_str.starts_with('(') && target_str.ends_with(')') {
                     &target_str[1..target_str.len() - 1]
@@ -268,13 +268,14 @@ impl IndentedPythonParser {
                     target_str
                 };
 
-                clean_str
+                let elements: Vec<PyExpr> = clean_str
                     .split(',')
-                    .map(|s| s.trim().to_string())
-                    .collect()
+                    .map(|s| PyExpr::Name(s.trim().to_string()))
+                    .collect();
+                PyExpr::Tuple(elements)
             } else {
                 // Single target
-                vec![target_str.to_string()]
+                PyExpr::Name(target_str.to_string())
             };
 
             let iter_str = for_content[in_pos + 4..].trim();
@@ -298,7 +299,7 @@ impl IndentedPythonParser {
             };
 
             return Ok(Some(PyStmt::For {
-                targets,
+                target,
                 iter,
                 body,
                 orelse,
@@ -328,13 +329,13 @@ impl IndentedPythonParser {
             };
 
             let args_str = &def_content[paren_pos + 1..close_paren];
-            let args = self.parse_function_args(args_str)?;
+            let params = self.parse_function_args(args_str)?;
 
             // Check for return type annotation: -> TYPE
             let return_type = if close_paren + 1 < def_content.len() {
                 let after_paren = &def_content[close_paren + 1..].trim();
                 if after_paren.starts_with("->") {
-                    Some(after_paren[2..].trim().to_string())
+                    Some(TypeAnnotation::Name(after_paren[2..].trim().to_string()))
                 } else {
                     None
                 }
@@ -348,7 +349,7 @@ impl IndentedPythonParser {
 
             return Ok(Some(PyStmt::FunctionDef {
                 name,
-                args,
+                params,
                 body,
                 return_type,
                 decorators: std::mem::take(&mut self.pending_decorators),
@@ -376,16 +377,16 @@ impl IndentedPythonParser {
             };
 
             let bases_str = &class_content[paren_pos + 1..close_paren];
-            let bases: Vec<String> = if bases_str.trim().is_empty() {
+            let bases: Vec<PyExpr> = if bases_str.trim().is_empty() {
                 vec![]
             } else {
-                bases_str.split(',').map(|s| s.trim().to_string()).collect()
+                bases_str.split(',').map(|s| PyExpr::Name(s.trim().to_string())).collect()
             };
 
             (name, bases)
         } else {
             // No base classes
-            (class_content.to_string(), vec![])
+            (class_content.to_string(), vec![] as Vec<PyExpr>)
         };
 
         self.current_line += 1;
@@ -414,7 +415,7 @@ impl IndentedPythonParser {
             decorator_str.to_string()
         };
 
-        self.pending_decorators.push(decorator_name);
+        self.pending_decorators.push(PyExpr::Name(decorator_name));
         self.current_line += 1;
 
         // Return None to continue parsing (decorators don't generate statements themselves)
@@ -455,35 +456,35 @@ impl IndentedPythonParser {
         Ok(stmts)
     }
 
-    fn parse_function_args(&self, args_str: &str) -> Result<Vec<Arg>> {
+    fn parse_function_args(&self, args_str: &str) -> Result<Vec<FunctionParam>> {
         if args_str.trim().is_empty() {
             return Ok(vec![]);
         }
 
-        let args: Vec<Arg> = args_str
+        let params: Vec<FunctionParam> = args_str
             .split(',')
             .map(|arg| {
                 let arg = arg.trim();
                 // Simple parsing: name or name: type
                 if let Some(colon_pos) = arg.find(':') {
                     let name = arg[..colon_pos].trim().to_string();
-                    let type_hint = Some(arg[colon_pos + 1..].trim().to_string());
-                    Arg {
+                    let type_annotation = Some(TypeAnnotation::Name(arg[colon_pos + 1..].trim().to_string()));
+                    FunctionParam {
                         name,
-                        type_hint,
-                        default: None,
+                        type_annotation,
+                        default_value: None,
                     }
                 } else {
-                    Arg {
+                    FunctionParam {
                         name: arg.to_string(),
-                        type_hint: None,
-                        default: None,
+                        type_annotation: None,
+                        default_value: None,
                     }
                 }
             })
             .collect();
 
-        Ok(args)
+        Ok(params)
     }
 
     fn parse_simple_statement(&self, line: &str) -> Result<Option<PyStmt>> {
@@ -534,7 +535,7 @@ impl IndentedPythonParser {
                             };
                             let value = self.parse_expr(last_part)?;
                             return Ok(Some(PyStmt::AugAssign {
-                                target: actual_target,
+                                target: PyExpr::Name(actual_target),
                                 op,
                                 value,
                             }));
@@ -542,20 +543,17 @@ impl IndentedPythonParser {
                     }
                 }
 
-                // Regular assignment or chained assignment
-                // All parts except the last are targets
-                let targets: Vec<String> = parts[..parts.len() - 1]
-                    .iter()
-                    .map(|s| s.to_string())
-                    .collect();
-
+                // Regular assignment (take first target for chained assignments like a = b = 5)
+                let target_str = parts[parts.len() - 2].trim();
                 let value = self.parse_expr(last_part)?;
 
-                // Return assignment with all targets
+                // Parse target as expression
+                let target = self.parse_expr(target_str)?;
+
+                // Return assignment
                 return Ok(Some(PyStmt::Assign {
-                    targets,
+                    target,
                     value,
-                    type_hint: None,
                 }));
             }
         }
@@ -615,9 +613,7 @@ impl IndentedPythonParser {
         if s.starts_with("await ") {
             let inner = &s[6..].trim();
             let value = self.parse_expr(inner)?;
-            return Ok(PyExpr::Await {
-                value: Box::new(value),
-            });
+            return Ok(PyExpr::Await(Box::new(value)));
         }
 
         // Lambda expressions: lambda x: x + 1, lambda x, y: x + y
@@ -1194,7 +1190,7 @@ impl IndentedPythonParser {
         Ok(PyExpr::ListComp {
             element: Box::new(element),
             generators: vec![Comprehension {
-                target,
+                target: PyExpr::Name(target),
                 iter,
                 ifs,
             }],
@@ -1290,16 +1286,16 @@ impl IndentedPythonParser {
                     // bare except
                     (None, None)
                 } else if let Some(as_pos) = except_str.find(" as ") {
-                    let exc = Some(except_str[..as_pos].trim().to_string());
+                    let exc = Some(PyExpr::Name(except_str[..as_pos].trim().to_string()));
                     let var = Some(except_str[as_pos + 4..].trim().to_string());
                     (exc, var)
                 } else {
-                    (Some(except_str.to_string()), None)
+                    (Some(PyExpr::Name(except_str.to_string())), None)
                 };
 
                 let handler_body = self.parse_block(expected_indent + 1)?;
                 handlers.push(ExceptHandler {
-                    exc_type,
+                    exception_type: exc_type,
                     name,
                     body: handler_body,
                 });
@@ -1363,7 +1359,7 @@ impl IndentedPythonParser {
         for item_str in item_strings {
             let (context_expr_str, optional_vars) = if let Some(as_pos) = item_str.find(" as ") {
                 let expr = item_str[..as_pos].trim();
-                let var = Some(item_str[as_pos + 4..].trim().to_string());
+                let var = Some(PyExpr::Name(item_str[as_pos + 4..].trim().to_string()));
                 (expr, var)
             } else {
                 (item_str.as_str(), None)
@@ -1398,8 +1394,8 @@ if x > 0:
         let mut parser = IndentedPythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::If { test, body, .. } => {
                 assert_eq!(body.len(), 1);
             }
@@ -1418,8 +1414,8 @@ else:
         let mut parser = IndentedPythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::If { body, orelse, .. } => {
                 assert_eq!(body.len(), 1);
                 assert_eq!(orelse.len(), 1);
@@ -1437,11 +1433,10 @@ for i in range(10):
         let mut parser = IndentedPythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
-            PyStmt::For { targets, body, .. } => {
-                assert_eq!(targets.len(), 1);
-                assert_eq!(targets[0], "i");
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
+            PyStmt::For { target, body, .. } => {
+                assert_eq!(*target, PyExpr::Name("i".to_string()));
                 assert_eq!(body.len(), 1);
             }
             _ => panic!("Expected for loop"),
@@ -1457,8 +1452,8 @@ while x < 10:
         let mut parser = IndentedPythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::While { test, body, .. } => {
                 assert_eq!(body.len(), 1);
             }
@@ -1475,11 +1470,11 @@ def add(a, b):
         let mut parser = IndentedPythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
-            PyStmt::FunctionDef { name, args, body, .. } => {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
+            PyStmt::FunctionDef { name, params, body, .. } => {
                 assert_eq!(name, "add");
-                assert_eq!(args.len(), 2);
+                assert_eq!(params.len(), 2);
                 assert_eq!(body.len(), 1);
             }
             _ => panic!("Expected function definition"),
@@ -1498,8 +1493,8 @@ if x > 0:
         let mut parser = IndentedPythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
             PyStmt::If { body, .. } => {
                 assert_eq!(body.len(), 1);
                 // Inner if statement
@@ -1520,11 +1515,11 @@ if x > 0:
         let mut parser = IndentedPythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
-            PyStmt::Import { names, aliases: _ } => {
-                assert_eq!(names.len(), 1);
-                assert_eq!(names[0], "math");
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
+            PyStmt::Import { modules } => {
+                assert_eq!(modules.len(), 1);
+                assert_eq!(modules[0].0, "math");
             }
             _ => panic!("Expected import statement"),
         }
@@ -1536,12 +1531,12 @@ if x > 0:
         let mut parser = IndentedPythonParser::new(source);
         let module = parser.parse().unwrap();
 
-        assert_eq!(module.body.len(), 1);
-        match &module.body[0] {
-            PyStmt::ImportFrom { module, names, aliases: _ } => {
-                assert_eq!(module, "os");
+        assert_eq!(module.statements.len(), 1);
+        match &module.statements[0] {
+            PyStmt::ImportFrom { module, names, .. } => {
+                assert_eq!(module, &Some("os".to_string()));
                 assert_eq!(names.len(), 1);
-                assert_eq!(names[0], "path");
+                assert_eq!(names[0].0, "path");
             }
             _ => panic!("Expected from-import statement"),
         }
@@ -1572,7 +1567,9 @@ impl IndentedPythonParser {
             }
         }
 
-        Ok(Some(PyStmt::Import { names, aliases }))
+        // Combine names and aliases into modules: Vec<(String, Option<String>)>
+        let modules: Vec<(String, Option<String>)> = names.into_iter().zip(aliases.into_iter()).collect();
+        Ok(Some(PyStmt::Import { modules }))
     }
 
     fn parse_from_import_statement(&mut self) -> Result<Option<PyStmt>> {
@@ -1583,7 +1580,7 @@ impl IndentedPythonParser {
         let parts: Vec<&str> = line.content.split(" import ").collect();
         if parts.len() != 2 {
             #[cfg(target_arch = "wasm32")]
-            return Err(Error::ParseError(format!(
+            return Err(Error::Parse(format!(
                 "Invalid from-import statement: {}",
                 line.content
             )));
@@ -1613,6 +1610,12 @@ impl IndentedPythonParser {
             }
         }
 
-        Ok(Some(PyStmt::ImportFrom { module, names, aliases }))
+        // Combine names and aliases into names: Vec<(String, Option<String>)>
+        let name_pairs: Vec<(String, Option<String>)> = names.into_iter().zip(aliases.into_iter()).collect();
+        Ok(Some(PyStmt::ImportFrom {
+            module: Some(module),
+            names: name_pairs,
+            level: 0  // Direct import, not relative
+        }))
     }
 }

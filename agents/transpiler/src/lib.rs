@@ -98,6 +98,9 @@ use async_trait::async_trait;
 
 use code_generator::CodeGenerator;
 pub use class_translator::ClassTranslator;
+use python_parser::PythonParser;
+use python_to_rust::PythonToRustTranslator;
+use feature_translator::FeatureTranslator;
 
 #[cfg(not(target_arch = "wasm32"))]
 use portalis_core::{Agent, AgentCapability, AgentId, ArtifactMetadata, Error, Result};
@@ -109,7 +112,7 @@ pub type Result<T> = std::result::Result<T, Error>;
 #[derive(Debug)]
 pub enum Error {
     CodeGeneration(String),
-    ParseError(String),
+    Parse(String),
     Other(String),
 }
 
@@ -118,7 +121,7 @@ impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Error::CodeGeneration(msg) => write!(f, "Code generation error: {}", msg),
-            Error::ParseError(msg) => write!(f, "Parse error: {}", msg),
+            Error::Parse(msg) => write!(f, "Parse error: {}", msg),
             Error::Other(msg) => write!(f, "Error: {}", msg),
         }
     }
@@ -172,7 +175,14 @@ pub struct TranspilerOutput {
 #[derive(Debug, Clone)]
 pub enum TranslationMode {
     /// Pattern-based translation (CPU, no external dependencies)
+    /// Uses CodeGenerator for JSON-based typed functions
     PatternBased,
+    /// Full AST-based translation pipeline
+    /// Uses PythonParser → PythonToRustTranslator for complete Python source
+    AstBased,
+    /// Feature-based translation with stdlib mapping
+    /// Uses FeatureTranslator for comprehensive Python → Rust translation
+    FeatureBased,
     /// NeMo-powered translation (GPU-accelerated, requires NeMo service)
     #[cfg(feature = "nemo")]
     NeMo {
@@ -213,6 +223,16 @@ impl TranspilerAgent {
         }
     }
 
+    /// Create transpiler with AST-based translation mode
+    pub fn with_ast_mode() -> Self {
+        Self::with_mode(TranslationMode::AstBased)
+    }
+
+    /// Create transpiler with feature-based translation mode
+    pub fn with_feature_mode() -> Self {
+        Self::with_mode(TranslationMode::FeatureBased)
+    }
+
     /// Get current translation mode
     pub fn translation_mode(&self) -> &TranslationMode {
         &self.translation_mode
@@ -221,9 +241,71 @@ impl TranspilerAgent {
     /// Generate Rust function from typed function info
     #[cfg(not(target_arch = "wasm32"))]
     fn generate_function(&self, func: &serde_json::Value) -> Result<String> {
-        // Use the advanced code generator with temporary instance
+        // Check if source code is available for AST-based translation
+        if let Some(source_code) = self.extract_python_source(func) {
+            match &self.translation_mode {
+                TranslationMode::AstBased => {
+                    return self.translate_with_ast(&source_code);
+                }
+                TranslationMode::FeatureBased => {
+                    return self.translate_with_features(&source_code);
+                }
+                _ => {}
+            }
+        }
+
+        // Fallback to pattern-based CodeGenerator
         let mut generator = CodeGenerator::new();
         generator.generate_function(func)
+    }
+
+    /// Translate Python source code using AST-based translator
+    #[cfg(not(target_arch = "wasm32"))]
+    fn translate_with_ast(&self, python_code: &str) -> Result<String> {
+        // Parse Python source
+        let parser = PythonParser::new(python_code.to_string(), "<string>".to_string());
+        let module = parser.parse()?;
+
+        // Translate to Rust
+        let mut translator = PythonToRustTranslator::new();
+        translator.translate_module(&module)
+    }
+
+    /// Translate Python source code using feature-based translator
+    #[cfg(not(target_arch = "wasm32"))]
+    fn translate_with_features(&self, python_code: &str) -> Result<String> {
+        let mut translator = FeatureTranslator::new();
+        translator.translate(python_code)
+    }
+
+    /// Translate complete Python module to Rust (public API)
+    ///
+    /// This method provides a high-level interface for translating Python source code
+    /// using the configured translation mode.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn translate_python_module(&self, python_source: &str) -> Result<String> {
+        match &self.translation_mode {
+            TranslationMode::PatternBased => {
+                // For pattern-based, we need to parse and extract functions
+                // This is a simplified approach - in production you'd parse the module
+                Err(Error::CodeGeneration(
+                    "PatternBased mode requires pre-analyzed JSON input. Use AstBased or FeatureBased for raw Python source.".into()
+                ))
+            }
+            TranslationMode::AstBased => {
+                self.translate_with_ast(python_source)
+            }
+            TranslationMode::FeatureBased => {
+                self.translate_with_features(python_source)
+            }
+            #[cfg(feature = "nemo")]
+            TranslationMode::NeMo { service_url, mode, temperature } => {
+                // NeMo requires async, this is a sync method
+                Err(Error::CodeGeneration(
+                    "NeMo mode requires async translation. Use translate_with_nemo directly.".into()
+                ))
+            }
+        }
     }
 
     /// Translate Python code using NeMo service
@@ -489,5 +571,98 @@ mod tests {
         assert!(output.rust_code.contains("pub fn fibonacci"));
         assert!(output.rust_code.contains("if n <= 1"));
         assert!(output.rust_code.contains("fibonacci(n - 1) + fibonacci(n - 2)"));
+    }
+
+    #[test]
+    fn test_feature_based_translation() {
+        let agent = TranspilerAgent::with_feature_mode();
+
+        let python_code = r#"
+x = 42
+y = 3.14
+msg = "hello"
+result = x + 10
+"#;
+
+        let rust_code = agent.translate_python_module(python_code).unwrap();
+
+        assert!(rust_code.contains("let x: i32 = 42"));
+        assert!(rust_code.contains("let y: f64 = 3.14"));
+        assert!(rust_code.contains("let msg: String = \"hello\""));
+        assert!(rust_code.contains("let result: i32 = x + 10"));
+    }
+
+    #[test]
+    fn test_ast_based_translation() {
+        let agent = TranspilerAgent::with_ast_mode();
+
+        let python_code = r#"
+def add(a, b):
+    return a + b
+"#;
+
+        let rust_code = agent.translate_python_module(python_code).unwrap();
+
+        assert!(rust_code.contains("fn add"));
+        assert!(rust_code.contains("return a + b"));
+    }
+
+    #[test]
+    fn test_feature_based_with_imports() {
+        let agent = TranspilerAgent::with_feature_mode();
+
+        let python_code = r#"
+import math
+x = math.sqrt(16)
+"#;
+
+        let rust_code = agent.translate_python_module(python_code).unwrap();
+
+        // Should have use statements for math module
+        assert!(rust_code.contains("use") || rust_code.contains("math"));
+    }
+
+    #[test]
+    fn test_feature_based_with_control_flow() {
+        let agent = TranspilerAgent::with_feature_mode();
+
+        let python_code = r#"
+x = 10
+if x > 5:
+    y = 20
+else:
+    y = 30
+"#;
+
+        let rust_code = agent.translate_python_module(python_code).unwrap();
+
+        assert!(rust_code.contains("let x: i32 = 10"));
+        assert!(rust_code.contains("if x > 5"));
+    }
+
+    #[tokio::test]
+    async fn test_ast_mode_with_source_code() {
+        let agent = TranspilerAgent::with_ast_mode();
+
+        let input = TranspilerInput {
+            typed_functions: vec![json!({
+                "name": "add",
+                "params": [
+                    {"name": "a", "rust_type": {"I32": null}},
+                    {"name": "b", "rust_type": {"I32": null}}
+                ],
+                "return_type": {"I32": null},
+                "source_code": "def add(a, b):\n    return a + b"
+            })],
+            typed_classes: vec![],
+            use_statements: vec![],
+            cargo_dependencies: vec![],
+            api_contract: json!({}),
+        };
+
+        let output = agent.execute(input).await.unwrap();
+
+        // Should use AST translation since source_code is available
+        assert!(output.rust_code.contains("fn add"));
     }
 }
