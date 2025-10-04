@@ -1,0 +1,177 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portalis-rust-config
+  namespace: portalis-deployment
+  labels:
+    app: portalis-rust-transpiler
+    component: transpiler
+data:
+  # Environment configuration
+  environment: "production"
+  log_level: "info"
+
+  # Performance tuning
+  workers: "4"
+  batch_size: "32"
+  max_queue_size: "100"
+  max_concurrent_requests: "200"
+
+  # Rust agent configuration
+  rust_thread_pool_size: "16"
+  rust_async_workers: "8"
+  rust_compilation_timeout: "300"
+
+  # GPU configuration
+  cuda_device_id: "0"
+  cuda_streams: "4"
+  cuda_batch_size: "16"
+
+  # Triton configuration
+  triton_protocol: "http"
+  triton_timeout: "60"
+  triton_max_retries: "3"
+
+  # NeMo configuration
+  nemo_batch_size: "8"
+  nemo_max_length: "2048"
+  nemo_temperature: "0.2"
+
+  # Cache configuration
+  enable_cache: "true"
+  cache_size_mb: "1024"
+  cache_ttl_seconds: "3600"
+
+  # Monitoring configuration
+  enable_metrics: "true"
+  enable_tracing: "true"
+  enable_profiling: "false"
+  metrics_port: "9090"
+
+  # Health check configuration
+  health_check_interval: "30"
+  health_check_timeout: "10"
+
+  # WASM compilation settings
+  wasm_optimization_level: "3"
+  wasm_enable_simd: "true"
+  wasm_enable_threads: "false"
+
+  # Translation settings
+  translation_mode: "balanced"
+  enable_type_inference: "true"
+  enable_lifetime_analysis: "true"
+  enable_ownership_validation: "true"
+
+  # API settings
+  max_request_size_mb: "50"
+  request_timeout_seconds: "300"
+  enable_streaming: "true"
+
+  # Rate limiting
+  rate_limit_per_minute: "1000"
+  rate_limit_burst: "100"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portalis-rust-transpiler-scripts
+  namespace: portalis-deployment
+  labels:
+    app: portalis-rust-transpiler
+    component: scripts
+data:
+  warm-cache.sh: |
+    #!/bin/bash
+    # Warm up model cache on startup
+    set -e
+
+    echo "Warming up Rust transpiler cache..."
+
+    # Test basic translation
+    curl -X POST http://localhost:8000/api/v1/translation/translate \
+      -H "Content-Type: application/json" \
+      -d '{"python_code": "def test(): pass", "mode": "fast"}' \
+      > /dev/null 2>&1 || true
+
+    echo "Cache warm-up complete"
+
+  health-check.sh: |
+    #!/bin/bash
+    # Comprehensive health check
+    set -e
+
+    # Check Python API
+    HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/health)
+    if [ "$HTTP_STATUS" -ne 200 ]; then
+      echo "Python API health check failed: $HTTP_STATUS"
+      exit 1
+    fi
+
+    # Check Rust service
+    RUST_STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:8001/health 2>/dev/null || echo "000")
+    if [ "$RUST_STATUS" != "000" ] && [ "$RUST_STATUS" -ne 200 ]; then
+      echo "Rust service health check failed: $RUST_STATUS"
+      exit 1
+    fi
+
+    # Check GPU availability
+    nvidia-smi > /dev/null 2>&1 || {
+      echo "GPU not available"
+      exit 1
+    }
+
+    echo "All health checks passed"
+
+  metrics-export.sh: |
+    #!/bin/bash
+    # Export custom metrics
+    set -e
+
+    # Export GPU metrics
+    GPU_UTIL=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits | head -1)
+    GPU_MEM=$(nvidia-smi --query-gpu=memory.used --format=csv,noheader,nounits | head -1)
+    GPU_TEMP=$(nvidia-smi --query-gpu=temperature.gpu --format=csv,noheader,nounits | head -1)
+
+    # Send to Prometheus pushgateway if available
+    PUSHGATEWAY="${PUSHGATEWAY_URL:-pushgateway.portalis-monitoring.svc.cluster.local:9091}"
+
+    cat <<EOF | curl --data-binary @- http://$PUSHGATEWAY/metrics/job/rust-transpiler/instance/$POD_NAME || true
+    # TYPE gpu_utilization gauge
+    gpu_utilization{pod="$POD_NAME"} $GPU_UTIL
+    # TYPE gpu_memory_used_mb gauge
+    gpu_memory_used_mb{pod="$POD_NAME"} $GPU_MEM
+    # TYPE gpu_temperature_celsius gauge
+    gpu_temperature_celsius{pod="$POD_NAME"} $GPU_TEMP
+    EOF
+
+  benchmark.sh: |
+    #!/bin/bash
+    # Run performance benchmark
+    set -e
+
+    echo "Running Rust transpiler benchmark..."
+
+    # Test single translation
+    START=$(date +%s%N)
+    curl -X POST http://localhost:8000/api/v1/translation/translate \
+      -H "Content-Type: application/json" \
+      -d '{"python_code": "def fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)", "mode": "fast"}' \
+      > /dev/null 2>&1
+    END=$(date +%s%N)
+    DURATION_MS=$(( (END - START) / 1000000 ))
+
+    echo "Single translation: ${DURATION_MS}ms"
+
+    # Test concurrent translations
+    echo "Testing concurrent translations..."
+    for i in {1..10}; do
+      curl -X POST http://localhost:8000/api/v1/translation/translate \
+        -H "Content-Type: application/json" \
+        -d "{\"python_code\": \"def test_$i(): pass\", \"mode\": \"fast\"}" \
+        > /dev/null 2>&1 &
+    done
+    wait
+
+    echo "Benchmark complete"

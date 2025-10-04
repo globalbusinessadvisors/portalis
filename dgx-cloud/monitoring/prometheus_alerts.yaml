@@ -1,0 +1,245 @@
+# Prometheus Alert Rules for Portalis DGX Cloud
+# Production monitoring and alerting
+
+groups:
+  - name: portalis_rust_services
+    interval: 30s
+    rules:
+      # Service Health
+      - alert: ServiceDown
+        expr: up{job=~"portalis-.*"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          component: "{{ $labels.job }}"
+        annotations:
+          summary: "Portalis service {{ $labels.job }} is down"
+          description: "Service {{ $labels.job }} on {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(portalis_transpiler_errors_total[5m])) by (service)
+            /
+            sum(rate(portalis_transpiler_requests_total[5m])) by (service)
+          ) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: transpiler
+        annotations:
+          summary: "High error rate on {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: 5%)"
+
+      # GPU Metrics
+      - alert: HighGPUTemperature
+        expr: |
+          portalis_transpiler_gpu_temperature_celsius > 85
+          or
+          dcgm_gpu_temperature_celsius > 85
+        for: 5m
+        labels:
+          severity: critical
+          component: gpu
+        annotations:
+          summary: "GPU {{ $labels.gpu_id }} temperature is critically high"
+          description: "GPU temperature is {{ $value }}°C (threshold: 85°C)"
+
+      - alert: GPUMemorySaturation
+        expr: |
+          (
+            portalis_transpiler_gpu_memory_used_bytes
+            /
+            portalis_transpiler_gpu_memory_total_bytes
+          ) > 0.95
+        for: 10m
+        labels:
+          severity: warning
+          component: gpu
+        annotations:
+          summary: "GPU {{ $labels.gpu_id }} memory is saturated"
+          description: "GPU memory usage is {{ $value | humanizePercentage }} (threshold: 95%)"
+
+      - alert: LowGPUUtilization
+        expr: |
+          avg_over_time(portalis_transpiler_gpu_utilization_percent[30m]) < 20
+        for: 30m
+        labels:
+          severity: info
+          component: gpu
+        annotations:
+          summary: "GPU {{ $labels.gpu_id }} utilization is low"
+          description: "Average GPU utilization is {{ $value }}% over 30 minutes (threshold: 20%)"
+
+      # Performance
+      - alert: HighTranslationLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(portalis_transpiler_request_duration_seconds_bucket[5m])) by (le, endpoint)) > 1.0
+        for: 5m
+        labels:
+          severity: warning
+          component: transpiler
+        annotations:
+          summary: "High translation latency on {{ $labels.endpoint }}"
+          description: "P95 latency is {{ $value }}s (threshold: 1.0s)"
+
+      - alert: JobQueueBacklog
+        expr: portalis_orchestration_jobs_queued{priority=~"critical|high"} > 100
+        for: 3m
+        labels:
+          severity: warning
+          component: orchestration
+        annotations:
+          summary: "High-priority job queue backlog"
+          description: "{{ $labels.priority }} priority queue has {{ $value }} jobs waiting"
+
+      # Resource Usage
+      - alert: HighCPUUsage
+        expr: |
+          (
+            rate(container_cpu_usage_seconds_total{namespace="portalis", pod=~"portalis-.*"}[5m])
+            /
+            container_spec_cpu_quota{namespace="portalis", pod=~"portalis-.*"}
+          ) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          component: "{{ $labels.pod }}"
+        annotations:
+          summary: "High CPU usage on {{ $labels.pod }}"
+          description: "CPU usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            container_memory_working_set_bytes{namespace="portalis", pod=~"portalis-.*"}
+            /
+            container_spec_memory_limit_bytes{namespace="portalis", pod=~"portalis-.*"}
+          ) > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          component: "{{ $labels.pod }}"
+        annotations:
+          summary: "High memory usage on {{ $labels.pod }}"
+          description: "Memory usage is {{ $value | humanizePercentage }} (threshold: 90%)"
+
+      # Cache Performance
+      - alert: LowCacheHitRate
+        expr: |
+          (
+            sum(rate(portalis_transpiler_cache_hits_total[15m]))
+            /
+            (
+              sum(rate(portalis_transpiler_cache_hits_total[15m]))
+              +
+              sum(rate(portalis_transpiler_cache_misses_total[15m]))
+            )
+          ) < 0.5
+        for: 15m
+        labels:
+          severity: info
+          component: cache
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} over 15 minutes (threshold: 50%)"
+
+      # NeMo Bridge
+      - alert: TritonServerErrors
+        expr: rate(portalis_nemo_triton_errors_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: warning
+          component: nemo-bridge
+        annotations:
+          summary: "Triton server errors detected"
+          description: "Triton error rate: {{ $value }} errors/sec"
+
+      - alert: HighInferenceLatency
+        expr: |
+          histogram_quantile(0.95, sum(rate(portalis_nemo_inference_duration_seconds_bucket[5m])) by (le, model_name)) > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          component: nemo-bridge
+        annotations:
+          summary: "High inference latency for {{ $labels.model_name }}"
+          description: "P95 inference latency is {{ $value }}s (threshold: 0.5s)"
+
+      # WASM Pipeline
+      - alert: WASMPipelineFailures
+        expr: |
+          rate(portalis_wasm_pipeline_duration_seconds_count{status="failed"}[10m]) > 0.1
+        for: 10m
+        labels:
+          severity: warning
+          component: wasm-pipeline
+        annotations:
+          summary: "WASM pipeline failures detected"
+          description: "Failure rate: {{ $value }} failures/sec"
+
+  - name: portalis_gpu_health
+    interval: 15s
+    rules:
+      - alert: GPUXIDErrors
+        expr: increase(dcgm_gpu_xid_errors[5m]) > 0
+        for: 1m
+        labels:
+          severity: critical
+          component: gpu
+        annotations:
+          summary: "GPU {{ $labels.gpu }} XID errors detected"
+          description: "XID error count increased on GPU {{ $labels.gpu }}"
+
+      - alert: GPUPowerThrottle
+        expr: dcgm_gpu_power_usage_watts > 350
+        for: 10m
+        labels:
+          severity: warning
+          component: gpu
+        annotations:
+          summary: "GPU {{ $labels.gpu }} power usage high"
+          description: "Power usage is {{ $value }}W (may trigger thermal throttling)"
+
+      - alert: GPUPCIeErrors
+        expr: increase(dcgm_gpu_pcie_replay_counter[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          component: gpu
+        annotations:
+          summary: "GPU {{ $labels.gpu }} PCIe errors detected"
+          description: "PCIe replay counter increased by {{ $value }} in 5 minutes"
+
+  - name: portalis_scaling
+    interval: 1m
+    rules:
+      - alert: PodScalingNeeded
+        expr: |
+          (
+            avg_over_time(portalis_transpiler_gpu_utilization_percent[10m]) > 80
+            and
+            count(up{job="portalis-transpiler"} == 1) < 20
+          )
+        for: 5m
+        labels:
+          severity: info
+          component: autoscaling
+        annotations:
+          summary: "Transpiler service may need scaling"
+          description: "Average GPU utilization is high and replica count is below maximum"
+
+      - alert: PodScaleDownOpportunity
+        expr: |
+          (
+            avg_over_time(portalis_transpiler_gpu_utilization_percent[30m]) < 30
+            and
+            count(up{job="portalis-transpiler"} == 1) > 3
+          )
+        for: 30m
+        labels:
+          severity: info
+          component: autoscaling
+        annotations:
+          summary: "Transpiler service may be overprovisioned"
+          description: "Average GPU utilization is low, consider scaling down"

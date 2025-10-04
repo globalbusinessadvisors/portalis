@@ -1,0 +1,209 @@
+# Prometheus Configuration for Portalis
+# Standalone/Docker deployment configuration
+#
+# This configuration is designed for standalone or Docker deployments.
+# For Kubernetes deployments, use nim-microservices/k8s/monitoring/prometheus.yml
+#
+# Week 33 - Phase 4: Monitoring and Observability
+
+# Global configuration
+global:
+  # How frequently to scrape targets
+  scrape_interval: 15s
+
+  # How frequently to evaluate rules
+  evaluation_interval: 30s
+
+  # Scrape timeout (default: 10s)
+  scrape_timeout: 10s
+
+  # External labels to attach to any time series or alerts
+  external_labels:
+    cluster: 'portalis-standalone'
+    environment: 'production'
+    service: 'portalis'
+
+# Alertmanager configuration
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets:
+            # Alertmanager service (adjust host/port as needed)
+            - 'localhost:9093'
+            # For Docker: use service name
+            # - 'alertmanager:9093'
+
+# Load alert rules
+rule_files:
+  # Alert rules file with 28 rules across 10 groups
+  - '/etc/prometheus/alerts.yml'
+  # Additional custom rules can be added here
+  # - '/etc/prometheus/rules/*.yml'
+
+# Scrape configurations
+# Each job defines a set of targets and parameters for scraping metrics
+scrape_configs:
+  # Main Portalis service
+  # Scrapes metrics from the Portalis CLI/service application
+  - job_name: 'portalis'
+    # Metrics endpoint configuration
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          # Local deployment
+          - 'localhost:8080'
+          # Docker deployment (uncomment and adjust as needed)
+          # - 'portalis:8080'
+    # Additional labels for all metrics from this job
+    relabel_configs:
+      - target_label: service
+        replacement: portalis-main
+      - target_label: component
+        replacement: translation
+
+  # Portalis health checks
+  # Separate endpoint for health/readiness monitoring
+  - job_name: 'portalis-health'
+    metrics_path: '/health'
+    static_configs:
+      - targets:
+          - 'localhost:8080'
+          # - 'portalis:8080'  # Docker
+    relabel_configs:
+      - target_label: service
+        replacement: portalis-main
+      - target_label: component
+        replacement: health
+
+  # NIM microservices (Python API)
+  # Translation API service metrics
+  - job_name: 'portalis-nim'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          - 'localhost:8000'
+          # - 'nim-api:8000'  # Docker
+    relabel_configs:
+      - target_label: service
+        replacement: portalis-nim
+      - target_label: component
+        replacement: api
+
+  # Rust transpiler service
+  # CUDA-accelerated transpilation service
+  - job_name: 'portalis-rust-transpiler'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          - 'localhost:8081'
+          # - 'rust-transpiler:8081'  # Docker
+    relabel_configs:
+      - target_label: service
+        replacement: portalis-transpiler
+      - target_label: component
+        replacement: rust
+
+  # NVIDIA Triton Inference Server
+  # Serves AI models for translation assistance
+  - job_name: 'triton-inference-server'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          # Triton metrics endpoint (HTTP)
+          - 'localhost:8002'
+          # - 'triton:8002'  # Docker
+    relabel_configs:
+      - target_label: service
+        replacement: triton-inference-server
+      - target_label: component
+        replacement: inference
+
+  # NVIDIA DCGM Exporter (GPU metrics)
+  # Collects detailed GPU telemetry from NVIDIA GPUs
+  # Only enable if GPUs are available
+  - job_name: 'dcgm-exporter'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          - 'localhost:9400'
+          # - 'dcgm-exporter:9400'  # Docker
+    # Optional: only scrape if target is reachable
+    relabel_configs:
+      - target_label: service
+        replacement: gpu-metrics
+      - target_label: component
+        replacement: dcgm
+
+  # Node Exporter (system metrics)
+  # Collects host-level metrics (CPU, memory, disk, network)
+  - job_name: 'node-exporter'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          - 'localhost:9100'
+          # - 'node-exporter:9100'  # Docker
+    relabel_configs:
+      - target_label: service
+        replacement: system-metrics
+      - target_label: component
+        replacement: node
+
+  # Prometheus itself (self-monitoring)
+  # Monitors Prometheus server health and performance
+  - job_name: 'prometheus'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets:
+          - 'localhost:9090'
+    relabel_configs:
+      - target_label: service
+        replacement: prometheus
+      - target_label: component
+        replacement: monitoring
+
+  # Optional: cAdvisor (container metrics)
+  # Uncomment if running in Docker and want container-level metrics
+  # - job_name: 'cadvisor'
+  #   metrics_path: '/metrics'
+  #   static_configs:
+  #     - targets:
+  #         - 'localhost:8080'
+  #         # - 'cadvisor:8080'  # Docker
+  #   relabel_configs:
+  #     - target_label: service
+  #       replacement: container-metrics
+  #     - target_label: component
+  #       replacement: cadvisor
+
+  # Optional: Alertmanager (self-monitoring)
+  # Uncomment to monitor Alertmanager itself
+  # - job_name: 'alertmanager'
+  #   metrics_path: '/metrics'
+  #   static_configs:
+  #     - targets:
+  #         - 'localhost:9093'
+  #         # - 'alertmanager:9093'  # Docker
+  #   relabel_configs:
+  #     - target_label: service
+  #       replacement: alertmanager
+  #     - target_label: component
+  #       replacement: alerting
+
+# Storage configuration is now handled via command-line flags
+# See docker-compose.yml for --storage.tsdb.retention.time and --storage.tsdb.path
+
+# Optional: Remote write configuration
+# Uncomment to send metrics to remote storage (e.g., Grafana Cloud, Thanos)
+# remote_write:
+#   - url: "https://prometheus-remote-write-endpoint/api/v1/write"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-password"
+
+# Optional: Remote read configuration
+# Uncomment to query metrics from remote storage
+# remote_read:
+#   - url: "https://prometheus-remote-read-endpoint/api/v1/read"
+#     basic_auth:
+#       username: "your-username"
+#       password: "your-password"

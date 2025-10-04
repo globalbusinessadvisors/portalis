@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portalis: Python → Rust → WASM Transpiler</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+
+        .editor-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .editor-panel {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+        }
+
+        .editor-panel h2 {
+            background: #333;
+            color: white;
+            padding: 15px 20px;
+            font-size: 1.1rem;
+        }
+
+        textarea, pre {
+            width: 100%;
+            height: 400px;
+            padding: 20px;
+            border: none;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            line-height: 1.5;
+            resize: vertical;
+        }
+
+        textarea {
+            background: #f8f9fa;
+        }
+
+        pre {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            overflow: auto;
+            margin: 0;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .stats {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            display: flex;
+            justify-content: space-around;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-item {
+            text-align: center;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            color: #333;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .error {
+            color: #e74c3c;
+        }
+
+        .success {
+            color: #27ae60;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-size: 1.2rem;
+        }
+
+        @media (max-width: 768px) {
+            .editor-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Portalis Transpiler</h1>
+            <p>Real-time Python → Rust translation powered by WebAssembly</p>
+        </header>
+
+        <div id="loading" class="loading">Loading WASM module...</div>
+
+        <div id="app" style="display: none;">
+            <div class="editor-container">
+                <div class="editor-panel">
+                    <h2>🐍 Python Input</h2>
+                    <textarea id="python-input" placeholder="Enter Python code...">def fibonacci(n: int) -> int:
+    if n <= 1:
+        return n
+    return fibonacci(n - 1) + fibonacci(n - 2)
+
+result = fibonacci(10)
+print(result)</textarea>
+                </div>
+
+                <div class="editor-panel">
+                    <h2>🦀 Rust Output</h2>
+                    <pre id="rust-output">// Rust code will appear here...</pre>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button id="translate-btn">Translate →</button>
+                <button id="copy-btn">📋 Copy Rust</button>
+                <button id="download-btn">💾 Download .rs</button>
+            </div>
+
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-label">Lines</div>
+                    <div class="stat-value" id="line-count">0</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Translation Time</div>
+                    <div class="stat-value" id="translation-time">0ms</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Version</div>
+                    <div class="stat-value" id="version">-</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Status</div>
+                    <div class="stat-value success" id="status">Ready</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import init, { TranspilerWasm } from '../../wasm-pkg/web/portalis_transpiler.js';
+
+        let transpiler = null;
+
+        async function initTranspiler() {
+            try {
+                const startTime = performance.now();
+                await init();
+                transpiler = new TranspilerWasm();
+
+                const loadTime = (performance.now() - startTime).toFixed(2);
+                console.log(`WASM loaded in ${loadTime}ms`);
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('app').style.display = 'block';
+                document.getElementById('version').textContent = TranspilerWasm.version();
+
+                setupEventListeners();
+                translate(); // Auto-translate initial example
+            } catch (error) {
+                document.getElementById('loading').textContent = 'Error loading WASM: ' + error.message;
+                console.error('Failed to initialize:', error);
+            }
+        }
+
+        function setupEventListeners() {
+            document.getElementById('translate-btn').addEventListener('click', translate);
+            document.getElementById('copy-btn').addEventListener('click', copyToClipboard);
+            document.getElementById('download-btn').addEventListener('click', downloadRust);
+
+            // Auto-translate on input (debounced)
+            let timeout;
+            document.getElementById('python-input').addEventListener('input', () => {
+                clearTimeout(timeout);
+                timeout = setTimeout(translate, 500);
+            });
+        }
+
+        function translate() {
+            if (!transpiler) {
+                alert('Transpiler not ready. Please wait...');
+                return;
+            }
+
+            const pythonCode = document.getElementById('python-input').value;
+            const outputElement = document.getElementById('rust-output');
+            const statusElement = document.getElementById('status');
+
+            const startTime = performance.now();
+
+            try {
+                const rustCode = transpiler.translate(pythonCode);
+
+                outputElement.textContent = rustCode;
+
+                const translationTime = (performance.now() - startTime).toFixed(2);
+                const lineCount = rustCode.split('\\n').length;
+
+                document.getElementById('line-count').textContent = lineCount;
+                document.getElementById('translation-time').textContent = `${translationTime}ms`;
+
+                statusElement.textContent = 'Success';
+                statusElement.className = 'stat-value success';
+            } catch (error) {
+                outputElement.textContent = `Error: ${error}`;
+                statusElement.textContent = 'Error';
+                statusElement.className = 'stat-value error';
+                console.error('Translation error:', error);
+            }
+        }
+
+        function copyToClipboard() {
+            const rustCode = document.getElementById('rust-output').textContent;
+            navigator.clipboard.writeText(rustCode).then(() => {
+                const btn = document.getElementById('copy-btn');
+                const originalText = btn.textContent;
+                btn.textContent = '✓ Copied!';
+                setTimeout(() => btn.textContent = originalText, 2000);
+            });
+        }
+
+        function downloadRust() {
+            const rustCode = document.getElementById('rust-output').textContent;
+            const blob = new Blob([rustCode], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'generated.rs';
+            a.click();
+
+            URL.revokeObjectURL(url);
+        }
+
+        // Initialize on load
+        initTranspiler();
+    </script>
+</body>
+</html>

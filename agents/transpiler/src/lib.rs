@@ -4,14 +4,122 @@
 
 mod code_generator;
 pub mod class_translator;
+pub mod python_ast;
+pub mod python_to_rust;
+pub mod simple_parser;
+pub mod indented_parser;
+pub mod feature_translator;
+pub mod stdlib_mapper;
+pub mod stdlib_mappings_comprehensive;
+pub mod wasi_fs;
+pub mod py_to_rust_fs;
+pub mod import_analyzer;
+pub mod cargo_generator;
+pub mod external_packages;
 
+// WASM bindings (only compile for wasm32 target)
+#[cfg(target_arch = "wasm32")]
+pub mod wasm;
+
+#[cfg(test)]
+mod test_import_aliases;
+
+#[cfg(test)]
+mod day3_features_test;
+
+#[cfg(test)]
+mod day4_5_features_test;
+
+#[cfg(test)]
+mod day6_7_features_test;
+
+#[cfg(test)]
+mod day8_9_features_test;
+
+#[cfg(test)]
+mod day10_11_features_test;
+
+#[cfg(test)]
+mod day12_13_features_test;
+
+#[cfg(test)]
+mod day14_15_features_test;
+
+#[cfg(test)]
+mod day16_17_features_test;
+
+#[cfg(test)]
+mod day18_19_features_test;
+
+#[cfg(test)]
+mod day20_21_features_test;
+
+#[cfg(test)]
+mod day22_23_features_test;
+
+#[cfg(test)]
+mod day24_25_features_test;
+
+#[cfg(test)]
+mod day26_27_features_test;
+
+#[cfg(test)]
+mod day28_29_features_test;
+
+#[cfg(test)]
+mod day30_features_test;
+
+#[cfg(not(target_arch = "wasm32"))]
 use async_trait::async_trait;
+
 use code_generator::CodeGenerator;
 pub use class_translator::ClassTranslator;
+
+#[cfg(not(target_arch = "wasm32"))]
 use portalis_core::{Agent, AgentCapability, AgentId, ArtifactMetadata, Error, Result};
+
+#[cfg(target_arch = "wasm32")]
+pub type Result<T> = std::result::Result<T, Error>;
+
+#[cfg(target_arch = "wasm32")]
+#[derive(Debug)]
+pub enum Error {
+    CodeGeneration(String),
+    ParseError(String),
+    Other(String),
+}
+
+#[cfg(target_arch = "wasm32")]
+impl std::fmt::Display for Error {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Error::CodeGeneration(msg) => write!(f, "Code generation error: {}", msg),
+            Error::ParseError(msg) => write!(f, "Parse error: {}", msg),
+            Error::Other(msg) => write!(f, "Error: {}", msg),
+        }
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl std::error::Error for Error {}
+
+#[cfg(target_arch = "wasm32")]
+impl From<String> for Error {
+    fn from(s: String) -> Self {
+        Error::Other(s)
+    }
+}
+
+#[cfg(target_arch = "wasm32")]
+impl From<&str> for Error {
+    fn from(s: &str) -> Self {
+        Error::Other(s.to_string())
+    }
+}
+
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "nemo")]
+#[cfg(all(feature = "nemo", not(target_arch = "wasm32")))]
 use portalis_nemo_bridge::{NeMoClient, TranslateRequest};
 
 /// Input from Analysis Agent
@@ -28,6 +136,7 @@ pub struct TranspilerInput {
 }
 
 /// Generated Rust code
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TranspilerOutput {
     pub rust_code: String,
@@ -35,6 +144,7 @@ pub struct TranspilerOutput {
 }
 
 /// Translation mode configuration
+#[cfg(not(target_arch = "wasm32"))]
 #[derive(Debug, Clone)]
 pub enum TranslationMode {
     /// Pattern-based translation (CPU, no external dependencies)
@@ -48,6 +158,7 @@ pub enum TranslationMode {
     },
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl Default for TranslationMode {
     fn default() -> Self {
         Self::PatternBased
@@ -55,11 +166,13 @@ impl Default for TranslationMode {
 }
 
 /// Transpiler Agent implementation
+#[cfg(not(target_arch = "wasm32"))]
 pub struct TranspilerAgent {
     id: AgentId,
     translation_mode: TranslationMode,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl TranspilerAgent {
     pub fn new() -> Self {
         Self {
@@ -82,6 +195,7 @@ impl TranspilerAgent {
     }
 
     /// Generate Rust function from typed function info
+    #[cfg(not(target_arch = "wasm32"))]
     fn generate_function(&self, func: &serde_json::Value) -> Result<String> {
         // Use the advanced code generator with temporary instance
         let mut generator = CodeGenerator::new();
@@ -126,6 +240,7 @@ impl TranspilerAgent {
     }
 
     /// Fallback generate (old implementation)
+    #[cfg(not(target_arch = "wasm32"))]
     fn generate_function_old(&self, func: &serde_json::Value) -> Result<String> {
         let name = func.get("name")
             .and_then(|n| n.as_str())
@@ -223,12 +338,14 @@ impl TranspilerAgent {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl Default for TranspilerAgent {
     fn default() -> Self {
         Self::new()
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 #[async_trait]
 impl Agent for TranspilerAgent {
     type Input = TranspilerInput;

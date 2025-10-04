@@ -5,19 +5,38 @@ edition.workspace = true
 license.workspace = true
 authors.workspace = true
 
+[lib]
+crate-type = ["cdylib", "rlib"]
+
 [dependencies]
+anyhow.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+
+# Non-WASM dependencies
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 portalis-core = { path = "../../core" }
 portalis-nemo-bridge = { path = "../nemo-bridge", optional = true }
 tokio.workspace = true
 async-trait.workspace = true
-anyhow.workspace = true
-serde.workspace = true
-serde_json.workspace = true
 tracing.workspace = true
+
+# WASM-specific dependencies
+[target.'cfg(target_arch = "wasm32")'.dependencies]
+wasm-bindgen = { version = "0.2", optional = true }
+wasm-bindgen-futures = { version = "0.4", optional = true }
+js-sys = { version = "0.3", optional = true }
+web-sys = { version = "0.3", features = ["console"], optional = true }
+console_error_panic_hook = { version = "0.1", optional = true }
+serde-wasm-bindgen = { version = "0.6", optional = true }
+# WASI support for filesystem operations
+wasi = { version = "0.11", optional = true }
 
 [features]
 default = []
 nemo = ["portalis-nemo-bridge"]
+wasm = ["wasm-bindgen", "wasm-bindgen-futures", "js-sys", "web-sys", "console_error_panic_hook", "serde-wasm-bindgen"]
+wasi = ["dep:wasi"]
 
 [dev-dependencies]
 tokio = { workspace = true, features = ["test-util"] }
@@ -26,3 +45,7 @@ wiremock = "0.6"
 [[bench]]
 name = "translation_benchmark"
 harness = false
+
+[[example]]
+name = "translate_file"
+path = "examples/translate_file.rs"

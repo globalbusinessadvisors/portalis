@@ -1,0 +1,589 @@
+# Kubernetes Deployment Manifests for Portalis Rust Services
+# DGX Cloud Integration - Week 28
+
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: portalis
+  labels:
+    name: portalis
+    env: production
+
+---
+# ConfigMap for Rust service configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: portalis-rust-config
+  namespace: portalis
+data:
+  RUST_LOG: "info"
+  RUST_BACKTRACE: "1"
+  RAY_ADDRESS: "ray-head:6379"
+  REDIS_URL: "redis://redis-cluster:6379"
+  S3_MODELS_BUCKET: "portalis-models-prod"
+  S3_CACHE_BUCKET: "portalis-cache-prod"
+  S3_RESULTS_BUCKET: "portalis-results-prod"
+  PROMETHEUS_PORT: "9090"
+  METRICS_PORT: "9091"
+  DCGM_EXPORTER_URL: "http://dcgm-exporter:9400"
+
+---
+# Transpiler Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portalis-transpiler
+  namespace: portalis
+  labels:
+    app: portalis-transpiler
+    component: translation
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: portalis-transpiler
+  template:
+    metadata:
+      labels:
+        app: portalis-transpiler
+        component: translation
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9091"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: transpiler
+        image: portalis/transpiler-service:latest
+        ports:
+        - containerPort: 8080
+          name: http
+          protocol: TCP
+        - containerPort: 9091
+          name: metrics
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "transpiler"
+        - name: GPU_ALLOCATION
+          value: "auto"
+        envFrom:
+        - configMapRef:
+            name: portalis-rust-config
+        resources:
+          requests:
+            memory: "2Gi"
+            cpu: "1000m"
+            nvidia.com/gpu: "1"
+          limits:
+            memory: "8Gi"
+            cpu: "4000m"
+            nvidia.com/gpu: "2"
+        volumeMounts:
+        - name: models
+          mountPath: /mnt/models
+          readOnly: true
+        - name: cache
+          mountPath: /mnt/cache
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8080
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: portalis-models-pvc
+      - name: cache
+        persistentVolumeClaim:
+          claimName: portalis-cache-pvc
+      nodeSelector:
+        nvidia.com/gpu.product: "NVIDIA-A100-SXM4-80GB"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+
+---
+# Transpiler Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portalis-transpiler
+  namespace: portalis
+  labels:
+    app: portalis-transpiler
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8080
+    targetPort: 8080
+    protocol: TCP
+    name: http
+  - port: 9091
+    targetPort: 9091
+    protocol: TCP
+    name: metrics
+  selector:
+    app: portalis-transpiler
+
+---
+# Orchestration Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portalis-orchestration
+  namespace: portalis
+  labels:
+    app: portalis-orchestration
+    component: orchestration
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: portalis-orchestration
+  template:
+    metadata:
+      labels:
+        app: portalis-orchestration
+        component: orchestration
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9092"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: orchestration
+        image: portalis/orchestration-service:latest
+        ports:
+        - containerPort: 8081
+          name: http
+          protocol: TCP
+        - containerPort: 9092
+          name: metrics
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "orchestration"
+        - name: MAX_CONCURRENT_JOBS
+          value: "100"
+        envFrom:
+        - configMapRef:
+            name: portalis-rust-config
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+          limits:
+            memory: "16Gi"
+            cpu: "8000m"
+        volumeMounts:
+        - name: cache
+          mountPath: /mnt/cache
+        - name: results
+          mountPath: /mnt/results
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8081
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8081
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: cache
+        persistentVolumeClaim:
+          claimName: portalis-cache-pvc
+      - name: results
+        persistentVolumeClaim:
+          claimName: portalis-results-pvc
+
+---
+# Orchestration Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portalis-orchestration
+  namespace: portalis
+  labels:
+    app: portalis-orchestration
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8081
+    targetPort: 8081
+    protocol: TCP
+    name: http
+  - port: 9092
+    targetPort: 9092
+    protocol: TCP
+    name: metrics
+  selector:
+    app: portalis-orchestration
+
+---
+# NeMo Bridge Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portalis-nemo-bridge
+  namespace: portalis
+  labels:
+    app: portalis-nemo-bridge
+    component: translation
+spec:
+  replicas: 4
+  selector:
+    matchLabels:
+      app: portalis-nemo-bridge
+  template:
+    metadata:
+      labels:
+        app: portalis-nemo-bridge
+        component: translation
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9093"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: nemo-bridge
+        image: portalis/nemo-bridge-service:latest
+        ports:
+        - containerPort: 8082
+          name: http
+          protocol: TCP
+        - containerPort: 9093
+          name: metrics
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "nemo-bridge"
+        - name: TRITON_URL
+          value: "triton-inference-server:8000"
+        - name: NEMO_MODEL_PATH
+          value: "/mnt/models/nemo/translation_model.nemo"
+        envFrom:
+        - configMapRef:
+            name: portalis-rust-config
+        resources:
+          requests:
+            memory: "8Gi"
+            cpu: "2000m"
+            nvidia.com/gpu: "2"
+          limits:
+            memory: "32Gi"
+            cpu: "8000m"
+            nvidia.com/gpu: "4"
+        volumeMounts:
+        - name: models
+          mountPath: /mnt/models
+          readOnly: true
+        - name: cache
+          mountPath: /mnt/cache
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8082
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8082
+          initialDelaySeconds: 30
+          periodSeconds: 5
+      volumes:
+      - name: models
+        persistentVolumeClaim:
+          claimName: portalis-models-pvc
+      - name: cache
+        persistentVolumeClaim:
+          claimName: portalis-cache-pvc
+      nodeSelector:
+        nvidia.com/gpu.product: "NVIDIA-A100-SXM4-80GB"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+
+---
+# NeMo Bridge Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portalis-nemo-bridge
+  namespace: portalis
+  labels:
+    app: portalis-nemo-bridge
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8082
+    targetPort: 8082
+    protocol: TCP
+    name: http
+  - port: 9093
+    targetPort: 9093
+    protocol: TCP
+    name: metrics
+  selector:
+    app: portalis-nemo-bridge
+
+---
+# CUDA Bridge Service Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portalis-cuda-bridge
+  namespace: portalis
+  labels:
+    app: portalis-cuda-bridge
+    component: acceleration
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: portalis-cuda-bridge
+  template:
+    metadata:
+      labels:
+        app: portalis-cuda-bridge
+        component: acceleration
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9094"
+        prometheus.io/path: "/metrics"
+    spec:
+      containers:
+      - name: cuda-bridge
+        image: portalis/cuda-bridge-service:latest
+        ports:
+        - containerPort: 8083
+          name: http
+          protocol: TCP
+        - containerPort: 9094
+          name: metrics
+          protocol: TCP
+        env:
+        - name: SERVICE_NAME
+          value: "cuda-bridge"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0,1,2,3"
+        envFrom:
+        - configMapRef:
+            name: portalis-rust-config
+        resources:
+          requests:
+            memory: "4Gi"
+            cpu: "2000m"
+            nvidia.com/gpu: "2"
+          limits:
+            memory: "16Gi"
+            cpu: "8000m"
+            nvidia.com/gpu: "4"
+        volumeMounts:
+        - name: cache
+          mountPath: /mnt/cache
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8083
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 8083
+          initialDelaySeconds: 10
+          periodSeconds: 5
+      volumes:
+      - name: cache
+        persistentVolumeClaim:
+          claimName: portalis-cache-pvc
+      nodeSelector:
+        nvidia.com/gpu.product: "NVIDIA-A100-SXM4-80GB"
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+
+---
+# CUDA Bridge Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: portalis-cuda-bridge
+  namespace: portalis
+  labels:
+    app: portalis-cuda-bridge
+spec:
+  type: ClusterIP
+  ports:
+  - port: 8083
+    targetPort: 8083
+    protocol: TCP
+    name: http
+  - port: 9094
+    targetPort: 9094
+    protocol: TCP
+    name: metrics
+  selector:
+    app: portalis-cuda-bridge
+
+---
+# Persistent Volume Claims
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: portalis-models-pvc
+  namespace: portalis
+spec:
+  accessModes:
+  - ReadOnlyMany
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: portalis-cache-pvc
+  namespace: portalis
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 500Gi
+  storageClassName: fast-ssd
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: portalis-results-pvc
+  namespace: portalis
+spec:
+  accessModes:
+  - ReadWriteMany
+  resources:
+    requests:
+      storage: 1Ti
+  storageClassName: standard
+
+---
+# Horizontal Pod Autoscaler for Transpiler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: portalis-transpiler-hpa
+  namespace: portalis
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: portalis-transpiler
+  minReplicas: 3
+  maxReplicas: 20
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: gpu_utilization
+      target:
+        type: AverageValue
+        averageValue: "70"
+
+---
+# Horizontal Pod Autoscaler for NeMo Bridge
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: portalis-nemo-bridge-hpa
+  namespace: portalis
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: portalis-nemo-bridge
+  minReplicas: 4
+  maxReplicas: 16
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Pods
+    pods:
+      metric:
+        name: gpu_utilization
+      target:
+        type: AverageValue
+        averageValue: "75"
+
+---
+# Pod Disruption Budget for high availability
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: portalis-transpiler-pdb
+  namespace: portalis
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: portalis-transpiler
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: portalis-orchestration-pdb
+  namespace: portalis
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app: portalis-orchestration
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: portalis-nemo-bridge-pdb
+  namespace: portalis
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: portalis-nemo-bridge

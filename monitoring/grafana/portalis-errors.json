@@ -1,0 +1,573 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "portalis-errors",
+    "title": "Portalis - Error Analysis",
+    "tags": ["portalis", "errors", "troubleshooting"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "30s",
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Error Rate Overview"
+      },
+      {
+        "id": 2,
+        "gridPos": {
+          "x": 0,
+          "y": 1,
+          "w": 6,
+          "h": 5
+        },
+        "type": "stat",
+        "title": "Total Error Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_errors_total[5m]))",
+            "legendFormat": "Errors/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 0.1, "color": "yellow"},
+                {"value": 1, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": {
+          "x": 6,
+          "y": 1,
+          "w": 6,
+          "h": 5
+        },
+        "type": "stat",
+        "title": "Error Percentage",
+        "targets": [
+          {
+            "expr": "(sum(rate(portalis_translations_failed_total[5m])) / sum(rate(portalis_translations_total[5m]))) * 100",
+            "legendFormat": "Error %",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 5, "color": "yellow"},
+                {"value": 10, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": {
+          "x": 12,
+          "y": 1,
+          "w": 6,
+          "h": 5
+        },
+        "type": "stat",
+        "title": "Parse Errors",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_parse_errors_total[5m]))",
+            "legendFormat": "Parse Errors/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 0.01, "color": "yellow"},
+                {"value": 0.1, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "gridPos": {
+          "x": 18,
+          "y": 1,
+          "w": 6,
+          "h": 5
+        },
+        "type": "stat",
+        "title": "Compilation Errors",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_compilation_errors_total[5m]))",
+            "legendFormat": "Compilation Errors/sec",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "color": {"mode": "thresholds"},
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 0.01, "color": "yellow"},
+                {"value": 0.1, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "gridPos": {
+          "x": 0,
+          "y": 6,
+          "w": 24,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "Error Rate Over Time",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_errors_total[1m])) by (category)",
+            "legendFormat": "{{category}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "stacking": {"mode": "normal"}
+            }
+          }
+        }
+      },
+      {
+        "id": 20,
+        "gridPos": {
+          "x": 0,
+          "y": 14,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Error Categories"
+      },
+      {
+        "id": 21,
+        "gridPos": {
+          "x": 0,
+          "y": 15,
+          "w": 12,
+          "h": 8
+        },
+        "type": "piechart",
+        "title": "Errors by Category",
+        "targets": [
+          {
+            "expr": "sum(increase(portalis_errors_total[1h])) by (category)",
+            "legendFormat": "{{category}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short"
+          }
+        },
+        "options": {
+          "legend": {
+            "displayMode": "table",
+            "placement": "right",
+            "values": ["value", "percent"]
+          }
+        }
+      },
+      {
+        "id": 22,
+        "gridPos": {
+          "x": 12,
+          "y": 15,
+          "w": 12,
+          "h": 8
+        },
+        "type": "bargauge",
+        "title": "Errors by Severity",
+        "targets": [
+          {
+            "expr": "sum(increase(portalis_errors_total[1h])) by (severity)",
+            "legendFormat": "{{severity}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "color": {"mode": "palette-classic"}
+          }
+        },
+        "options": {
+          "orientation": "horizontal",
+          "displayMode": "gradient"
+        }
+      },
+      {
+        "id": 30,
+        "gridPos": {
+          "x": 0,
+          "y": 23,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Failed Translations"
+      },
+      {
+        "id": 31,
+        "gridPos": {
+          "x": 0,
+          "y": 24,
+          "w": 12,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "Translation Failures by Category",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_translations_failed_total[1m])) by (error_category)",
+            "legendFormat": "{{error_category}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 32,
+        "gridPos": {
+          "x": 12,
+          "y": 24,
+          "w": 12,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "Parse Errors by Type",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_parse_errors_total[1m])) by (error_type)",
+            "legendFormat": "{{error_type}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 40,
+        "gridPos": {
+          "x": 0,
+          "y": 32,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Root Cause Analysis"
+      },
+      {
+        "id": 41,
+        "gridPos": {
+          "x": 0,
+          "y": 33,
+          "w": 12,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "Errors by Component",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_errors_total[1m])) by (component)",
+            "legendFormat": "{{component}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 0
+            }
+          }
+        }
+      },
+      {
+        "id": 42,
+        "gridPos": {
+          "x": 12,
+          "y": 33,
+          "w": 12,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "Agent Failures",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_agent_status_total{status=\"failure\"}[1m])) by (agent_name)",
+            "legendFormat": "{{agent_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 0
+            }
+          }
+        }
+      },
+      {
+        "id": 50,
+        "gridPos": {
+          "x": 0,
+          "y": 41,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Error Recovery"
+      },
+      {
+        "id": 51,
+        "gridPos": {
+          "x": 0,
+          "y": 42,
+          "w": 12,
+          "h": 7
+        },
+        "type": "timeseries",
+        "title": "Error Recovery Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_error_recoveries_total[1m])) by (error_category)",
+            "legendFormat": "{{error_category}} - recovered",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "lineWidth": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 52,
+        "gridPos": {
+          "x": 12,
+          "y": 42,
+          "w": 12,
+          "h": 7
+        },
+        "type": "timeseries",
+        "title": "Recovery Methods Used",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_error_recoveries_total[1m])) by (recovery_method)",
+            "legendFormat": "{{recovery_method}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 60,
+        "gridPos": {
+          "x": 0,
+          "y": 49,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Alert Status"
+      },
+      {
+        "id": 61,
+        "gridPos": {
+          "x": 0,
+          "y": 50,
+          "w": 24,
+          "h": 8
+        },
+        "type": "table",
+        "title": "Active Alerts",
+        "targets": [
+          {
+            "expr": "ALERTS{alertname=~\".*Portalis.*|.*Error.*|.*Failure.*\"}",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {}
+        },
+        "options": {
+          "showHeader": true,
+          "sortBy": [
+            {"displayName": "severity", "desc": true}
+          ]
+        },
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true
+              },
+              "indexByName": {
+                "alertname": 0,
+                "severity": 1,
+                "alertstate": 2,
+                "component": 3
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 70,
+        "gridPos": {
+          "x": 0,
+          "y": 58,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Error Trends"
+      },
+      {
+        "id": 71,
+        "gridPos": {
+          "x": 0,
+          "y": 59,
+          "w": 24,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "7-Day Error Trend",
+        "targets": [
+          {
+            "expr": "sum(increase(portalis_errors_total[1d])) by (category)",
+            "legendFormat": "{{category}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 0
+            }
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "label": "Data Source",
+          "type": "datasource",
+          "query": "prometheus"
+        },
+        {
+          "name": "error_category",
+          "label": "Error Category",
+          "type": "query",
+          "datasource": "prometheus",
+          "query": "label_values(portalis_errors_total, category)",
+          "refresh": 1,
+          "multi": true,
+          "includeAll": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "datasource": "prometheus",
+          "enable": true,
+          "expr": "ALERTS{severity=\"critical\"}",
+          "name": "Critical Alerts",
+          "step": "60s",
+          "tagKeys": "alertname,severity",
+          "titleFormat": "Critical: {{alertname}}"
+        }
+      ]
+    }
+  }
+}

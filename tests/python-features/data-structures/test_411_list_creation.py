@@ -1,0 +1,22 @@
+"""
+Feature: 4.1.1 List Creation
+Category: Data Structures
+Complexity: Low
+Status: not_implemented
+"""
+
+import pytest
+
+PYTHON_SOURCE = """
+lst = [1, 2, 3]
+"""
+
+EXPECTED_RUST = """
+// TODO: Add Rust equivalent
+"""
+
+@pytest.mark.complexity("low")
+@pytest.mark.status("not_implemented")
+def test_411_list_creation():
+    """Test translation of 4.1.1 List Creation."""
+    pytest.skip("Feature not yet implemented")

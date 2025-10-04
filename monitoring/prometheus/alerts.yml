@@ -1,0 +1,440 @@
+# Prometheus Alert Rules for Portalis
+# Week 33 - Phase 4: Monitoring and Observability
+#
+# Alert Categories:
+# - High error rate (>5%)
+# - Slow translations (P95 > 5s)
+# - Low success rate (<95%)
+# - Resource exhaustion
+# - Service downtime
+# - GPU issues
+# - WASM failures
+
+groups:
+  - name: portalis_critical_alerts
+    interval: 30s
+    rules:
+      # CRITICAL: Service downtime
+      - alert: PortalisServiceDown
+        expr: up{job="portalis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+          component: system
+          team: platform
+        annotations:
+          summary: "Portalis service is down"
+          description: "Portalis service has been down for more than 1 minute"
+          runbook_url: "https://docs.portalis.io/runbooks/service-down"
+
+      # CRITICAL: Very low success rate
+      - alert: PortalisVeryLowSuccessRate
+        expr: |
+          (sum(rate(portalis_translations_success_total[5m]))
+          / sum(rate(portalis_translations_total[5m]))) < 0.80
+        for: 2m
+        labels:
+          severity: critical
+          component: translation
+          team: platform
+        annotations:
+          summary: "CRITICAL: Translation success rate below 80%"
+          description: "Success rate is {{ $value | humanizePercentage }} (target: >95%)"
+          runbook_url: "https://docs.portalis.io/runbooks/low-success-rate"
+
+      # CRITICAL: High error rate
+      - alert: PortalisHighErrorRate
+        expr: |
+          (sum(rate(portalis_translations_failed_total[5m]))
+          / sum(rate(portalis_translations_total[5m]))) > 0.10
+        for: 5m
+        labels:
+          severity: critical
+          component: translation
+          team: platform
+        annotations:
+          summary: "High translation error rate"
+          description: "Error rate is {{ $value | humanizePercentage }} (threshold: >10%)"
+          runbook_url: "https://docs.portalis.io/runbooks/high-error-rate"
+
+  - name: portalis_performance_alerts
+    interval: 30s
+    rules:
+      # WARNING: Slow translations
+      - alert: PortalisSlowTranslations
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(portalis_translation_duration_seconds_bucket[5m])) by (le)
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: performance
+          team: platform
+        annotations:
+          summary: "P95 translation latency exceeds 5 seconds"
+          description: "P95 latency is {{ $value | humanizeDuration }} (target: <5s)"
+          runbook_url: "https://docs.portalis.io/runbooks/slow-translations"
+
+      # CRITICAL: Very slow translations
+      - alert: PortalisVerySlowTranslations
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(portalis_translation_duration_seconds_bucket[5m])) by (le)
+          ) > 10
+        for: 3m
+        labels:
+          severity: critical
+          component: performance
+          team: platform
+        annotations:
+          summary: "CRITICAL: P95 translation latency exceeds 10 seconds"
+          description: "P95 latency is {{ $value | humanizeDuration }} (urgent action required)"
+          runbook_url: "https://docs.portalis.io/runbooks/very-slow-translations"
+
+      # WARNING: Low success rate
+      - alert: PortalisLowSuccessRate
+        expr: |
+          (sum(rate(portalis_translations_success_total[5m]))
+          / sum(rate(portalis_translations_total[5m]))) < 0.95
+        for: 5m
+        labels:
+          severity: warning
+          component: translation
+          team: platform
+        annotations:
+          summary: "Translation success rate below 95%"
+          description: "Success rate is {{ $value | humanizePercentage }} (target: >95%)"
+          runbook_url: "https://docs.portalis.io/runbooks/low-success-rate"
+
+      # INFO: Degraded performance
+      - alert: PortalisDegradedPerformance
+        expr: |
+          histogram_quantile(0.50,
+            sum(rate(portalis_translation_duration_seconds_bucket[5m])) by (le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: info
+          component: performance
+          team: platform
+        annotations:
+          summary: "P50 translation latency degraded"
+          description: "P50 latency is {{ $value | humanizeDuration }} (typical: <2s)"
+
+  - name: portalis_resource_alerts
+    interval: 60s
+    rules:
+      # CRITICAL: High CPU usage
+      - alert: PortalisHighCPUUsage
+        expr: portalis_cpu_usage_percent > 90
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+          team: platform
+        annotations:
+          summary: "High CPU usage detected"
+          description: "CPU usage is {{ $value | humanize }}% (threshold: >90%)"
+          runbook_url: "https://docs.portalis.io/runbooks/high-cpu"
+
+      # WARNING: Elevated CPU usage
+      - alert: PortalisElevatedCPUUsage
+        expr: portalis_cpu_usage_percent > 75
+        for: 10m
+        labels:
+          severity: warning
+          component: system
+          team: platform
+        annotations:
+          summary: "Elevated CPU usage"
+          description: "CPU usage is {{ $value | humanize }}% for 10 minutes"
+
+      # CRITICAL: High memory usage
+      - alert: PortalisHighMemoryUsage
+        expr: |
+          portalis_memory_usage_bytes / (16 * 1024 * 1024 * 1024) > 0.90
+        for: 5m
+        labels:
+          severity: critical
+          component: system
+          team: platform
+        annotations:
+          summary: "Memory usage critical"
+          description: "Memory usage at {{ $value | humanizePercentage }} (threshold: >90%)"
+          runbook_url: "https://docs.portalis.io/runbooks/high-memory"
+
+      # CRITICAL: Pipeline queue backup
+      - alert: PortalisPipelineQueueBackup
+        expr: sum(portalis_pipeline_queue_depth) > 1000
+        for: 10m
+        labels:
+          severity: critical
+          component: pipeline
+          team: platform
+        annotations:
+          summary: "Pipeline queue severely backed up"
+          description: "{{ $value | humanize }} items in queue (threshold: >1000)"
+          runbook_url: "https://docs.portalis.io/runbooks/queue-backup"
+
+  - name: portalis_gpu_alerts
+    interval: 30s
+    rules:
+      # CRITICAL: GPU out of memory
+      - alert: PortalisGPUOutOfMemory
+        expr: |
+          (portalis_transpiler_gpu_memory_used_bytes
+          / portalis_transpiler_gpu_memory_total_bytes) > 0.95
+        for: 2m
+        labels:
+          severity: critical
+          component: gpu
+          team: platform
+        annotations:
+          summary: "GPU out of memory"
+          description: "GPU {{ $labels.gpu_id }} memory at {{ $value | humanizePercentage }}"
+          runbook_url: "https://docs.portalis.io/runbooks/gpu-oom"
+
+      # WARNING: High GPU memory usage
+      - alert: PortalisHighGPUMemory
+        expr: |
+          (portalis_transpiler_gpu_memory_used_bytes
+          / portalis_transpiler_gpu_memory_total_bytes) > 0.80
+        for: 5m
+        labels:
+          severity: warning
+          component: gpu
+          team: platform
+        annotations:
+          summary: "High GPU memory usage"
+          description: "GPU {{ $labels.gpu_id }} memory at {{ $value | humanizePercentage }}"
+
+      # CRITICAL: GPU temperature critical
+      - alert: PortalisGPUOverheating
+        expr: portalis_transpiler_gpu_temperature_celsius > 85
+        for: 2m
+        labels:
+          severity: critical
+          component: gpu
+          team: platform
+        annotations:
+          summary: "GPU overheating"
+          description: "GPU {{ $labels.gpu_id }} temperature at {{ $value }}°C (threshold: >85°C)"
+          runbook_url: "https://docs.portalis.io/runbooks/gpu-overheat"
+
+      # INFO: Low GPU utilization
+      - alert: PortalisLowGPUUtilization
+        expr: avg(portalis_transpiler_gpu_utilization_percent) < 30
+        for: 15m
+        labels:
+          severity: info
+          component: gpu
+          team: platform
+        annotations:
+          summary: "Low GPU utilization"
+          description: "Average GPU utilization is {{ $value | humanize }}% (consider scaling down)"
+
+  - name: portalis_wasm_alerts
+    interval: 30s
+    rules:
+      # WARNING: Slow WASM compilation
+      - alert: PortalisSlowWASMCompilation
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(portalis_wasm_compile_duration_seconds_bucket[5m])) by (le)
+          ) > 5
+        for: 5m
+        labels:
+          severity: warning
+          component: wasm
+          team: platform
+        annotations:
+          summary: "Slow WASM compilation times"
+          description: "P95 WASM compilation time is {{ $value | humanizeDuration }}"
+
+      # WARNING: Large WASM binaries
+      - alert: PortalisLargeWASMBinaries
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(portalis_wasm_binary_size_bytes_bucket[5m])) by (le)
+          ) > 10485760
+        for: 10m
+        labels:
+          severity: warning
+          component: wasm
+          team: platform
+        annotations:
+          summary: "WASM binaries larger than expected"
+          description: "P95 WASM binary size is {{ $value | humanize1024 }} (threshold: >10MB)"
+
+      # CRITICAL: WASM compilation failures
+      - alert: PortalisWASMCompilationFailures
+        expr: |
+          sum(rate(portalis_compilation_errors_total{target_format="wasm"}[5m])) > 0.1
+        for: 5m
+        labels:
+          severity: critical
+          component: wasm
+          team: platform
+        annotations:
+          summary: "High WASM compilation failure rate"
+          description: "WASM compilation failing at {{ $value | humanize }} errors/sec"
+          runbook_url: "https://docs.portalis.io/runbooks/wasm-failures"
+
+  - name: portalis_agent_alerts
+    interval: 30s
+    rules:
+      # WARNING: Agent failures
+      - alert: PortalisAgentFailures
+        expr: |
+          sum(rate(portalis_agent_status_total{status="failure"}[5m])) by (agent_name) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          component: agents
+          team: platform
+        annotations:
+          summary: "Agent {{ $labels.agent_name }} experiencing failures"
+          description: "{{ $labels.agent_name }} failure rate: {{ $value | humanize }} ops/sec"
+          runbook_url: "https://docs.portalis.io/runbooks/agent-failures"
+
+      # WARNING: Slow agent execution
+      - alert: PortalisSlowAgent
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(portalis_agent_execution_duration_seconds_bucket[5m]))
+            by (agent_name, le)
+          ) > 10
+        for: 5m
+        labels:
+          severity: warning
+          component: agents
+          team: platform
+        annotations:
+          summary: "Agent {{ $labels.agent_name }} running slowly"
+          description: "P95 execution time: {{ $value | humanizeDuration }}"
+
+      # CRITICAL: Agent stuck
+      - alert: PortalisAgentStuck
+        expr: portalis_agents_active{agent_type!=""} > 100
+        for: 30m
+        labels:
+          severity: critical
+          component: agents
+          team: platform
+        annotations:
+          summary: "Too many active {{ $labels.agent_type }} agents"
+          description: "{{ $value | humanize }} agents active for 30+ minutes (possible stuck agents)"
+          runbook_url: "https://docs.portalis.io/runbooks/agent-stuck"
+
+  - name: portalis_cache_alerts
+    interval: 60s
+    rules:
+      # INFO: Low cache hit rate
+      - alert: PortalisLowCacheHitRate
+        expr: |
+          sum(rate(portalis_cache_hits_total[5m]))
+          / (sum(rate(portalis_cache_hits_total[5m]))
+          + sum(rate(portalis_cache_misses_total[5m]))) < 0.30
+        for: 15m
+        labels:
+          severity: info
+          component: cache
+          team: platform
+        annotations:
+          summary: "Low cache hit rate"
+          description: "Cache hit rate is {{ $value | humanizePercentage }} (opportunity for optimization)"
+
+      # WARNING: Cache eviction rate high
+      - alert: PortalisHighCacheEvictions
+        expr: sum(rate(portalis_cache_evictions_total[5m])) > 10
+        for: 10m
+        labels:
+          severity: warning
+          component: cache
+          team: platform
+        annotations:
+          summary: "High cache eviction rate"
+          description: "Cache evicting {{ $value | humanize }} items/sec (consider increasing cache size)"
+
+  - name: portalis_error_alerts
+    interval: 30s
+    rules:
+      # WARNING: Parse error spike
+      - alert: PortalisParseErrorSpike
+        expr: |
+          sum(rate(portalis_parse_errors_total[5m]))
+          > 4 * sum(rate(portalis_parse_errors_total[1h] offset 1h))
+        for: 5m
+        labels:
+          severity: warning
+          component: parser
+          team: platform
+        annotations:
+          summary: "Parse error spike detected"
+          description: "Parse errors 4x higher than 1 hour ago"
+          runbook_url: "https://docs.portalis.io/runbooks/error-spike"
+
+      # WARNING: Translation error spike
+      - alert: PortalisTranslationErrorSpike
+        expr: |
+          sum(rate(portalis_translation_errors_total[5m]))
+          > 4 * sum(rate(portalis_translation_errors_total[1h] offset 1h))
+        for: 5m
+        labels:
+          severity: warning
+          component: translation
+          team: platform
+        annotations:
+          summary: "Translation error spike detected"
+          description: "Translation errors 4x higher than 1 hour ago"
+          runbook_url: "https://docs.portalis.io/runbooks/error-spike"
+
+  - name: portalis_sla_alerts
+    interval: 60s
+    rules:
+      # CRITICAL: SLA violation
+      - alert: PortalisSLAViolation
+        expr: |
+          (
+            (histogram_quantile(0.95,
+              sum(rate(portalis_translation_duration_seconds_bucket[5m])) by (le)
+            ) < 5) +
+            ((sum(rate(portalis_translations_success_total[5m]))
+              / sum(rate(portalis_translations_total[5m]))) > 0.95)
+          ) / 2 < 0.75
+        for: 15m
+        labels:
+          severity: critical
+          component: sla
+          team: platform
+        annotations:
+          summary: "SLA compliance below threshold"
+          description: "Overall SLA compliance is degraded"
+          runbook_url: "https://docs.portalis.io/runbooks/sla-violation"
+
+  - name: portalis_deadman_switches
+    interval: 60s
+    rules:
+      # Deadman switch: Ensure Prometheus is scraping
+      - alert: PortalisDeadmanSwitch
+        expr: vector(1)
+        labels:
+          severity: info
+          component: monitoring
+        annotations:
+          summary: "Portalis monitoring heartbeat"
+          description: "This alert should always be firing. If not, Prometheus is not scraping correctly."
+
+      # Ensure metrics are being collected
+      - alert: PortalisNoMetrics
+        expr: absent(portalis_translations_total)
+        for: 5m
+        labels:
+          severity: critical
+          component: monitoring
+          team: platform
+        annotations:
+          summary: "No metrics being collected"
+          description: "Core Portalis metrics are not available"
+          runbook_url: "https://docs.portalis.io/runbooks/no-metrics"

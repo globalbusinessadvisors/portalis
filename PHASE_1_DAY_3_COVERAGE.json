@@ -1,0 +1,39 @@
+{
+  "total_features": 527,
+  "implemented_features": 25,
+  "coverage_percent": 4.743833017077799,
+  "test_results": {
+    "tested": 25,
+    "passed": 25,
+    "failed": 0,
+    "skipped": 0,
+    "failures": []
+  },
+  "implemented_list": [
+    "test_121_integer_literals.py",
+    "test_122_floating_point_literals.py",
+    "test_124_string_literals_single_quote.py",
+    "test_125_string_literals_double_quote.py",
+    "test_1211_boolean_literals.py",
+    "test_111_simple_assignment.py",
+    "test_115_augmented_assignment.py",
+    "test_131_single_line_comments.py",
+    "test_1551_print.py",
+    "test_211_addition.py",
+    "test_221_equal.py",
+    "test_222_not_equal.py",
+    "test_223_greater_than.py",
+    "test_224_less_than.py",
+    "test_225_greater_than_or_equal.py",
+    "test_226_less_than_or_equal.py",
+    "test_231_logical_and.py",
+    "test_232_logical_or.py",
+    "test_233_logical_not.py",
+    "test_1213_list_literals.py",
+    "test_413_list_indexing.py",
+    "test_1214_tuple_literals.py",
+    "test_335_pass_statement_no_op.py",
+    "test_331_break_statement.py",
+    "test_332_continue_statement.py"
+  ]
+}

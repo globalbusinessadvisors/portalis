@@ -1,0 +1,418 @@
+# Ray Cluster Integration with Rust Services
+# Multi-GPU Workload Distribution for Portalis
+
+cluster_name: portalis-rust-services
+max_workers: 16
+upscaling_speed: 2.0
+idle_timeout_minutes: 3
+
+# Rust service configuration
+rust_services:
+  enabled: true
+
+  # Service registry
+  services:
+    transpiler:
+      binary_path: "/opt/portalis/bin/portalis-transpiler"
+      replicas: 4
+      gpu_allocation: 1
+      cpu_cores: 4
+      memory_gb: 8
+      priority: high
+
+    orchestration:
+      binary_path: "/opt/portalis/bin/portalis-orchestration"
+      replicas: 2
+      gpu_allocation: 0  # CPU-only
+      cpu_cores: 8
+      memory_gb: 16
+      priority: high
+
+    nemo_bridge:
+      binary_path: "/opt/portalis/bin/portalis-nemo-bridge"
+      replicas: 6
+      gpu_allocation: 2
+      cpu_cores: 8
+      memory_gb: 32
+      priority: critical
+
+    cuda_bridge:
+      binary_path: "/opt/portalis/bin/portalis-cuda-bridge"
+      replicas: 3
+      gpu_allocation: 2
+      cpu_cores: 4
+      memory_gb: 16
+      priority: high
+
+  # Service health checks
+  health_checks:
+    enabled: true
+    interval_seconds: 15
+    timeout_seconds: 5
+    failure_threshold: 3
+    success_threshold: 2
+
+  # Service discovery
+  discovery:
+    method: "consul"  # Options: consul, etcd, zookeeper
+    consul_url: "http://consul:8500"
+    service_prefix: "portalis"
+
+# Multi-GPU workload distribution
+gpu_distribution:
+  enabled: true
+
+  # Distribution strategy
+  strategy: "intelligent_scheduling"  # Options: round_robin, least_loaded, intelligent_scheduling
+
+  # Intelligent scheduling configuration
+  intelligent_scheduling:
+    # Factor weights for scheduling decisions
+    weights:
+      gpu_memory_available: 0.3
+      gpu_utilization: 0.25
+      current_queue_length: 0.2
+      historical_performance: 0.15
+      thermal_status: 0.1
+
+    # Affinity rules
+    affinity:
+      # Prefer same-GPU for related tasks
+      task_locality: true
+
+      # Prefer same-node for data locality
+      data_locality: true
+
+      # Anti-affinity for fault tolerance
+      replica_spread: true
+
+    # Resource reservation
+    reservations:
+      # Reserve GPUs for high-priority tasks
+      high_priority_gpus: 4
+
+      # Reserve for interactive workloads
+      interactive_gpus: 2
+
+      # Overflow capacity
+      overflow_gpus: 2
+
+  # GPU pools
+  gpu_pools:
+    # High-performance pool for critical workloads
+    high_performance:
+      gpu_types: ["A100-80GB", "H100-80GB"]
+      count: 8
+      exclusive: false
+      max_jobs_per_gpu: 2
+      priority_levels: ["critical", "high"]
+
+    # Standard pool for batch processing
+    standard:
+      gpu_types: ["A100-40GB", "A100-80GB"]
+      count: 16
+      exclusive: false
+      max_jobs_per_gpu: 4
+      priority_levels: ["high", "medium"]
+
+    # Spot pool for low-priority workloads
+    spot:
+      gpu_types: ["A100-40GB"]
+      count: 8
+      exclusive: false
+      max_jobs_per_gpu: 8
+      priority_levels: ["medium", "low"]
+      spot_instances: true
+
+  # Load balancing
+  load_balancing:
+    enabled: true
+    algorithm: "weighted_least_connections"
+    rebalance_interval_seconds: 60
+
+    # Migration policy
+    migration:
+      enabled: true
+      max_migrations_per_minute: 5
+      min_imbalance_threshold: 0.3  # 30% difference triggers migration
+
+# Task scheduling policies
+task_scheduling:
+  # Queue configuration
+  queues:
+    critical:
+      max_size: 100
+      timeout_seconds: 300
+      preemption: true
+
+    high:
+      max_size: 500
+      timeout_seconds: 600
+      preemption: false
+
+    medium:
+      max_size: 2000
+      timeout_seconds: 1800
+      preemption: false
+
+    low:
+      max_size: 5000
+      timeout_seconds: 3600
+      preemption: false
+      allow_spot: true
+
+  # Scheduling algorithm
+  algorithm: "priority_queue_with_fairness"
+
+  # Fair share configuration
+  fair_share:
+    enabled: true
+    window_minutes: 60
+    min_share_percentage: 5
+
+  # Backfill scheduling
+  backfill:
+    enabled: true
+    max_backfill_jobs: 20
+    min_duration_seconds: 60
+
+# Performance optimization
+performance:
+  # GPU memory optimization
+  gpu_memory:
+    pooling_enabled: true
+    pool_size_mb: 16384
+    fragmentation_threshold: 0.3
+    defragmentation_interval_minutes: 30
+
+  # Kernel fusion
+  kernel_fusion:
+    enabled: true
+    max_kernels_per_fusion: 8
+    min_kernel_size_kb: 128
+
+  # Data pipeline optimization
+  data_pipeline:
+    prefetch_enabled: true
+    prefetch_buffer_size: 10
+    async_loading: true
+    pin_memory: true
+
+  # Batching
+  batching:
+    enabled: true
+    max_batch_size: 64
+    max_batch_delay_ms: 50
+    adaptive_batching: true
+
+# Monitoring and metrics
+monitoring:
+  enabled: true
+
+  # Metrics collection
+  metrics:
+    collection_interval_seconds: 10
+    retention_days: 30
+
+    # GPU metrics
+    gpu_metrics:
+      - utilization
+      - memory_used
+      - memory_total
+      - temperature
+      - power_usage
+      - sm_clock
+      - memory_clock
+      - pcie_throughput
+
+    # Service metrics
+    service_metrics:
+      - request_count
+      - request_latency
+      - error_rate
+      - queue_depth
+      - active_tasks
+      - completed_tasks
+
+    # System metrics
+    system_metrics:
+      - cpu_utilization
+      - memory_usage
+      - network_throughput
+      - disk_io
+
+  # Prometheus integration
+  prometheus:
+    enabled: true
+    port: 9090
+    path: "/metrics"
+
+    # Custom metrics
+    custom_metrics:
+      - name: "portalis_rust_service_requests_total"
+        type: "counter"
+        labels: ["service", "endpoint", "status"]
+
+      - name: "portalis_rust_service_latency_seconds"
+        type: "histogram"
+        labels: ["service", "endpoint"]
+        buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1.0, 5.0]
+
+      - name: "portalis_gpu_distribution_efficiency"
+        type: "gauge"
+        labels: ["pool", "gpu_type"]
+
+      - name: "portalis_task_queue_depth"
+        type: "gauge"
+        labels: ["priority", "pool"]
+
+  # DCGM integration
+  dcgm:
+    enabled: true
+    exporter_url: "http://dcgm-exporter:9400"
+    scrape_interval_seconds: 10
+
+    # Field groups to collect
+    field_groups:
+      - profiling
+      - health
+      - utilization
+      - memory
+
+  # Alert configuration
+  alerts:
+    enabled: true
+
+    rules:
+      - name: "gpu_high_temperature"
+        condition: "gpu_temperature_celsius > 85"
+        duration: "5m"
+        severity: "critical"
+        actions: ["throttle_workload", "notify_ops"]
+
+      - name: "gpu_memory_saturation"
+        condition: "gpu_memory_usage_percent > 95"
+        duration: "10m"
+        severity: "warning"
+        actions: ["trigger_migration", "scale_up"]
+
+      - name: "service_high_latency"
+        condition: "service_latency_p95 > 1.0"
+        duration: "5m"
+        severity: "warning"
+        actions: ["scale_up", "notify_ops"]
+
+      - name: "queue_backlog"
+        condition: "task_queue_depth > 100"
+        duration: "3m"
+        severity: "warning"
+        actions: ["scale_up", "enable_backfill"]
+
+      - name: "service_error_rate_high"
+        condition: "error_rate > 0.05"
+        duration: "2m"
+        severity: "critical"
+        actions: ["circuit_break", "notify_oncall"]
+
+# Fault tolerance
+fault_tolerance:
+  # Automatic recovery
+  auto_recovery:
+    enabled: true
+    max_retries: 3
+    retry_backoff_seconds: 30
+
+  # Checkpointing
+  checkpointing:
+    enabled: true
+    interval_seconds: 300
+    storage_path: "s3://portalis-checkpoints/"
+    compression: true
+
+  # Circuit breaker
+  circuit_breaker:
+    enabled: true
+    failure_threshold: 5
+    timeout_seconds: 60
+    half_open_max_requests: 3
+
+  # Graceful degradation
+  degradation:
+    enabled: true
+    fallback_to_cpu: true
+    reduce_batch_size: true
+    disable_optimization: false
+
+# Resource limits
+resource_limits:
+  # Per-service limits
+  per_service:
+    max_gpu_memory_mb: 65536  # 64 GB
+    max_cpu_cores: 16
+    max_memory_gb: 128
+    max_concurrent_tasks: 100
+
+  # Global limits
+  global:
+    max_total_gpus: 64
+    max_total_cpu_cores: 512
+    max_total_memory_gb: 2048
+    max_concurrent_services: 50
+
+  # Rate limiting
+  rate_limiting:
+    enabled: true
+    requests_per_second: 1000
+    burst_size: 2000
+
+# Logging configuration
+logging:
+  level: "info"
+  format: "json"
+
+  outputs:
+    - type: "stdout"
+    - type: "file"
+      path: "/var/log/portalis/ray-rust.log"
+      rotation: "100MB"
+      retention: "7d"
+    - type: "loki"
+      url: "http://loki:3100"
+
+  # Structured logging fields
+  fields:
+    - service_name
+    - service_version
+    - node_id
+    - gpu_id
+    - task_id
+    - tenant_id
+    - timestamp
+    - level
+    - message
+    - duration_ms
+
+# Security
+security:
+  # Authentication
+  authentication:
+    enabled: true
+    method: "jwt"
+    jwt_secret_path: "/etc/portalis/secrets/jwt-secret"
+
+  # Authorization
+  authorization:
+    enabled: true
+    rbac_enabled: true
+
+  # Encryption
+  encryption:
+    tls_enabled: true
+    cert_path: "/etc/portalis/certs/server.crt"
+    key_path: "/etc/portalis/certs/server.key"
+
+  # Network policies
+  network_policies:
+    enabled: true
+    allow_external_access: false
+    allowed_cidrs: ["10.0.0.0/8"]

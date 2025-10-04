@@ -7,8 +7,19 @@ pub mod agent;
 pub mod message;
 pub mod types;
 pub mod error;
+pub mod metrics;
+pub mod middleware;
+pub mod telemetry;
+pub mod logging;
+pub mod assessment;
+// TODO: Re-enable when sqlx dependency is added
+// pub mod rbac;
+// pub mod sso;
+// pub mod quota;
 
 pub use agent::{Agent, AgentCapability, AgentId, AgentMetadata};
 pub use message::{Message, MessageBus, MessageId, MessagePayload};
 pub use types::{Artifact, Phase, PipelineState, ArtifactMetadata, TestResult};
 pub use error::{Error, Result};
+pub use metrics::PortalisMetrics;
+pub use telemetry::init_telemetry;

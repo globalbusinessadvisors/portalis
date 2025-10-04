@@ -1,0 +1,139 @@
+# Alertmanager Configuration for Portalis
+# Phase 5 Week 37 - Alert Routing and Notification
+#
+# This configuration routes alerts from Prometheus to various channels.
+# Update receivers and routes according to your notification preferences.
+
+global:
+  # Default SMTP configuration (optional)
+  # smtp_smarthost: 'smtp.gmail.com:587'
+  # smtp_from: 'alertmanager@portalis.dev'
+  # smtp_auth_username: 'your-email@portalis.dev'
+  # smtp_auth_password: 'your-password'
+
+  # Slack webhook URL (optional)
+  # slack_api_url: 'https://hooks.slack.com/services/YOUR/WEBHOOK/URL'
+
+  # Default notification timeout
+  resolve_timeout: 5m
+
+# Templates for custom alert formatting
+templates:
+  - '/etc/alertmanager/templates/*.tmpl'
+
+# Route configuration
+route:
+  # Default receiver for all alerts
+  receiver: 'default'
+
+  # Group alerts by these labels
+  group_by: ['alertname', 'cluster', 'service']
+
+  # Wait time before sending initial notification
+  group_wait: 30s
+
+  # Wait time before sending notification about new alerts in group
+  group_interval: 5m
+
+  # Wait time before re-sending resolved alerts
+  repeat_interval: 4h
+
+  # Child routes for specific alert types
+  routes:
+    # Critical alerts - immediate notification
+    - match:
+        severity: critical
+      receiver: 'critical-alerts'
+      group_wait: 10s
+      group_interval: 1m
+      repeat_interval: 1h
+
+    # Warning alerts - batched notification
+    - match:
+        severity: warning
+      receiver: 'warning-alerts'
+      group_wait: 1m
+      group_interval: 10m
+      repeat_interval: 12h
+
+    # High error rate alerts
+    - match:
+        alertname: HighErrorRate
+      receiver: 'error-alerts'
+      group_wait: 30s
+      repeat_interval: 2h
+
+    # GPU-related alerts
+    - match_re:
+        service: 'gpu-.*'
+      receiver: 'gpu-alerts'
+      group_wait: 1m
+      repeat_interval: 4h
+
+# Inhibition rules - suppress alerts when other alerts are firing
+inhibit_rules:
+  # Suppress warning if critical alert is firing for same instance
+  - source_match:
+      severity: 'critical'
+    target_match:
+      severity: 'warning'
+    equal: ['alertname', 'instance']
+
+  # Suppress service down alerts if instance is down
+  - source_match:
+      alertname: 'InstanceDown'
+    target_match_re:
+      alertname: '.*Down'
+    equal: ['instance']
+
+# Receivers - notification channels
+receivers:
+  # Default receiver (logs only)
+  - name: 'default'
+    # No actual notifications configured - alerts visible in Alertmanager UI only
+
+  # Critical alerts - multiple channels
+  - name: 'critical-alerts'
+    # Email notifications (uncomment and configure)
+    # email_configs:
+    #   - to: 'oncall@portalis.dev'
+    #     headers:
+    #       Subject: '[CRITICAL] Portalis Alert: {{ .GroupLabels.alertname }}'
+    #     html: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+
+    # Slack notifications (uncomment and configure)
+    # slack_configs:
+    #   - channel: '#portalis-critical'
+    #     title: 'Critical Alert: {{ .GroupLabels.alertname }}'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'
+    #     send_resolved: true
+
+    # PagerDuty integration (uncomment and configure)
+    # pagerduty_configs:
+    #   - service_key: 'YOUR_PAGERDUTY_SERVICE_KEY'
+    #     description: '{{ .GroupLabels.alertname }}'
+
+  # Warning alerts
+  - name: 'warning-alerts'
+    # Slack notifications (uncomment and configure)
+    # slack_configs:
+    #   - channel: '#portalis-warnings'
+    #     title: 'Warning: {{ .GroupLabels.alertname }}'
+    #     text: '{{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+    #     send_resolved: true
+
+  # Error rate alerts
+  - name: 'error-alerts'
+    # Email notifications (uncomment and configure)
+    # email_configs:
+    #   - to: 'engineering@portalis.dev'
+    #     headers:
+    #       Subject: '[ERROR] High Error Rate in {{ .GroupLabels.service }}'
+
+  # GPU alerts
+  - name: 'gpu-alerts'
+    # Slack notifications (uncomment and configure)
+    # slack_configs:
+    #   - channel: '#portalis-gpu'
+    #     title: 'GPU Alert: {{ .GroupLabels.alertname }}'
+    #     text: '{{ range .Alerts }}{{ .Annotations.description }}{{ end }}'

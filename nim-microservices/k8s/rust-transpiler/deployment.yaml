@@ -1,0 +1,263 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: portalis-rust-transpiler
+  namespace: portalis-deployment
+  labels:
+    app: portalis-rust-transpiler
+    component: transpiler
+    tier: backend
+    version: v1.0.0
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: portalis-rust-transpiler
+  template:
+    metadata:
+      labels:
+        app: portalis-rust-transpiler
+        component: transpiler
+        tier: backend
+        version: v1.0.0
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: portalis-transpiler
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+
+      # Node affinity for GPU nodes
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: nvidia.com/gpu
+                operator: Exists
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            preference:
+              matchExpressions:
+              - key: node.kubernetes.io/instance-type
+                operator: In
+                values:
+                - a100
+                - v100
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app
+                  operator: In
+                  values:
+                  - portalis-rust-transpiler
+              topologyKey: kubernetes.io/hostname
+
+      # Init container to check GPU availability
+      initContainers:
+      - name: gpu-check
+        image: nvcr.io/nvidia/cuda:12.0.0-base-ubuntu22.04
+        command: ['sh', '-c', 'nvidia-smi || (echo "GPU not available" && exit 1)']
+        resources:
+          limits:
+            nvidia.com/gpu: 1
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          capabilities:
+            drop:
+            - ALL
+
+      containers:
+      - name: rust-transpiler
+        image: portalis/rust-transpiler:latest
+        imagePullPolicy: IfNotPresent
+
+        ports:
+        - name: http
+          containerPort: 8000
+          protocol: TCP
+        - name: rust-service
+          containerPort: 8001
+          protocol: TCP
+        - name: grpc
+          containerPort: 50051
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+
+        env:
+        - name: SERVICE_NAME
+          value: "portalis-rust-transpiler"
+        - name: ENVIRONMENT
+          valueFrom:
+            configMapKeyRef:
+              name: portalis-rust-config
+              key: environment
+        - name: LOG_LEVEL
+          valueFrom:
+            configMapKeyRef:
+              name: portalis-rust-config
+              key: log_level
+        - name: ENABLE_CUDA
+          value: "true"
+        - name: CUDA_VISIBLE_DEVICES
+          value: "0"
+        - name: RUST_LOG
+          value: "info,portalis=debug"
+        - name: RUST_BACKTRACE
+          value: "1"
+        - name: WORKERS
+          value: "4"
+        - name: BATCH_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: portalis-rust-config
+              key: batch_size
+        - name: MAX_QUEUE_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: portalis-rust-config
+              key: max_queue_size
+        - name: TRITON_URL
+          value: "triton-service.portalis-deployment.svc.cluster.local:8000"
+        - name: NEMO_SERVICE_URL
+          value: "nemo-service.portalis-deployment.svc.cluster.local:8080"
+        - name: ENABLE_METRICS
+          value: "true"
+        - name: ENABLE_TRACING
+          value: "true"
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: POD_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        - name: POD_IP
+          valueFrom:
+            fieldRef:
+              fieldPath: status.podIP
+
+        resources:
+          requests:
+            cpu: "2"
+            memory: "8Gi"
+            nvidia.com/gpu: 1
+          limits:
+            cpu: "8"
+            memory: "16Gi"
+            nvidia.com/gpu: 1
+
+        # Liveness probe - checks if service is alive
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 60
+          periodSeconds: 30
+          timeoutSeconds: 10
+          successThreshold: 1
+          failureThreshold: 3
+
+        # Readiness probe - checks if service is ready to accept traffic
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 3
+
+        # Startup probe - allows for longer startup time
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 8000
+            scheme: HTTP
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 12
+
+        volumeMounts:
+        - name: model-cache
+          mountPath: /models
+          readOnly: true
+        - name: workspace
+          mountPath: /data
+        - name: shm
+          mountPath: /dev/shm
+        - name: rust-config
+          mountPath: /app/config
+          readOnly: true
+
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: false
+          capabilities:
+            drop:
+            - ALL
+
+      volumes:
+      - name: model-cache
+        persistentVolumeClaim:
+          claimName: portalis-model-cache
+      - name: workspace
+        emptyDir:
+          sizeLimit: 10Gi
+      - name: shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 8Gi
+      - name: rust-config
+        configMap:
+          name: portalis-rust-config
+
+      # Tolerations for GPU nodes
+      tolerations:
+      - key: nvidia.com/gpu
+        operator: Exists
+        effect: NoSchedule
+      - key: workload-type
+        operator: Equal
+        value: gpu-inference
+        effect: NoSchedule
+
+      # DNS configuration
+      dnsPolicy: ClusterFirst
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 60
+
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: portalis-rust-transpiler-pdb
+  namespace: portalis-deployment
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: portalis-rust-transpiler

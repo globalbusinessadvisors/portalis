@@ -1,0 +1,4206 @@
+{
+  "total_tests": 590,
+  "by_category": {
+    "basic-syntax": {
+      "total": 38,
+      "not_implemented": 38
+    },
+    "operators": {
+      "total": 48,
+      "not_implemented": 48
+    },
+    "control-flow": {
+      "total": 28,
+      "not_implemented": 28
+    },
+    "data-structures": {
+      "total": 43,
+      "not_implemented": 43
+    },
+    "functions": {
+      "total": 119,
+      "not_implemented": 119
+    },
+    "classes": {
+      "total": 65,
+      "not_implemented": 65
+    },
+    "modules": {
+      "total": 22,
+      "not_implemented": 22
+    },
+    "exceptions": {
+      "total": 18,
+      "not_implemented": 18
+    },
+    "context-managers": {
+      "total": 12,
+      "not_implemented": 12
+    },
+    "iterators": {
+      "total": 28,
+      "not_implemented": 28
+    },
+    "async-await": {
+      "total": 32,
+      "not_implemented": 32
+    },
+    "type-hints": {
+      "total": 38,
+      "not_implemented": 38
+    },
+    "metaclasses": {
+      "total": 22,
+      "not_implemented": 22
+    },
+    "descriptors": {
+      "total": 16,
+      "not_implemented": 16
+    },
+    "magic-methods": {
+      "total": 61,
+      "not_implemented": 61
+    }
+  },
+  "by_complexity": {
+    "Low": 255,
+    "Medium": 179,
+    "High": 96,
+    "Very": 60
+  },
+  "by_status": {
+    "not_implemented": 590
+  },
+  "test_files": [
+    {
+      "path": "basic-syntax/test_simple_assignment.py",
+      "category": "basic-syntax",
+      "feature": "Simple Assignment",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_111_simple_assignment.py",
+      "category": "basic-syntax",
+      "feature": "1.1.1 Simple Assignment",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_112_multiple_assignment.py",
+      "category": "basic-syntax",
+      "feature": "1.1.2 Multiple Assignment",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_113_tuple_unpacking.py",
+      "category": "basic-syntax",
+      "feature": "1.1.3 Tuple Unpacking",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_114_extended_unpacking.py",
+      "category": "basic-syntax",
+      "feature": "1.1.4 Extended Unpacking",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_115_augmented_assignment.py",
+      "category": "basic-syntax",
+      "feature": "1.1.5 Augmented Assignment",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_116_walrus_operator_assignment_expression.py",
+      "category": "basic-syntax",
+      "feature": "1.1.6 Walrus Operator (Assignment Expression)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_117_annotated_assignment.py",
+      "category": "basic-syntax",
+      "feature": "1.1.7 Annotated Assignment",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_118_global_declaration.py",
+      "category": "basic-syntax",
+      "feature": "1.1.8 Global Declaration",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_119_nonlocal_declaration.py",
+      "category": "basic-syntax",
+      "feature": "1.1.9 Nonlocal Declaration",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_1110_del_statement.py",
+      "category": "basic-syntax",
+      "feature": "1.1.10 Del Statement",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_121_integer_literals.py",
+      "category": "basic-syntax",
+      "feature": "1.2.1 Integer Literals",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_122_floating_point_literals.py",
+      "category": "basic-syntax",
+      "feature": "1.2.2 Floating Point Literals",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_123_complex_number_literals.py",
+      "category": "basic-syntax",
+      "feature": "1.2.3 Complex Number Literals",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_124_string_literals_single_quote.py",
+      "category": "basic-syntax",
+      "feature": "1.2.4 String Literals (single quote)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_125_string_literals_double_quote.py",
+      "category": "basic-syntax",
+      "feature": "1.2.5 String Literals (double quote)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_126_triple_quoted_strings_multiline.py",
+      "category": "basic-syntax",
+      "feature": "1.2.6 Triple-Quoted Strings (multiline)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_127_raw_strings.py",
+      "category": "basic-syntax",
+      "feature": "1.2.7 Raw Strings",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_128_formatted_strings_f_strings.py",
+      "category": "basic-syntax",
+      "feature": "1.2.8 Formatted Strings (f-strings)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_129_f_string_expressions.py",
+      "category": "basic-syntax",
+      "feature": "1.2.9 F-String Expressions",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_1210_byte_literals.py",
+      "category": "basic-syntax",
+      "feature": "1.2.10 Byte Literals",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_1211_boolean_literals.py",
+      "category": "basic-syntax",
+      "feature": "1.2.11 Boolean Literals",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_1212_none_literal.py",
+      "category": "basic-syntax",
+      "feature": "1.2.12 None Literal",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_1213_list_literals.py",
+      "category": "basic-syntax",
+      "feature": "1.2.13 List Literals",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_1214_tuple_literals.py",
+      "category": "basic-syntax",
+      "feature": "1.2.14 Tuple Literals",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_1215_dict_literals.py",
+      "category": "basic-syntax",
+      "feature": "1.2.15 Dict Literals",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_131_single_line_comments.py",
+      "category": "basic-syntax",
+      "feature": "1.3.1 Single-Line Comments",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_132_multi_line_comments.py",
+      "category": "basic-syntax",
+      "feature": "1.3.2 Multi-Line Comments",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_133_function_docstrings.py",
+      "category": "basic-syntax",
+      "feature": "1.3.3 Function Docstrings",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_134_class_docstrings.py",
+      "category": "basic-syntax",
+      "feature": "1.3.4 Class Docstrings",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_135_module_docstrings.py",
+      "category": "basic-syntax",
+      "feature": "1.3.5 Module Docstrings",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_141_indentation_based_blocks.py",
+      "category": "basic-syntax",
+      "feature": "1.4.1 Indentation-Based Blocks",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_142_line_continuation_backslash.py",
+      "category": "basic-syntax",
+      "feature": "1.4.2 Line Continuation (backslash)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_143_implicit_line_continuation.py",
+      "category": "basic-syntax",
+      "feature": "1.4.3 Implicit Line Continuation",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_144_semicolon_statement_separator.py",
+      "category": "basic-syntax",
+      "feature": "1.4.4 Semicolon Statement Separator",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_151_ellipsis_literal.py",
+      "category": "basic-syntax",
+      "feature": "1.5.1 Ellipsis Literal",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_152_underscore_throwaway_variable.py",
+      "category": "basic-syntax",
+      "feature": "1.5.2 Underscore (throwaway variable)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "basic-syntax/test_153_name_mangling_private_attributes.py",
+      "category": "basic-syntax",
+      "feature": "1.5.3 Name Mangling (private attributes)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_154_1518_reserved_keywords.py",
+      "category": "operators",
+      "feature": "1.5.4-1.5.18: Reserved Keywords",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_211_addition.py",
+      "category": "operators",
+      "feature": "2.1.1 Addition (+)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_212_subtraction.py",
+      "category": "operators",
+      "feature": "2.1.2 Subtraction (-)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_213_multiplication.py",
+      "category": "operators",
+      "feature": "2.1.3 Multiplication (*)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_214_division.py",
+      "category": "operators",
+      "feature": "2.1.4 Division (/)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_215_floor_division.py",
+      "category": "operators",
+      "feature": "2.1.5 Floor Division (//)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_216_modulo.py",
+      "category": "operators",
+      "feature": "2.1.6 Modulo (%)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_217_exponentiation.py",
+      "category": "operators",
+      "feature": "2.1.7 Exponentiation (**)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_221_equal.py",
+      "category": "operators",
+      "feature": "2.2.1 Equal (==)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_222_not_equal.py",
+      "category": "operators",
+      "feature": "2.2.2 Not Equal (!=)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_223_greater_than.py",
+      "category": "operators",
+      "feature": "2.2.3 Greater Than (>)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_224_less_than.py",
+      "category": "operators",
+      "feature": "2.2.4 Less Than (<)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_225_greater_than_or_equal.py",
+      "category": "operators",
+      "feature": "2.2.5 Greater Than or Equal (>=)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_226_less_than_or_equal.py",
+      "category": "operators",
+      "feature": "2.2.6 Less Than or Equal (<=)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_227_chained_comparisons.py",
+      "category": "operators",
+      "feature": "2.2.7 Chained Comparisons",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_228_identity_comparison_is.py",
+      "category": "operators",
+      "feature": "2.2.8 Identity Comparison (is)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_231_logical_and.py",
+      "category": "operators",
+      "feature": "2.3.1 Logical AND",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_232_logical_or.py",
+      "category": "operators",
+      "feature": "2.3.2 Logical OR",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_233_logical_not.py",
+      "category": "operators",
+      "feature": "2.3.3 Logical NOT",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_234_short_circuit_evaluation_and.py",
+      "category": "operators",
+      "feature": "2.3.4 Short-Circuit Evaluation (AND)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_235_short_circuit_evaluation_or.py",
+      "category": "operators",
+      "feature": "2.3.5 Short-Circuit Evaluation (OR)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_241_bitwise_and.py",
+      "category": "operators",
+      "feature": "2.4.1 Bitwise AND (&)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_242_bitwise_or.py",
+      "category": "operators",
+      "feature": "2.4.2 Bitwise OR (|)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_243_bitwise_xor.py",
+      "category": "operators",
+      "feature": "2.4.3 Bitwise XOR (^)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_244_bitwise_not.py",
+      "category": "operators",
+      "feature": "2.4.4 Bitwise NOT (~)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_245_left_shift.py",
+      "category": "operators",
+      "feature": "2.4.5 Left Shift (<<)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_246_right_shift.py",
+      "category": "operators",
+      "feature": "2.4.6 Right Shift (>>)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_251_membership_in.py",
+      "category": "operators",
+      "feature": "2.5.1 Membership (in)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_252_membership_not_in.py",
+      "category": "operators",
+      "feature": "2.5.2 Membership (not in)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_253_identity_is.py",
+      "category": "operators",
+      "feature": "2.5.3 Identity (is)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_254_identity_is_not.py",
+      "category": "operators",
+      "feature": "2.5.4 Identity (is not)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_261_unary_plus.py",
+      "category": "operators",
+      "feature": "2.6.1 Unary Plus (+)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_262_unary_minus.py",
+      "category": "operators",
+      "feature": "2.6.2 Unary Minus (-)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_263_unary_not_not.py",
+      "category": "operators",
+      "feature": "2.6.3 Unary NOT (not)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_271_conditional_expression.py",
+      "category": "operators",
+      "feature": "2.7.1 Conditional Expression",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_281_string_concatenation.py",
+      "category": "operators",
+      "feature": "2.8.1 String Concatenation (+)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_282_string_repetition.py",
+      "category": "operators",
+      "feature": "2.8.2 String Repetition (*)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_283_list_concatenation.py",
+      "category": "operators",
+      "feature": "2.8.3 List Concatenation (+)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_284_list_repetition.py",
+      "category": "operators",
+      "feature": "2.8.4 List Repetition (*)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_285_subscription.py",
+      "category": "operators",
+      "feature": "2.8.5 Subscription ([])",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_286_slicing_startend.py",
+      "category": "operators",
+      "feature": "2.8.6 Slicing ([start:end])",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_287_extended_slicing_startendstep.py",
+      "category": "operators",
+      "feature": "2.8.7 Extended Slicing ([start:end:step])",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_288_negative_indexing.py",
+      "category": "operators",
+      "feature": "2.8.8 Negative Indexing",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_289_attribute_access.py",
+      "category": "operators",
+      "feature": "2.8.9 Attribute Access (.)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_2810_function_call.py",
+      "category": "operators",
+      "feature": "2.8.10 Function Call ()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_2811_matrix_multiplication_python_35.py",
+      "category": "operators",
+      "feature": "2.8.11 Matrix Multiplication (@) [Python 3.5+]",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_2812_floor_division_assignment.py",
+      "category": "operators",
+      "feature": "2.8.12 Floor Division Assignment (//=)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "operators/test_2813_power_assignment.py",
+      "category": "operators",
+      "feature": "2.8.13 Power Assignment (**=)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_2814_operator_overloading_magic_methods.py",
+      "category": "control-flow",
+      "feature": "2.8.14 Operator Overloading (magic methods)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_311_if_statement.py",
+      "category": "control-flow",
+      "feature": "3.1.1 If Statement",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_312_if_else_statement.py",
+      "category": "control-flow",
+      "feature": "3.1.2 If-Else Statement",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_313_if_elif_else_statement.py",
+      "category": "control-flow",
+      "feature": "3.1.3 If-Elif-Else Statement",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_314_nested_if_statements.py",
+      "category": "control-flow",
+      "feature": "3.1.4 Nested If Statements",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_315_match_statement_python_310.py",
+      "category": "control-flow",
+      "feature": "3.1.5 Match Statement (Python 3.10+)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_316_match_with_guards.py",
+      "category": "control-flow",
+      "feature": "3.1.6 Match with Guards",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_317_match_with_pattern_binding.py",
+      "category": "control-flow",
+      "feature": "3.1.7 Match with Pattern Binding",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_321_while_loop.py",
+      "category": "control-flow",
+      "feature": "3.2.1 While Loop",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_322_while_else_loop.py",
+      "category": "control-flow",
+      "feature": "3.2.2 While-Else Loop",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_323_for_loop_iterating.py",
+      "category": "control-flow",
+      "feature": "3.2.3 For Loop (iterating)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_324_for_loop_with_range.py",
+      "category": "control-flow",
+      "feature": "3.2.4 For Loop with Range",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_325_for_loop_with_enumerate.py",
+      "category": "control-flow",
+      "feature": "3.2.5 For Loop with Enumerate",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_326_for_else_loop.py",
+      "category": "control-flow",
+      "feature": "3.2.6 For-Else Loop",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_327_nested_loops.py",
+      "category": "control-flow",
+      "feature": "3.2.7 Nested Loops",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_328_loop_with_break.py",
+      "category": "control-flow",
+      "feature": "3.2.8 Loop with Break",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_329_loop_with_continue.py",
+      "category": "control-flow",
+      "feature": "3.2.9 Loop with Continue",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_331_break_statement.py",
+      "category": "control-flow",
+      "feature": "3.3.1 Break Statement",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_332_continue_statement.py",
+      "category": "control-flow",
+      "feature": "3.3.2 Continue Statement",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_333_return_statement.py",
+      "category": "control-flow",
+      "feature": "3.3.3 Return Statement",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_334_return_with_multiple_values.py",
+      "category": "control-flow",
+      "feature": "3.3.4 Return with Multiple Values",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_335_pass_statement_no_op.py",
+      "category": "control-flow",
+      "feature": "3.3.5 Pass Statement (no-op)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_341_assert_statement.py",
+      "category": "control-flow",
+      "feature": "3.4.1 Assert Statement",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_342_raise_statement_exceptions.py",
+      "category": "control-flow",
+      "feature": "3.4.2 Raise Statement (exceptions)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_343_try_except_covered_in_section_8.py",
+      "category": "control-flow",
+      "feature": "3.4.3 Try-Except (covered in section 8)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_344_with_statement_context_managers.py",
+      "category": "control-flow",
+      "feature": "3.4.4 With Statement (context managers)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_345_yield_statement_generators.py",
+      "category": "control-flow",
+      "feature": "3.4.5 Yield Statement (generators)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "control-flow/test_346_yield_from_statement.py",
+      "category": "control-flow",
+      "feature": "3.4.6 Yield From Statement",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_347_asyncawait_covered_in_section_11.py",
+      "category": "data-structures",
+      "feature": "3.4.7 Async/Await (covered in section 11)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_411_list_creation.py",
+      "category": "data-structures",
+      "feature": "4.1.1 List Creation",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_412_empty_list.py",
+      "category": "data-structures",
+      "feature": "4.1.2 Empty List",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_413_list_indexing.py",
+      "category": "data-structures",
+      "feature": "4.1.3 List Indexing",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_414_list_slicing.py",
+      "category": "data-structures",
+      "feature": "4.1.4 List Slicing",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_415_list_append.py",
+      "category": "data-structures",
+      "feature": "4.1.5 List Append",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_416_list_extend.py",
+      "category": "data-structures",
+      "feature": "4.1.6 List Extend",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_417_list_insert.py",
+      "category": "data-structures",
+      "feature": "4.1.7 List Insert",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_418_list_remove.py",
+      "category": "data-structures",
+      "feature": "4.1.8 List Remove",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_419_list_pop.py",
+      "category": "data-structures",
+      "feature": "4.1.9 List Pop",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_4110_list_sort.py",
+      "category": "data-structures",
+      "feature": "4.1.10 List Sort",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_421_basic_list_comprehension.py",
+      "category": "data-structures",
+      "feature": "4.2.1 Basic List Comprehension",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_422_list_comprehension_with_condition.py",
+      "category": "data-structures",
+      "feature": "4.2.2 List Comprehension with Condition",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_423_nested_list_comprehension.py",
+      "category": "data-structures",
+      "feature": "4.2.3 Nested List Comprehension",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_424_list_comprehension_with_multiple_iterables.py",
+      "category": "data-structures",
+      "feature": "4.2.4 List Comprehension with Multiple Iterables",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_425_list_comprehension_with_function_call.py",
+      "category": "data-structures",
+      "feature": "4.2.5 List Comprehension with Function Call",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_431_dict_creation.py",
+      "category": "data-structures",
+      "feature": "4.3.1 Dict Creation",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_432_empty_dict.py",
+      "category": "data-structures",
+      "feature": "4.3.2 Empty Dict",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_433_dict_access.py",
+      "category": "data-structures",
+      "feature": "4.3.3 Dict Access",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_434_dict_get_with_default.py",
+      "category": "data-structures",
+      "feature": "4.3.4 Dict Get with Default",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_435_dict_setdefault.py",
+      "category": "data-structures",
+      "feature": "4.3.5 Dict SetDefault",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_436_dict_update.py",
+      "category": "data-structures",
+      "feature": "4.3.6 Dict Update",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_437_dict_keysvaluesitems.py",
+      "category": "data-structures",
+      "feature": "4.3.7 Dict Keys/Values/Items",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_438_dict_comprehension.py",
+      "category": "data-structures",
+      "feature": "4.3.8 Dict Comprehension",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_439_dict_pop.py",
+      "category": "data-structures",
+      "feature": "4.3.9 Dict Pop",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_4310_dict_merge_python_39.py",
+      "category": "data-structures",
+      "feature": "4.3.10 Dict Merge (Python 3.9+)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_441_set_creation.py",
+      "category": "data-structures",
+      "feature": "4.4.1 Set Creation",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_442_empty_set.py",
+      "category": "data-structures",
+      "feature": "4.4.2 Empty Set",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_443_set_add.py",
+      "category": "data-structures",
+      "feature": "4.4.3 Set Add",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_444_set_remove.py",
+      "category": "data-structures",
+      "feature": "4.4.4 Set Remove",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_445_set_union.py",
+      "category": "data-structures",
+      "feature": "4.4.5 Set Union",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_446_set_intersection.py",
+      "category": "data-structures",
+      "feature": "4.4.6 Set Intersection",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_447_set_difference.py",
+      "category": "data-structures",
+      "feature": "4.4.7 Set Difference",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_448_set_comprehension.py",
+      "category": "data-structures",
+      "feature": "4.4.8 Set Comprehension",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_451_tuple_creation.py",
+      "category": "data-structures",
+      "feature": "4.5.1 Tuple Creation",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_452_single_element_tuple.py",
+      "category": "data-structures",
+      "feature": "4.5.2 Single-Element Tuple",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_453_tuple_unpacking.py",
+      "category": "data-structures",
+      "feature": "4.5.3 Tuple Unpacking",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_454_named_tuples.py",
+      "category": "data-structures",
+      "feature": "4.5.4 Named Tuples",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_455_tuple_indexing.py",
+      "category": "data-structures",
+      "feature": "4.5.5 Tuple Indexing",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_461_range_object.py",
+      "category": "data-structures",
+      "feature": "4.6.1 Range Object",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_462_frozen_set.py",
+      "category": "data-structures",
+      "feature": "4.6.2 Frozen Set",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_463_bytes.py",
+      "category": "data-structures",
+      "feature": "4.6.3 Bytes",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "data-structures/test_464_bytearray.py",
+      "category": "data-structures",
+      "feature": "4.6.4 Bytearray",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_465_memoryview.py",
+      "category": "functions",
+      "feature": "4.6.5 Memoryview",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_511_basic_function.py",
+      "category": "functions",
+      "feature": "5.1.1 Basic Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_512_function_with_parameters.py",
+      "category": "functions",
+      "feature": "5.1.2 Function with Parameters",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_513_function_with_return_value.py",
+      "category": "functions",
+      "feature": "5.1.3 Function with Return Value",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_514_function_with_default_arguments.py",
+      "category": "functions",
+      "feature": "5.1.4 Function with Default Arguments",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_515_function_with_keyword_arguments.py",
+      "category": "functions",
+      "feature": "5.1.5 Function with Keyword Arguments",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_516_function_with_args_variable_positional_args.py",
+      "category": "functions",
+      "feature": "5.1.6 Function with *args (Variable Positional Args)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_517_function_with_kwargs_variable_keyword_args.py",
+      "category": "functions",
+      "feature": "5.1.7 Function with **kwargs (Variable Keyword Args)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_518_function_with_mixed_arguments.py",
+      "category": "functions",
+      "feature": "5.1.8 Function with Mixed Arguments",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_519_function_with_type_hints.py",
+      "category": "functions",
+      "feature": "5.1.9 Function with Type Hints",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_5110_nested_function.py",
+      "category": "functions",
+      "feature": "5.1.10 Nested Function",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_521_basic_lambda.py",
+      "category": "functions",
+      "feature": "5.2.1 Basic Lambda",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_522_lambda_with_multiple_arguments.py",
+      "category": "functions",
+      "feature": "5.2.2 Lambda with Multiple Arguments",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_523_lambda_in_higher_order_function.py",
+      "category": "functions",
+      "feature": "5.2.3 Lambda in Higher-Order Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_531_simple_decorator.py",
+      "category": "functions",
+      "feature": "5.3.1 Simple Decorator",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_532_decorator_with_arguments.py",
+      "category": "functions",
+      "feature": "5.3.2 Decorator with Arguments",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_533_class_decorator.py",
+      "category": "functions",
+      "feature": "5.3.3 Class Decorator",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_534_property_decorator.py",
+      "category": "functions",
+      "feature": "5.3.4 Property Decorator",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_535_static_method_decorator.py",
+      "category": "functions",
+      "feature": "5.3.5 Static Method Decorator",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_536_class_method_decorator.py",
+      "category": "functions",
+      "feature": "5.3.6 Class Method Decorator",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_537_decorator_stacking.py",
+      "category": "functions",
+      "feature": "5.3.7 Decorator Stacking",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_538_functoolswraps.py",
+      "category": "functions",
+      "feature": "5.3.8 functools.wraps",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_539_lru_cache_decorator.py",
+      "category": "functions",
+      "feature": "5.3.9 LRU Cache Decorator",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_5310_property_setter.py",
+      "category": "functions",
+      "feature": "5.3.10 Property Setter",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_541_basic_closure.py",
+      "category": "functions",
+      "feature": "5.4.1 Basic Closure",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_542_closure_with_mutable_capture.py",
+      "category": "functions",
+      "feature": "5.4.2 Closure with Mutable Capture",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_543_closure_in_list_comprehension.py",
+      "category": "functions",
+      "feature": "5.4.3 Closure in List Comprehension",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_544_closure_with_multiple_captures.py",
+      "category": "functions",
+      "feature": "5.4.4 Closure with Multiple Captures",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_545_partial_application.py",
+      "category": "functions",
+      "feature": "5.4.5 Partial Application",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_551_basic_generator.py",
+      "category": "functions",
+      "feature": "5.5.1 Basic Generator",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_552_generator_expression.py",
+      "category": "functions",
+      "feature": "5.5.2 Generator Expression",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_553_generator_with_send.py",
+      "category": "functions",
+      "feature": "5.5.3 Generator with Send",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_554_generator_with_return.py",
+      "category": "functions",
+      "feature": "5.5.4 Generator with Return",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_555_yield_from.py",
+      "category": "functions",
+      "feature": "5.5.5 Yield From",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_556_generator_delegation.py",
+      "category": "functions",
+      "feature": "5.5.6 Generator Delegation",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_557_generator_with_finally.py",
+      "category": "functions",
+      "feature": "5.5.7 Generator with Finally",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_558_generator_pipeline.py",
+      "category": "functions",
+      "feature": "5.5.8 Generator Pipeline",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_559_infinite_generator.py",
+      "category": "functions",
+      "feature": "5.5.9 Infinite Generator",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_5510_generator_as_context_manager.py",
+      "category": "functions",
+      "feature": "5.5.10 Generator as Context Manager",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_561_function_annotations.py",
+      "category": "functions",
+      "feature": "5.6.1 Function Annotations",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_562_access_name.py",
+      "category": "functions",
+      "feature": "5.6.2 Access __name__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_563_access_doc.py",
+      "category": "functions",
+      "feature": "5.6.3 Access __doc__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_564_access_annotations.py",
+      "category": "functions",
+      "feature": "5.6.4 Access __annotations__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_565_inspect_module.py",
+      "category": "functions",
+      "feature": "5.6.5 Inspect Module",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_566_callable_check.py",
+      "category": "functions",
+      "feature": "5.6.6 Callable Check",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_567_function_defaults.py",
+      "category": "functions",
+      "feature": "5.6.7 Function Defaults",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_568_function_closure.py",
+      "category": "functions",
+      "feature": "5.6.8 Function Closure",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_569_function_code_object.py",
+      "category": "functions",
+      "feature": "5.6.9 Function Code Object",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_14210_weak_reference_descriptor.py",
+      "category": "functions",
+      "feature": "14.2.10 Weak Reference Descriptor",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1511_int.py",
+      "category": "functions",
+      "feature": "15.1.1 int()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1512_float.py",
+      "category": "functions",
+      "feature": "15.1.2 float()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1513_str.py",
+      "category": "functions",
+      "feature": "15.1.3 str()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1514_bool.py",
+      "category": "functions",
+      "feature": "15.1.4 bool()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1515_bytes.py",
+      "category": "functions",
+      "feature": "15.1.5 bytes()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1516_bytearray.py",
+      "category": "functions",
+      "feature": "15.1.6 bytearray()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1517_list.py",
+      "category": "functions",
+      "feature": "15.1.7 list()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1518_tuple.py",
+      "category": "functions",
+      "feature": "15.1.8 tuple()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1519_dict.py",
+      "category": "functions",
+      "feature": "15.1.9 dict()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15110_set.py",
+      "category": "functions",
+      "feature": "15.1.10 set()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15111_frozenset.py",
+      "category": "functions",
+      "feature": "15.1.11 frozenset()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15112_complex.py",
+      "category": "functions",
+      "feature": "15.1.12 complex()",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15113_chr.py",
+      "category": "functions",
+      "feature": "15.1.13 chr()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15114_ord.py",
+      "category": "functions",
+      "feature": "15.1.14 ord()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15115_hex_oct_bin.py",
+      "category": "functions",
+      "feature": "15.1.15 hex(), oct(), bin()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1521_abs.py",
+      "category": "functions",
+      "feature": "15.2.1 abs()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1522_round.py",
+      "category": "functions",
+      "feature": "15.2.2 round()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1523_pow.py",
+      "category": "functions",
+      "feature": "15.2.3 pow()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1524_min.py",
+      "category": "functions",
+      "feature": "15.2.4 min()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1525_max.py",
+      "category": "functions",
+      "feature": "15.2.5 max()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1526_sum.py",
+      "category": "functions",
+      "feature": "15.2.6 sum()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1527_divmod.py",
+      "category": "functions",
+      "feature": "15.2.7 divmod()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1528_pow_with_modulo.py",
+      "category": "functions",
+      "feature": "15.2.8 pow() with modulo",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1529_round_with_precision.py",
+      "category": "functions",
+      "feature": "15.2.9 round() with precision",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15210_isinstance_for_numbers.py",
+      "category": "functions",
+      "feature": "15.2.10 isinstance() for numbers",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1531_len.py",
+      "category": "functions",
+      "feature": "15.3.1 len()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1532_range.py",
+      "category": "functions",
+      "feature": "15.3.2 range()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1533_enumerate.py",
+      "category": "functions",
+      "feature": "15.3.3 enumerate()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1534_zip.py",
+      "category": "functions",
+      "feature": "15.3.4 zip()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1535_map.py",
+      "category": "functions",
+      "feature": "15.3.5 map()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1536_filter.py",
+      "category": "functions",
+      "feature": "15.3.6 filter()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1537_sorted.py",
+      "category": "functions",
+      "feature": "15.3.7 sorted()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1538_reversed.py",
+      "category": "functions",
+      "feature": "15.3.8 reversed()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1539_any.py",
+      "category": "functions",
+      "feature": "15.3.9 any()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15310_all.py",
+      "category": "functions",
+      "feature": "15.3.10 all()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15311_iter.py",
+      "category": "functions",
+      "feature": "15.3.11 iter()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15312_next.py",
+      "category": "functions",
+      "feature": "15.3.12 next()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15313_slice.py",
+      "category": "functions",
+      "feature": "15.3.13 slice()",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15314_reversed_on_sequence.py",
+      "category": "functions",
+      "feature": "15.3.14 reversed() on sequence",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15315_zip_longest.py",
+      "category": "functions",
+      "feature": "15.3.15 zip() longest",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1541_getattr.py",
+      "category": "functions",
+      "feature": "15.4.1 getattr()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1542_setattr.py",
+      "category": "functions",
+      "feature": "15.4.2 setattr()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1543_hasattr.py",
+      "category": "functions",
+      "feature": "15.4.3 hasattr()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1544_delattr.py",
+      "category": "functions",
+      "feature": "15.4.4 delattr()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1545_dir.py",
+      "category": "functions",
+      "feature": "15.4.5 dir()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1546_vars.py",
+      "category": "functions",
+      "feature": "15.4.6 vars()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1547_id.py",
+      "category": "functions",
+      "feature": "15.4.7 id()",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1548_type.py",
+      "category": "functions",
+      "feature": "15.4.8 type()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1549_isinstance.py",
+      "category": "functions",
+      "feature": "15.4.9 isinstance()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15410_issubclass.py",
+      "category": "functions",
+      "feature": "15.4.10 issubclass()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1551_print.py",
+      "category": "functions",
+      "feature": "15.5.1 print()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1552_input.py",
+      "category": "functions",
+      "feature": "15.5.2 input()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1553_open.py",
+      "category": "functions",
+      "feature": "15.5.3 open()",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1554_format.py",
+      "category": "functions",
+      "feature": "15.5.4 format()",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1555_repr.py",
+      "category": "functions",
+      "feature": "15.5.5 repr()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1561_callable.py",
+      "category": "functions",
+      "feature": "15.6.1 callable()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1562_hash.py",
+      "category": "functions",
+      "feature": "15.6.2 hash()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1563_help.py",
+      "category": "functions",
+      "feature": "15.6.3 help()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1564_eval.py",
+      "category": "functions",
+      "feature": "15.6.4 eval()",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1565_exec.py",
+      "category": "functions",
+      "feature": "15.6.5 exec()",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1566_compile.py",
+      "category": "functions",
+      "feature": "15.6.6 compile()",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1567_globals.py",
+      "category": "functions",
+      "feature": "15.6.7 globals()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1568_locals.py",
+      "category": "functions",
+      "feature": "15.6.8 locals()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_1569_property.py",
+      "category": "functions",
+      "feature": "15.6.9 property()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15610_classmethod.py",
+      "category": "functions",
+      "feature": "15.6.10 classmethod()",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15611_staticmethod.py",
+      "category": "functions",
+      "feature": "15.6.11 staticmethod()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15612_super.py",
+      "category": "functions",
+      "feature": "15.6.12 super()",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15613_object.py",
+      "category": "functions",
+      "feature": "15.6.13 object()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15614_ascii.py",
+      "category": "functions",
+      "feature": "15.6.14 ascii()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "functions/test_15615_breakpoint.py",
+      "category": "functions",
+      "feature": "15.6.15 breakpoint()",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_5610_function_globals.py",
+      "category": "classes",
+      "feature": "5.6.10 Function Globals",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_611_basic_class.py",
+      "category": "classes",
+      "feature": "6.1.1 Basic Class",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_612_class_with_constructor.py",
+      "category": "classes",
+      "feature": "6.1.2 Class with Constructor",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_613_class_with_methods.py",
+      "category": "classes",
+      "feature": "6.1.3 Class with Methods",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_614_class_variables.py",
+      "category": "classes",
+      "feature": "6.1.4 Class Variables",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_615_instance_variables.py",
+      "category": "classes",
+      "feature": "6.1.5 Instance Variables",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_616_class_documentation.py",
+      "category": "classes",
+      "feature": "6.1.6 Class Documentation",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_617_single_inheritance.py",
+      "category": "classes",
+      "feature": "6.1.7 Single Inheritance",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_618_multiple_inheritance.py",
+      "category": "classes",
+      "feature": "6.1.8 Multiple Inheritance",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_619_method_overriding.py",
+      "category": "classes",
+      "feature": "6.1.9 Method Overriding",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6110_super_call.py",
+      "category": "classes",
+      "feature": "6.1.10 Super() Call",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6111_abstract_base_classes.py",
+      "category": "classes",
+      "feature": "6.1.11 Abstract Base Classes",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6112_dataclasses.py",
+      "category": "classes",
+      "feature": "6.1.12 Dataclasses",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6113_slots.py",
+      "category": "classes",
+      "feature": "6.1.13 Slots",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6114_class_composition.py",
+      "category": "classes",
+      "feature": "6.1.14 Class Composition",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6115_nested_classes.py",
+      "category": "classes",
+      "feature": "6.1.15 Nested Classes",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_621_property_getter.py",
+      "category": "classes",
+      "feature": "6.2.1 Property Getter",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_622_property_setter.py",
+      "category": "classes",
+      "feature": "6.2.2 Property Setter",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_623_property_deleter.py",
+      "category": "classes",
+      "feature": "6.2.3 Property Deleter",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_624_read_only_property.py",
+      "category": "classes",
+      "feature": "6.2.4 Read-Only Property",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_625_computed_property.py",
+      "category": "classes",
+      "feature": "6.2.5 Computed Property",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_626_cached_property.py",
+      "category": "classes",
+      "feature": "6.2.6 Cached Property",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_627_descriptor_protocol_get.py",
+      "category": "classes",
+      "feature": "6.2.7 Descriptor Protocol (__get__)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_628_descriptor_protocol_set.py",
+      "category": "classes",
+      "feature": "6.2.8 Descriptor Protocol (__set__)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_629_descriptor_protocol_delete.py",
+      "category": "classes",
+      "feature": "6.2.9 Descriptor Protocol (__delete__)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6210_descriptor_in_class.py",
+      "category": "classes",
+      "feature": "6.2.10 Descriptor in Class",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_631_instance_method.py",
+      "category": "classes",
+      "feature": "6.3.1 Instance Method",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_632_static_method.py",
+      "category": "classes",
+      "feature": "6.3.2 Static Method",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_633_class_method.py",
+      "category": "classes",
+      "feature": "6.3.3 Class Method",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_634_alternative_constructor_classmethod.py",
+      "category": "classes",
+      "feature": "6.3.4 Alternative Constructor (classmethod)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_635_method_with_self_type.py",
+      "category": "classes",
+      "feature": "6.3.5 Method with Self Type",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_641_new_method.py",
+      "category": "classes",
+      "feature": "6.4.1 __new__ Method",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_642_del_destructor.py",
+      "category": "classes",
+      "feature": "6.4.2 __del__ Destructor",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_643_repr_method.py",
+      "category": "classes",
+      "feature": "6.4.3 __repr__ Method",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_644_str_method.py",
+      "category": "classes",
+      "feature": "6.4.4 __str__ Method",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_645_eq_method.py",
+      "category": "classes",
+      "feature": "6.4.5 __eq__ Method",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_646_hash_method.py",
+      "category": "classes",
+      "feature": "6.4.6 __hash__ Method",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_647_bool_method.py",
+      "category": "classes",
+      "feature": "6.4.7 __bool__ Method",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_648_len_method.py",
+      "category": "classes",
+      "feature": "6.4.8 __len__ Method",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_649_contains_method.py",
+      "category": "classes",
+      "feature": "6.4.9 __contains__ Method",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6410_private_methods_name_mangling.py",
+      "category": "classes",
+      "feature": "6.4.10 Private Methods (name mangling)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_651_add.py",
+      "category": "classes",
+      "feature": "6.5.1 __add__ (+)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_652_sub.py",
+      "category": "classes",
+      "feature": "6.5.2 __sub__ (-)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_653_mul.py",
+      "category": "classes",
+      "feature": "6.5.3 __mul__ (*)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_654_truediv.py",
+      "category": "classes",
+      "feature": "6.5.4 __truediv__ (/)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_655_floordiv.py",
+      "category": "classes",
+      "feature": "6.5.5 __floordiv__ (//)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_656_mod.py",
+      "category": "classes",
+      "feature": "6.5.6 __mod__ (%)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_657_pow.py",
+      "category": "classes",
+      "feature": "6.5.7 __pow__ (**)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_658_lt.py",
+      "category": "classes",
+      "feature": "6.5.8 __lt__ (<)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_659_le.py",
+      "category": "classes",
+      "feature": "6.5.9 __le__ (<=)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6510_gt.py",
+      "category": "classes",
+      "feature": "6.5.10 __gt__ (>)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6511_ge.py",
+      "category": "classes",
+      "feature": "6.5.11 __ge__ (>=)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6512_getitem.py",
+      "category": "classes",
+      "feature": "6.5.12 __getitem__ ([])",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6513_setitem.py",
+      "category": "classes",
+      "feature": "6.5.13 __setitem__ ([]=)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6514_delitem_del.py",
+      "category": "classes",
+      "feature": "6.5.14 __delitem__ (del [])",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_6515_call_making_object_callable.py",
+      "category": "classes",
+      "feature": "6.5.15 __call__ (making object callable)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_661_getattr.py",
+      "category": "classes",
+      "feature": "6.6.1 __getattr__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_662_setattr.py",
+      "category": "classes",
+      "feature": "6.6.2 __setattr__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_663_delattr.py",
+      "category": "classes",
+      "feature": "6.6.3 __delattr__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_664_getattribute.py",
+      "category": "classes",
+      "feature": "6.6.4 __getattribute__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_665_dir.py",
+      "category": "classes",
+      "feature": "6.6.5 __dir__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_666_sizeof.py",
+      "category": "classes",
+      "feature": "6.6.6 __sizeof__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_667_copy.py",
+      "category": "classes",
+      "feature": "6.6.7 __copy__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_668_deepcopy.py",
+      "category": "classes",
+      "feature": "6.6.8 __deepcopy__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "classes/test_669_reduce_pickle_support.py",
+      "category": "classes",
+      "feature": "6.6.9 __reduce__ (pickle support)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_6610_mixins.py",
+      "category": "modules",
+      "feature": "6.6.10 Mixins",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_711_basic_import.py",
+      "category": "modules",
+      "feature": "7.1.1 Basic Import",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_712_import_with_alias.py",
+      "category": "modules",
+      "feature": "7.1.2 Import with Alias",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_713_from_import.py",
+      "category": "modules",
+      "feature": "7.1.3 From Import",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_714_from_import_multiple.py",
+      "category": "modules",
+      "feature": "7.1.4 From Import Multiple",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_715_from_import_all.py",
+      "category": "modules",
+      "feature": "7.1.5 From Import All",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_716_relative_import_current_package.py",
+      "category": "modules",
+      "feature": "7.1.6 Relative Import (current package)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_717_relative_import_parent_package.py",
+      "category": "modules",
+      "feature": "7.1.7 Relative Import (parent package)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_718_relative_import_specific_level.py",
+      "category": "modules",
+      "feature": "7.1.8 Relative Import (specific level)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_719_import_in_function.py",
+      "category": "modules",
+      "feature": "7.1.9 Import in Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_7110_conditional_import.py",
+      "category": "modules",
+      "feature": "7.1.10 Conditional Import",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_7111_try_except_import.py",
+      "category": "modules",
+      "feature": "7.1.11 Try-Except Import",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_7112_import_with_import.py",
+      "category": "modules",
+      "feature": "7.1.12 Import with __import__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_721_name_main.py",
+      "category": "modules",
+      "feature": "7.2.1 __name__ == \"__main__\"",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_722_all_export_list.py",
+      "category": "modules",
+      "feature": "7.2.2 __all__ (export list)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_723_module_docstring.py",
+      "category": "modules",
+      "feature": "7.2.3 Module Docstring",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_724_file_attribute.py",
+      "category": "modules",
+      "feature": "7.2.4 __file__ Attribute",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_725_package_attribute.py",
+      "category": "modules",
+      "feature": "7.2.5 __package__ Attribute",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_726_path_package_path.py",
+      "category": "modules",
+      "feature": "7.2.6 __path__ (package path)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_727_reload_function.py",
+      "category": "modules",
+      "feature": "7.2.7 reload() Function",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_728_init_py.py",
+      "category": "modules",
+      "feature": "7.2.8 __init__.py",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "modules/test_729_namespace_packages.py",
+      "category": "modules",
+      "feature": "7.2.9 Namespace Packages",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_7210_entry_points.py",
+      "category": "exceptions",
+      "feature": "7.2.10 Entry Points",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_811_basic_try_except.py",
+      "category": "exceptions",
+      "feature": "8.1.1 Basic Try-Except",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_812_except_with_type.py",
+      "category": "exceptions",
+      "feature": "8.1.2 Except with Type",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_813_except_with_binding.py",
+      "category": "exceptions",
+      "feature": "8.1.3 Except with Binding",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_814_multiple_except_clauses.py",
+      "category": "exceptions",
+      "feature": "8.1.4 Multiple Except Clauses",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_815_multiple_exception_types.py",
+      "category": "exceptions",
+      "feature": "8.1.5 Multiple Exception Types",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_816_except_else.py",
+      "category": "exceptions",
+      "feature": "8.1.6 Except-Else",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_817_finally_clause.py",
+      "category": "exceptions",
+      "feature": "8.1.7 Finally Clause",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_818_try_except_else_finally.py",
+      "category": "exceptions",
+      "feature": "8.1.8 Try-Except-Else-Finally",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_819_nested_try_except.py",
+      "category": "exceptions",
+      "feature": "8.1.9 Nested Try-Except",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_8110_bare_except_catch_all.py",
+      "category": "exceptions",
+      "feature": "8.1.10 Bare Except (catch all)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_821_raise_exception.py",
+      "category": "exceptions",
+      "feature": "8.2.1 Raise Exception",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_822_raise_from_variable.py",
+      "category": "exceptions",
+      "feature": "8.2.2 Raise from Variable",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_823_re_raise_exception.py",
+      "category": "exceptions",
+      "feature": "8.2.3 Re-raise Exception",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_824_raise_from_another_exception.py",
+      "category": "exceptions",
+      "feature": "8.2.4 Raise from Another Exception",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_825_raise_without_from.py",
+      "category": "exceptions",
+      "feature": "8.2.5 Raise without From",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_826_custom_exception.py",
+      "category": "exceptions",
+      "feature": "8.2.6 Custom Exception",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "exceptions/test_827_exception_with_arguments.py",
+      "category": "exceptions",
+      "feature": "8.2.7 Exception with Arguments",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_828_assert_raises.py",
+      "category": "context-managers",
+      "feature": "8.2.8 Assert Raises",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_911_basic_with.py",
+      "category": "context-managers",
+      "feature": "9.1.1 Basic With",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_912_multiple_context_managers.py",
+      "category": "context-managers",
+      "feature": "9.1.2 Multiple Context Managers",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_913_context_manager_protocol_enter.py",
+      "category": "context-managers",
+      "feature": "9.1.3 Context Manager Protocol (__enter__)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_914_context_manager_protocol_exit.py",
+      "category": "context-managers",
+      "feature": "9.1.4 Context Manager Protocol (__exit__)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_915_suppressing_exceptions_in_context_manager.py",
+      "category": "context-managers",
+      "feature": "9.1.5 Suppressing Exceptions in Context Manager",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_916_contextlibcontextmanager.py",
+      "category": "context-managers",
+      "feature": "9.1.6 contextlib.contextmanager",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_917_contextlibclosing.py",
+      "category": "context-managers",
+      "feature": "9.1.7 contextlib.closing",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_918_contextlibsuppress.py",
+      "category": "context-managers",
+      "feature": "9.1.8 contextlib.suppress",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_919_async_context_manager.py",
+      "category": "context-managers",
+      "feature": "9.1.9 Async Context Manager",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_9110_aenter_aexit.py",
+      "category": "context-managers",
+      "feature": "9.1.10 __aenter__ / __aexit__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "context-managers/test_9111_exitstack.py",
+      "category": "context-managers",
+      "feature": "9.1.11 ExitStack",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_9112_nested_with_deprecated_syntax.py",
+      "category": "iterators",
+      "feature": "9.1.12 Nested With (deprecated syntax)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1011_iter_method.py",
+      "category": "iterators",
+      "feature": "10.1.1 __iter__ Method",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1012_next_method.py",
+      "category": "iterators",
+      "feature": "10.1.2 __next__ Method",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1013_iter_function.py",
+      "category": "iterators",
+      "feature": "10.1.3 iter() Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1014_next_function.py",
+      "category": "iterators",
+      "feature": "10.1.4 next() Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1015_next_with_default.py",
+      "category": "iterators",
+      "feature": "10.1.5 next() with Default",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1016_stopiteration_exception.py",
+      "category": "iterators",
+      "feature": "10.1.6 StopIteration Exception",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1017_iterator_chaining.py",
+      "category": "iterators",
+      "feature": "10.1.7 Iterator Chaining",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1018_custom_iterator_class.py",
+      "category": "iterators",
+      "feature": "10.1.8 Custom Iterator Class",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1021_basic_generator.py",
+      "category": "iterators",
+      "feature": "10.2.1 Basic Generator",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1022_generator_expression.py",
+      "category": "iterators",
+      "feature": "10.2.2 Generator Expression",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1023_yield_value.py",
+      "category": "iterators",
+      "feature": "10.2.3 Yield Value",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1024_yield_in_loop.py",
+      "category": "iterators",
+      "feature": "10.2.4 Yield in Loop",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1025_yield_from.py",
+      "category": "iterators",
+      "feature": "10.2.5 Yield from",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1026_generator_send.py",
+      "category": "iterators",
+      "feature": "10.2.6 Generator Send",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1027_generator_close.py",
+      "category": "iterators",
+      "feature": "10.2.7 Generator Close",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1028_generator_throw.py",
+      "category": "iterators",
+      "feature": "10.2.8 Generator Throw",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1029_generator_return_value.py",
+      "category": "iterators",
+      "feature": "10.2.9 Generator Return Value",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_10210_generator_in_comprehension.py",
+      "category": "iterators",
+      "feature": "10.2.10 Generator in Comprehension",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1031_zip_function.py",
+      "category": "iterators",
+      "feature": "10.3.1 zip() Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1032_enumerate_function.py",
+      "category": "iterators",
+      "feature": "10.3.2 enumerate() Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1033_map_function.py",
+      "category": "iterators",
+      "feature": "10.3.3 map() Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1034_filter_function.py",
+      "category": "iterators",
+      "feature": "10.3.4 filter() Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1035_reduce_function.py",
+      "category": "iterators",
+      "feature": "10.3.5 reduce() Function",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1036_any_function.py",
+      "category": "iterators",
+      "feature": "10.3.6 any() Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1037_all_function.py",
+      "category": "iterators",
+      "feature": "10.3.7 all() Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1038_sorted_with_iterator.py",
+      "category": "iterators",
+      "feature": "10.3.8 sorted() with Iterator",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "iterators/test_1039_reversed_function.py",
+      "category": "iterators",
+      "feature": "10.3.9 reversed() Function",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_10310_itertoolschain.py",
+      "category": "async-await",
+      "feature": "10.3.10 itertools.chain",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1111_async_function_definition.py",
+      "category": "async-await",
+      "feature": "11.1.1 Async Function Definition",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1112_await_expression.py",
+      "category": "async-await",
+      "feature": "11.1.2 Await Expression",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1113_async_function_with_parameters.py",
+      "category": "async-await",
+      "feature": "11.1.3 Async Function with Parameters",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1114_async_function_return_type.py",
+      "category": "async-await",
+      "feature": "11.1.4 Async Function Return Type",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1115_multiple_awaits.py",
+      "category": "async-await",
+      "feature": "11.1.5 Multiple Awaits",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1116_async_lambda_not_directly_supported.py",
+      "category": "async-await",
+      "feature": "11.1.6 Async Lambda (not directly supported)",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1117_async_generator.py",
+      "category": "async-await",
+      "feature": "11.1.7 Async Generator",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1118_async_comprehension.py",
+      "category": "async-await",
+      "feature": "11.1.8 Async Comprehension",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1121_asynciorun.py",
+      "category": "async-await",
+      "feature": "11.2.1 asyncio.run()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1122_asynciocreate_task.py",
+      "category": "async-await",
+      "feature": "11.2.2 asyncio.create_task()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1123_asynciogather.py",
+      "category": "async-await",
+      "feature": "11.2.3 asyncio.gather()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1124_asynciowait.py",
+      "category": "async-await",
+      "feature": "11.2.4 asyncio.wait()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1125_asynciosleep.py",
+      "category": "async-await",
+      "feature": "11.2.5 asyncio.sleep()",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1126_asyncioqueue.py",
+      "category": "async-await",
+      "feature": "11.2.6 asyncio.Queue",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1127_asynciolock.py",
+      "category": "async-await",
+      "feature": "11.2.7 asyncio.Lock",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1128_asynciosemaphore.py",
+      "category": "async-await",
+      "feature": "11.2.8 asyncio.Semaphore",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1129_asyncioevent.py",
+      "category": "async-await",
+      "feature": "11.2.9 asyncio.Event",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_11210_asynciotimeout.py",
+      "category": "async-await",
+      "feature": "11.2.10 asyncio.timeout()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_11211_asyncioshield.py",
+      "category": "async-await",
+      "feature": "11.2.11 asyncio.shield()",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_11212_asynciowait_for.py",
+      "category": "async-await",
+      "feature": "11.2.12 asyncio.wait_for()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1131_async_for_loop.py",
+      "category": "async-await",
+      "feature": "11.3.1 Async For Loop",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1132_aiter_method.py",
+      "category": "async-await",
+      "feature": "11.3.2 __aiter__ Method",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1133_anext_method.py",
+      "category": "async-await",
+      "feature": "11.3.3 __anext__ Method",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1134_async_generator.py",
+      "category": "async-await",
+      "feature": "11.3.4 Async Generator",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1135_async_comprehension.py",
+      "category": "async-await",
+      "feature": "11.3.5 Async Comprehension",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1136_async_generator_expression.py",
+      "category": "async-await",
+      "feature": "11.3.6 Async Generator Expression",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1141_async_with.py",
+      "category": "async-await",
+      "feature": "11.4.1 Async With",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1142_aenter_method.py",
+      "category": "async-await",
+      "feature": "11.4.2 __aenter__ Method",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1143_aexit_method.py",
+      "category": "async-await",
+      "feature": "11.4.3 __aexit__ Method",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1144_contextlibasynccontextmanager.py",
+      "category": "async-await",
+      "feature": "11.4.4 contextlib.asynccontextmanager",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "async-await/test_1145_multiple_async_context_managers.py",
+      "category": "async-await",
+      "feature": "11.4.5 Multiple Async Context Managers",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1146_async_context_manager_exception_handling.py",
+      "category": "type-hints",
+      "feature": "11.4.6 Async Context Manager Exception Handling",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1211_variable_annotation.py",
+      "category": "type-hints",
+      "feature": "12.1.1 Variable Annotation",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1212_function_parameter_annotation.py",
+      "category": "type-hints",
+      "feature": "12.1.2 Function Parameter Annotation",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1213_function_return_type.py",
+      "category": "type-hints",
+      "feature": "12.1.3 Function Return Type",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1214_optional_type.py",
+      "category": "type-hints",
+      "feature": "12.1.4 Optional Type",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1215_union_type.py",
+      "category": "type-hints",
+      "feature": "12.1.5 Union Type",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1216_union_type_syntax_python_310.py",
+      "category": "type-hints",
+      "feature": "12.1.6 Union Type (| syntax, Python 3.10+)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1217_list_type.py",
+      "category": "type-hints",
+      "feature": "12.1.7 List Type",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1218_dict_type.py",
+      "category": "type-hints",
+      "feature": "12.1.8 Dict Type",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1219_tuple_type.py",
+      "category": "type-hints",
+      "feature": "12.1.9 Tuple Type",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12110_set_type.py",
+      "category": "type-hints",
+      "feature": "12.1.10 Set Type",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1221_callable_type.py",
+      "category": "type-hints",
+      "feature": "12.2.1 Callable Type",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1222_any_type.py",
+      "category": "type-hints",
+      "feature": "12.2.2 Any Type",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1223_generic_typevar.py",
+      "category": "type-hints",
+      "feature": "12.2.3 Generic TypeVar",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1224_generic_class.py",
+      "category": "type-hints",
+      "feature": "12.2.4 Generic Class",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1225_protocol_structural_subtyping.py",
+      "category": "type-hints",
+      "feature": "12.2.5 Protocol (Structural Subtyping)",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1226_typeddict.py",
+      "category": "type-hints",
+      "feature": "12.2.6 TypedDict",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1227_literal_type.py",
+      "category": "type-hints",
+      "feature": "12.2.7 Literal Type",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1228_final_type.py",
+      "category": "type-hints",
+      "feature": "12.2.8 Final Type",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1229_classvar.py",
+      "category": "type-hints",
+      "feature": "12.2.9 ClassVar",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12210_type_alias.py",
+      "category": "type-hints",
+      "feature": "12.2.10 Type Alias",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12211_newtype.py",
+      "category": "type-hints",
+      "feature": "12.2.11 NewType",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12212_annotated_type.py",
+      "category": "type-hints",
+      "feature": "12.2.12 Annotated Type",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12213_paramspec.py",
+      "category": "type-hints",
+      "feature": "12.2.13 ParamSpec",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12214_self_type_python_311.py",
+      "category": "type-hints",
+      "feature": "12.2.14 Self Type (Python 3.11+)",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12215_type_guards.py",
+      "category": "type-hints",
+      "feature": "12.2.15 Type Guards",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1231_type_checking_constant.py",
+      "category": "type-hints",
+      "feature": "12.3.1 TYPE_CHECKING Constant",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1232_forward_references.py",
+      "category": "type-hints",
+      "feature": "12.3.2 Forward References",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1233_string_based_forward_reference.py",
+      "category": "type-hints",
+      "feature": "12.3.3 String-Based Forward Reference",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1234_get_type_hints.py",
+      "category": "type-hints",
+      "feature": "12.3.4 get_type_hints()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1235_overload_decorator.py",
+      "category": "type-hints",
+      "feature": "12.3.5 @overload Decorator",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1236_cast_function.py",
+      "category": "type-hints",
+      "feature": "12.3.6 cast() Function",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1237_reveal_type.py",
+      "category": "type-hints",
+      "feature": "12.3.7 reveal_type()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1238_assert_type.py",
+      "category": "type-hints",
+      "feature": "12.3.8 assert_type()",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_1239_no_type_check_decorator.py",
+      "category": "type-hints",
+      "feature": "12.3.9 @no_type_check Decorator",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12310_type_checking_import.py",
+      "category": "type-hints",
+      "feature": "12.3.10 TYPE_CHECKING Import",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12311_awaitable_type.py",
+      "category": "type-hints",
+      "feature": "12.3.11 Awaitable Type",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "type-hints/test_12312_coroutine_type.py",
+      "category": "type-hints",
+      "feature": "12.3.12 Coroutine Type",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_12313_asynciterator_type.py",
+      "category": "metaclasses",
+      "feature": "12.3.13 AsyncIterator Type",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1311_type_as_metaclass.py",
+      "category": "metaclasses",
+      "feature": "13.1.1 Type as Metaclass",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1312_custom_metaclass.py",
+      "category": "metaclasses",
+      "feature": "13.1.2 Custom Metaclass",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1313_new_in_metaclass.py",
+      "category": "metaclasses",
+      "feature": "13.1.3 __new__ in Metaclass",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1314_init_in_metaclass.py",
+      "category": "metaclasses",
+      "feature": "13.1.4 __init__ in Metaclass",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1315_call_in_metaclass.py",
+      "category": "metaclasses",
+      "feature": "13.1.5 __call__ in Metaclass",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1316_prepare_in_metaclass.py",
+      "category": "metaclasses",
+      "feature": "13.1.6 __prepare__ in Metaclass",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1317_metaclass_inheritance.py",
+      "category": "metaclasses",
+      "feature": "13.1.7 Metaclass Inheritance",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1318_init_subclass.py",
+      "category": "metaclasses",
+      "feature": "13.1.8 __init_subclass__",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1321_singleton_pattern.py",
+      "category": "metaclasses",
+      "feature": "13.2.1 Singleton Pattern",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1322_abstract_base_class_abcmeta.py",
+      "category": "metaclasses",
+      "feature": "13.2.2 Abstract Base Class (ABCMeta)",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1323_registration_pattern.py",
+      "category": "metaclasses",
+      "feature": "13.2.3 Registration Pattern",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1324_attribute_validation.py",
+      "category": "metaclasses",
+      "feature": "13.2.4 Attribute Validation",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1325_method_injection.py",
+      "category": "metaclasses",
+      "feature": "13.2.5 Method Injection",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1326_proxywrapper_classes.py",
+      "category": "metaclasses",
+      "feature": "13.2.6 Proxy/Wrapper Classes",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1327_orm_models.py",
+      "category": "metaclasses",
+      "feature": "13.2.7 ORM Models",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1331_multiple_metaclasses.py",
+      "category": "metaclasses",
+      "feature": "13.3.1 Multiple Metaclasses",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1332_mro_method_resolution_order.py",
+      "category": "metaclasses",
+      "feature": "13.3.2 __mro__ (Method Resolution Order)",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1333_subclasses.py",
+      "category": "metaclasses",
+      "feature": "13.3.3 __subclasses__()",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1334_instancecheck.py",
+      "category": "metaclasses",
+      "feature": "13.3.4 __instancecheck__",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1335_subclasscheck.py",
+      "category": "metaclasses",
+      "feature": "13.3.5 __subclasscheck__",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "metaclasses/test_1336_class_decorators_as_alternative.py",
+      "category": "metaclasses",
+      "feature": "13.3.6 Class Decorators as Alternative",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1337_set_name_descriptor.py",
+      "category": "descriptors",
+      "feature": "13.3.7 __set_name__ (Descriptor)",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1411_get_method.py",
+      "category": "descriptors",
+      "feature": "14.1.1 __get__ Method",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1412_set_method.py",
+      "category": "descriptors",
+      "feature": "14.1.2 __set__ Method",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1413_delete_method.py",
+      "category": "descriptors",
+      "feature": "14.1.3 __delete__ Method",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1414_data_descriptor_has_set_or_delete.py",
+      "category": "descriptors",
+      "feature": "14.1.4 Data Descriptor (has __set__ or __delete__)",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1415_non_data_descriptor_only_get.py",
+      "category": "descriptors",
+      "feature": "14.1.5 Non-Data Descriptor (only __get__)",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1416_set_name_hook.py",
+      "category": "descriptors",
+      "feature": "14.1.6 __set_name__ Hook",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1421_property_implementation.py",
+      "category": "descriptors",
+      "feature": "14.2.1 Property Implementation",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1422_static_method_implementation.py",
+      "category": "descriptors",
+      "feature": "14.2.2 Static Method Implementation",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1423_class_method_implementation.py",
+      "category": "descriptors",
+      "feature": "14.2.3 Class Method Implementation",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1424_lazy_attribute.py",
+      "category": "descriptors",
+      "feature": "14.2.4 Lazy Attribute",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1425_validated_attribute.py",
+      "category": "descriptors",
+      "feature": "14.2.5 Validated Attribute",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1426_type_checked_attribute.py",
+      "category": "descriptors",
+      "feature": "14.2.6 Type-Checked Attribute",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1427_cached_property.py",
+      "category": "descriptors",
+      "feature": "14.2.7 Cached Property",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1428_method_descriptor.py",
+      "category": "descriptors",
+      "feature": "14.2.8 Method Descriptor",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "descriptors/test_1429_slot_descriptor.py",
+      "category": "descriptors",
+      "feature": "14.2.9 Slot Descriptor",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_15616_import.py",
+      "category": "magic-methods",
+      "feature": "15.6.16 __import__()",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1611_new.py",
+      "category": "magic-methods",
+      "feature": "16.1.1 __new__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1612_init.py",
+      "category": "magic-methods",
+      "feature": "16.1.2 __init__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1613_del.py",
+      "category": "magic-methods",
+      "feature": "16.1.3 __del__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1614_repr.py",
+      "category": "magic-methods",
+      "feature": "16.1.4 __repr__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1615_str.py",
+      "category": "magic-methods",
+      "feature": "16.1.5 __str__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1616_format.py",
+      "category": "magic-methods",
+      "feature": "16.1.6 __format__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1617_bytes.py",
+      "category": "magic-methods",
+      "feature": "16.1.7 __bytes__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1618_hash.py",
+      "category": "magic-methods",
+      "feature": "16.1.8 __hash__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1621_eq.py",
+      "category": "magic-methods",
+      "feature": "16.2.1 __eq__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1622_ne.py",
+      "category": "magic-methods",
+      "feature": "16.2.2 __ne__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1623_lt.py",
+      "category": "magic-methods",
+      "feature": "16.2.3 __lt__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1624_le.py",
+      "category": "magic-methods",
+      "feature": "16.2.4 __le__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1625_gt.py",
+      "category": "magic-methods",
+      "feature": "16.2.5 __gt__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1626_ge.py",
+      "category": "magic-methods",
+      "feature": "16.2.6 __ge__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1627_bool.py",
+      "category": "magic-methods",
+      "feature": "16.2.7 __bool__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1628_cmp_python_2_deprecated.py",
+      "category": "magic-methods",
+      "feature": "16.2.8 __cmp__ (Python 2, deprecated)",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1631_add.py",
+      "category": "magic-methods",
+      "feature": "16.3.1 __add__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1632_sub.py",
+      "category": "magic-methods",
+      "feature": "16.3.2 __sub__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1633_mul.py",
+      "category": "magic-methods",
+      "feature": "16.3.3 __mul__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1634_truediv.py",
+      "category": "magic-methods",
+      "feature": "16.3.4 __truediv__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1635_floordiv.py",
+      "category": "magic-methods",
+      "feature": "16.3.5 __floordiv__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1636_mod.py",
+      "category": "magic-methods",
+      "feature": "16.3.6 __mod__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1637_divmod.py",
+      "category": "magic-methods",
+      "feature": "16.3.7 __divmod__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1638_pow.py",
+      "category": "magic-methods",
+      "feature": "16.3.8 __pow__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1639_lshift.py",
+      "category": "magic-methods",
+      "feature": "16.3.9 __lshift__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16310_rshift.py",
+      "category": "magic-methods",
+      "feature": "16.3.10 __rshift__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16311_and.py",
+      "category": "magic-methods",
+      "feature": "16.3.11 __and__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16312_or.py",
+      "category": "magic-methods",
+      "feature": "16.3.12 __or__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16313_xor.py",
+      "category": "magic-methods",
+      "feature": "16.3.13 __xor__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16314_neg.py",
+      "category": "magic-methods",
+      "feature": "16.3.14 __neg__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16315_pos.py",
+      "category": "magic-methods",
+      "feature": "16.3.15 __pos__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16316_abs.py",
+      "category": "magic-methods",
+      "feature": "16.3.16 __abs__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16317_invert.py",
+      "category": "magic-methods",
+      "feature": "16.3.17 __invert__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16318_matmul.py",
+      "category": "magic-methods",
+      "feature": "16.3.18 __matmul__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1641_radd.py",
+      "category": "magic-methods",
+      "feature": "16.4.1 __radd__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1642_rsub_rmul_rtruediv_etc.py",
+      "category": "magic-methods",
+      "feature": "16.4.2 __rsub__, __rmul__, __rtruediv__, etc.",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1651_iadd.py",
+      "category": "magic-methods",
+      "feature": "16.5.1 __iadd__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1652_isub_imul_etc.py",
+      "category": "magic-methods",
+      "feature": "16.5.2 __isub__, __imul__, etc.",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1661_len.py",
+      "category": "magic-methods",
+      "feature": "16.6.1 __len__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1662_getitem.py",
+      "category": "magic-methods",
+      "feature": "16.6.2 __getitem__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1663_setitem.py",
+      "category": "magic-methods",
+      "feature": "16.6.3 __setitem__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1664_delitem.py",
+      "category": "magic-methods",
+      "feature": "16.6.4 __delitem__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1665_contains.py",
+      "category": "magic-methods",
+      "feature": "16.6.5 __contains__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1666_iter.py",
+      "category": "magic-methods",
+      "feature": "16.6.6 __iter__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1667_reversed.py",
+      "category": "magic-methods",
+      "feature": "16.6.7 __reversed__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1668_next.py",
+      "category": "magic-methods",
+      "feature": "16.6.8 __next__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1669_missing.py",
+      "category": "magic-methods",
+      "feature": "16.6.9 __missing__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_16610_length_hint.py",
+      "category": "magic-methods",
+      "feature": "16.6.10 __length_hint__",
+      "complexity": "Low",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1671_call.py",
+      "category": "magic-methods",
+      "feature": "16.7.1 __call__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1672_enter.py",
+      "category": "magic-methods",
+      "feature": "16.7.2 __enter__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1673_exit.py",
+      "category": "magic-methods",
+      "feature": "16.7.3 __exit__",
+      "complexity": "High",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1674_await.py",
+      "category": "magic-methods",
+      "feature": "16.7.4 __await__",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1681_getattr.py",
+      "category": "magic-methods",
+      "feature": "16.8.1 __getattr__",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1682_setattr.py",
+      "category": "magic-methods",
+      "feature": "16.8.2 __setattr__",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1683_delattr.py",
+      "category": "magic-methods",
+      "feature": "16.8.3 __delattr__",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1684_getattribute.py",
+      "category": "magic-methods",
+      "feature": "16.8.4 __getattribute__",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1685_dir.py",
+      "category": "magic-methods",
+      "feature": "16.8.5 __dir__",
+      "complexity": "Medium",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1686_get_descriptor.py",
+      "category": "magic-methods",
+      "feature": "16.8.6 __get__ (descriptor)",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1687_set_descriptor.py",
+      "category": "magic-methods",
+      "feature": "16.8.7 __set__ (descriptor)",
+      "complexity": "Very",
+      "status": "not_implemented"
+    },
+    {
+      "path": "magic-methods/test_1688_delete_descriptor.py",
+      "category": "magic-methods",
+      "feature": "16.8.8 __delete__ (descriptor)",
+      "complexity": "Very",
+      "status": "not_implemented"
+    }
+  ]
+}

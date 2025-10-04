@@ -1,0 +1,583 @@
+warning: unused import: `Level`
+  --> core/src/telemetry.rs:11:27
+   |
+11 | use tracing::{info, warn, Level};
+   |                           ^^^^^
+   |
+   = note: `#[warn(unused_imports)]` on by default
+
+warning: unused import: `std::fmt`
+  --> core/src/logging.rs:12:5
+   |
+12 | use std::fmt;
+   |     ^^^^^^^^
+
+warning: unused import: `HashSet`
+ --> core/src/assessment/feature_detector.rs:6:33
+  |
+6 | use std::collections::{HashMap, HashSet};
+  |                                 ^^^^^^^
+
+warning: unused import: `std::collections::HashMap`
+ --> core/src/assessment/effort_estimator.rs:8:5
+  |
+8 | use std::collections::HashMap;
+  |     ^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: unused variable: `duration`
+  --> core/src/middleware/metrics_middleware.rs:79:13
+   |
+79 |         let duration = self.start.elapsed().as_secs_f64();
+   |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_duration`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unused variable: `duration`
+  --> core/src/middleware/metrics_middleware.rs:95:13
+   |
+95 |         let duration = self.start.elapsed().as_secs_f64();
+   |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_duration`
+
+warning: unused variable: `duration`
+   --> core/src/middleware/metrics_middleware.rs:119:13
+    |
+119 |         let duration = self.start.elapsed().as_secs_f64();
+    |             ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_duration`
+
+warning: unused variable: `error_msg`
+   --> core/src/middleware/metrics_middleware.rs:178:26
+    |
+178 |     pub fn failure(self, error_msg: &str) {
+    |                          ^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_error_msg`
+
+warning: unused variable: `complexity`
+   --> core/src/middleware/metrics_middleware.rs:312:48
+    |
+312 |     pub fn success(self, lines_of_code: usize, complexity: f64) {
+    |                                                ^^^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_complexity`
+
+warning: unused variable: `count`
+   --> core/src/assessment/compatibility_analyzer.rs:187:24
+    |
+187 |         for (category, count) in &features.summary.by_category {
+    |                        ^^^^^ help: if this is intentional, prefix it with an underscore: `_count`
+
+warning: unused variable: `features`
+   --> core/src/assessment/compatibility_analyzer.rs:398:9
+    |
+398 |         features: &FeatureSet,
+    |         ^^^^^^^^ help: if this is intentional, prefix it with an underscore: `_features`
+
+warning: field `method` is never read
+  --> core/src/middleware/metrics_middleware.rs:63:5
+   |
+60 | pub struct RequestGuard {
+   |            ------------ field in this struct
+...
+63 |     method: String,
+   |     ^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: field `min_translatable_score` is never read
+  --> core/src/assessment/compatibility_analyzer.rs:96:5
+   |
+94 | pub struct CompatibilityAnalyzer {
+   |            --------------------- field in this struct
+95 |     /// Minimum score to consider translatable
+96 |     min_translatable_score: f64,
+   |     ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: `portalis-core` (lib) generated 13 warnings (run `cargo fix --lib -p portalis-core` to apply 4 suggestions)
+   Compiling portalis-transpiler v0.1.0 (/workspace/portalis/agents/transpiler)
+warning: unused variable: `params`
+  --> agents/transpiler/src/code_generator.rs:80:54
+   |
+80 |     fn generate_function_body(&mut self, name: &str, params: &[Value], return_type: &str) -> Result<String> {
+   |                                                      ^^^^^^ help: if this is intentional, prefix it with an underscore: `_params`
+   |
+   = note: `#[warn(unused_variables)]` on by default
+
+warning: unreachable pattern
+   --> agents/transpiler/src/python_to_rust.rs:879:13
+    |
+879 |             _ => Err(Error::CodeGeneration(format!(
+    |             ^ no value can reach this
+    |
+note: multiple earlier patterns match some of the same values
+   --> agents/transpiler/src/python_to_rust.rs:879:13
+    |
+330 |               PyStmt::Expr(expr) => {
+    |               ------------------ matches some of the same values
+...
+335 | /             PyStmt::Assign {
+336 | |                 targets,
+337 | |                 value,
+338 | |                 type_hint,
+339 | |             } => {
+    | |_____________- matches some of the same values
+...
+370 |               PyStmt::AugAssign { target, op, value } => {
+    |               --------------------------------------- matches some of the same values
+...
+382 | /             PyStmt::FunctionDef {
+383 | |                 name,
+384 | |                 args,
+385 | |                 body,
+...   |
+388 | |                 is_async,
+389 | |             } => {
+    | |_____________- matches some of the same values
+...
+879 |               _ => Err(Error::CodeGeneration(format!(
+    |               ^ ...and 14 other patterns collectively make this unreachable
+    = note: `#[warn(unreachable_patterns)]` on by default
+
+warning: unused variable: `bases`
+   --> agents/transpiler/src/python_to_rust.rs:583:17
+    |
+583 |                 bases,
+    |                 ^^^^^ help: try ignoring the field: `bases: _`
+
+warning: unused variable: `i`
+   --> agents/transpiler/src/python_to_rust.rs:786:26
+    |
+786 |                     for (i, handler) in handlers.iter().enumerate() {
+    |                          ^ help: if this is intentional, prefix it with an underscore: `_i`
+
+warning: unused variable: `is_elif`
+   --> agents/transpiler/src/indented_parser.rs:186:29
+    |
+186 |         let (condition_str, is_elif) = if line.content.starts_with("elif ") {
+    |                             ^^^^^^^ help: if this is intentional, prefix it with an underscore: `_is_elif`
+
+warning: unused variable: `test`
+    --> agents/transpiler/src/indented_parser.rs:1403:26
+     |
+1403 |             PyStmt::If { test, body, .. } => {
+     |                          ^^^^-
+     |                          |
+     |                          help: try removing the field
+
+warning: unused variable: `test`
+    --> agents/transpiler/src/indented_parser.rs:1462:29
+     |
+1462 |             PyStmt::While { test, body, .. } => {
+     |                             ^^^^-
+     |                             |
+     |                             help: try removing the field
+
+warning: methods `extract_python_source` and `generate_function_old` are never used
+   --> agents/transpiler/src/lib.rs:230:8
+    |
+170 | impl TranspilerAgent {
+    | -------------------- methods in this implementation
+...
+230 |     fn extract_python_source(&self, func: &serde_json::Value) -> Option<String> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+...
+238 |     fn generate_function_old(&self, func: &serde_json::Value) -> Result<String> {
+    |        ^^^^^^^^^^^^^^^^^^^^^
+    |
+    = note: `#[warn(dead_code)]` on by default
+
+warning: `portalis-transpiler` (lib test) generated 8 warnings (run `cargo fix --lib -p portalis-transpiler --tests` to apply 2 suggestions)
+warning: `portalis-transpiler` (lib) generated 6 warnings (6 duplicates)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 7.72s
+     Running unittests src/lib.rs (/workspace/portalis/target/debug/deps/portalis_transpiler-ddf8bea8cc109e8d)
+
+running 233 tests
+test class_translator::tests::test_generate_instance_method ... ok
+test class_translator::tests::test_generate_constructor ... ok
+test class_translator::tests::test_generate_simple_struct ... ok
+test day10_11_features_test::test_augmented_assignment_all_operators ... ok
+test day10_11_features_test::test_dictionary_literal_empty ... ok
+test day10_11_features_test::test_dictionary_access ... ok
+test day10_11_features_test::test_len_function ... ok
+test day10_11_features_test::test_dictionary_literal_with_values ... ok
+test day10_11_features_test::test_list_append ... ok
+test day10_11_features_test::test_multiple_assignment ... ok
+test day10_11_features_test::test_list_comprehension_simple ... ok
+test day10_11_features_test::test_list_comprehension_with_condition ... FAILED
+test day10_11_features_test::test_range_with_step ... ok
+test day10_11_features_test::test_string_concatenation ... ok
+test day12_13_features_test::test_assert_with_condition ... ok
+test day10_11_features_test::test_string_concatenation_with_variables ... ok
+test day12_13_features_test::test_assert_with_and ... ok
+test day12_13_features_test::test_assert_with_message ... ok
+test day12_13_features_test::test_assert_in_function ... ok
+test day12_13_features_test::test_assert_with_not ... ok
+test day12_13_features_test::test_assert_not_equal ... ok
+test day14_15_features_test::test_full_slice ... ok
+test day12_13_features_test::test_multiple_asserts ... ok
+test day12_13_features_test::test_simple_assert ... ok
+test day12_13_features_test::test_assert_with_or ... ok
+test day14_15_features_test::test_basic_slice ... ok
+test day14_15_features_test::test_slice_from_start ... ok
+test day14_15_features_test::test_nested_slice ... ok
+test day14_15_features_test::test_multiple_slices ... ok
+test day12_13_features_test::test_assert_equality ... ok
+test day14_15_features_test::test_slice_in_function ... ok
+test day10_11_features_test::test_string_methods ... ok
+test day16_17_features_test::test_lambda_no_args ... FAILED
+test day16_17_features_test::test_lambda_with_call ... ok
+test day14_15_features_test::test_slice_to_end ... ok
+test day14_15_features_test::test_string_slice ... ok
+test day16_17_features_test::test_lambda_two_args ... ok
+test day16_17_features_test::test_lambda_complex_expression ... ok
+test day14_15_features_test::test_slice_with_range_and_step ... ok
+test day16_17_features_test::test_lambda_assigned_to_variable ... ok
+test day16_17_features_test::test_lambda_with_comparison ... ok
+test day16_17_features_test::test_lambda_with_multiplication ... ok
+test day16_17_features_test::test_lambda_with_multiple_operations ... ok
+test day16_17_features_test::test_multiple_lambdas ... ok
+test day14_15_features_test::test_slice_with_step ... ok
+test day18_19_features_test::test_len_with_string ... ok
+test day18_19_features_test::test_max_function_args ... ok
+test day16_17_features_test::test_simple_lambda ... ok
+test day18_19_features_test::test_max_function_list ... ok
+test day18_19_features_test::test_abs_function ... ok
+test day18_19_features_test::test_len_function ... ok
+test day18_19_features_test::test_min_function_args ... ok
+test day20_21_features_test::test_for_else_no_break ... ok
+test day18_19_features_test::test_nested_builtin_functions ... FAILED
+test day18_19_features_test::test_reversed_function ... ok
+test day18_19_features_test::test_min_function_list ... ok
+test day18_19_features_test::test_multiple_builtin_functions ... ok
+test day20_21_features_test::test_for_else_empty_sequence ... ok
+test day18_19_features_test::test_sum_function ... ok
+test day18_19_features_test::test_sorted_function ... ok
+test day20_21_features_test::test_for_else_search_pattern ... ok
+test day20_21_features_test::test_for_else_with_assignment_in_else ... ok
+test day20_21_features_test::test_while_else_no_break ... ok
+test day22_23_features_test::test_chained_string_methods ... ok
+test day20_21_features_test::test_for_else_with_continue ... ok
+test day22_23_features_test::test_list_reverse ... ok
+test day22_23_features_test::test_multiple_string_operations ... ok
+test day20_21_features_test::test_for_else_with_break ... ok
+test day22_23_features_test::test_list_sort ... ok
+test day22_23_features_test::test_list_append ... ok
+test day22_23_features_test::test_list_pop ... ok
+test day20_21_features_test::test_while_else_with_break ... ok
+test day20_21_features_test::test_while_else_countdown ... ok
+test day20_21_features_test::test_nested_for_with_else ... ok
+test day22_23_features_test::test_string_replace ... ok
+test day22_23_features_test::test_string_count ... ok
+test day22_23_features_test::test_string_find ... ok
+test day22_23_features_test::test_string_lstrip ... ok
+test day22_23_features_test::test_string_endswith ... ok
+test day22_23_features_test::test_string_join ... ok
+test day22_23_features_test::test_string_lower ... ok
+test day22_23_features_test::test_string_rstrip ... ok
+test day22_23_features_test::test_string_strip ... ok
+test day22_23_features_test::test_string_upper ... ok
+test day22_23_features_test::test_string_split_no_args ... ok
+test day24_25_features_test::test_enumerate_basic ... ok
+test day24_25_features_test::test_enumerate_in_list_comprehension ... ok
+test day22_23_features_test::test_string_startswith ... ok
+test day22_23_features_test::test_string_split_with_delimiter ... ok
+test day24_25_features_test::test_zip_assignment ... ok
+test day24_25_features_test::test_enumerate_assignment ... ok
+test day24_25_features_test::test_zip_unequal_length ... ok
+test day24_25_features_test::test_enumerate_start_index ... ok
+test day24_25_features_test::test_enumerate_with_index ... ok
+test day24_25_features_test::test_zip_two_lists ... ok
+test day24_25_features_test::test_zip_three_lists ... ok
+test day26_27_features_test::test_swap_values ... ok
+test day26_27_features_test::test_enumerate_simple ... ok
+test day26_27_features_test::test_tuple_assignment_literal ... ok
+test day26_27_features_test::test_nested_tuple_unpacking ... ok
+test day26_27_features_test::test_for_loop_tuple_unpacking ... ok
+test day26_27_features_test::test_for_enumerate_with_assignment ... ok
+test day24_25_features_test::test_zip_with_range ... ok
+test day26_27_features_test::test_for_loop_with_index ... ok
+test day26_27_features_test::test_tuple_unpacking_simple ... ok
+test day26_27_features_test::test_tuple_unpacking_three_values ... ok
+test day28_29_features_test::test_any_empty_list ... ok
+test day28_29_features_test::test_any_with_condition ... FAILED
+test day26_27_features_test::test_zip_simple ... ok
+test day28_29_features_test::test_any_function ... ok
+test day28_29_features_test::test_all_with_condition ... FAILED
+test day28_29_features_test::test_all_empty_list ... ok
+test day28_29_features_test::test_all_function ... ok
+test day28_29_features_test::test_dict_constructor_empty ... ok
+test day28_29_features_test::test_list_constructor_empty ... ok
+test day28_29_features_test::test_bool_conversion ... ok
+test day28_29_features_test::test_int_conversion ... ok
+test day28_29_features_test::test_str_conversion ... ok
+test day28_29_features_test::test_float_conversion ... ok
+test day28_29_features_test::test_type_conversion_chain ... ok
+test day30_features_test::test_raise_bare ... ok
+test day30_features_test::test_nested_try_except ... ok
+test day30_features_test::test_raise_exception ... ok
+test day30_features_test::test_try_except_basic ... ok
+test day28_29_features_test::test_list_from_range ... ok
+test day28_29_features_test::test_list_from_enumerate ... ok
+test day28_29_features_test::test_list_from_zip ... ok
+test day30_features_test::test_try_except_else ... ok
+test day30_features_test::test_try_except_in_function ... ok
+test day3_features_test::tests::test_comparison_operators ... FAILED
+test day3_features_test::tests::test_empty_list ... ok
+test day30_features_test::test_try_except_finally ... ok
+test day3_features_test::tests::test_empty_tuple ... ok
+test day30_features_test::test_try_except_with_type ... ok
+test day30_features_test::test_try_except_with_variable ... ok
+test day3_features_test::tests::test_logical_not ... ok
+test day3_features_test::tests::test_list_indexing ... ok
+test day3_features_test::tests::test_pass_statement ... ok
+test day30_features_test::test_try_finally ... ok
+test day3_features_test::tests::test_logical_and ... ok
+test day3_features_test::tests::test_logical_or ... ok
+test day3_features_test::tests::test_list_literal ... ok
+test day3_features_test::tests::test_tuple_literal ... ok
+test day4_5_features_test::test_all_arithmetic_operators ... ok
+test day3_features_test::tests::test_full_day3_program ... FAILED
+test day4_5_features_test::test_complete_program_fibonacci ... FAILED
+test day4_5_features_test::test_division_operator ... ok
+test day4_5_features_test::test_modulo_operator ... ok
+test day4_5_features_test::test_for_loop_range_start_stop ... ok
+test day4_5_features_test::test_for_loop_range ... ok
+test day4_5_features_test::test_subtraction_operator ... ok
+test day4_5_features_test::test_if_elif_else ... ok
+test day4_5_features_test::test_multiplication_operator ... ok
+test day4_5_features_test::test_while_loop ... ok
+test day6_7_features_test::test_function_call_no_args ... ok
+test day4_5_features_test::test_if_statement ... ok
+test day4_5_features_test::test_complete_program_fizzbuzz ... FAILED
+test day6_7_features_test::test_function_call_with_args ... ok
+test day4_5_features_test::test_nested_if_in_loop ... ok
+test day6_7_features_test::test_function_return_no_value ... ok
+test day6_7_features_test::test_function_return_expression ... ok
+test day6_7_features_test::test_function_call_result_used ... ok
+test day4_5_features_test::test_if_else ... ok
+test day6_7_features_test::test_complete_program_with_functions ... ok
+test day4_5_features_test::test_nested_loops ... ok
+test day6_7_features_test::test_function_with_params ... ok
+test day6_7_features_test::test_function_with_loop ... ok
+test day6_7_features_test::test_function_with_if_statement ... ok
+test day6_7_features_test::test_multiple_functions ... ok
+test day8_9_features_test::test_attribute_access ... ok
+test day8_9_features_test::test_class_object_creation ... ok
+test day6_7_features_test::test_function_with_local_variables ... ok
+test day6_7_features_test::test_recursive_function ... ok
+test day6_7_features_test::test_simple_function_no_params ... FAILED
+test day6_7_features_test::test_function_with_type_hints ... ok
+test day8_9_features_test::test_class_with_init ... ok
+test day8_9_features_test::test_class_with_method ... ok
+test day8_9_features_test::test_class_with_typed_init ... ok
+test day8_9_features_test::test_simple_class_definition ... ok
+test day8_9_features_test::test_class_with_method_parameters ... ok
+test day8_9_features_test::test_class_with_return_method ... ok
+test feature_translator::tests::test_translate_float_literal ... ok
+test indented_parser::tests::test_from_import_statement ... ok
+test feature_translator::tests::test_translate_comments_skipped ... ok
+test feature_translator::tests::test_translate_simple_assignment ... ok
+test feature_translator::tests::test_translate_augmented_assignment ... ok
+test feature_translator::tests::test_translate_integer_literal ... ok
+test feature_translator::tests::test_translate_boolean_literal ... ok
+test day8_9_features_test::test_class_with_multiple_methods ... ok
+test feature_translator::tests::test_translate_binary_operation ... ok
+test day8_9_features_test::test_complete_class_program ... ok
+test python_ast::tests::test_simple_assignment ... ok
+test indented_parser::tests::test_import_statement ... ok
+test python_ast::tests::test_literal_creation ... ok
+test indented_parser::tests::test_if_else ... ok
+test indented_parser::tests::test_for_loop ... ok
+test feature_translator::tests::test_translate_string_literal ... ok
+test python_ast::tests::test_function_definition ... ok
+test python_ast::tests::test_binary_operation ... ok
+test feature_translator::tests::test_full_program ... FAILED
+test python_to_rust::tests::test_type_inference_int ... ok
+test feature_translator::tests::test_translate_multiple_statements ... ok
+test python_to_rust::tests::test_type_inference_float ... ok
+test indented_parser::tests::test_while_loop ... ok
+test indented_parser::tests::test_function_definition ... ok
+test feature_translator::tests::test_translate_print ... FAILED
+test simple_parser::tests::test_parse_augmented_assignment ... ok
+test indented_parser::tests::test_if_statement ... ok
+test indented_parser::tests::test_nested_blocks ... ok
+test simple_parser::tests::test_parse_integer_literal ... ok
+test simple_parser::tests::test_parse_print ... ok
+test simple_parser::tests::test_parse_boolean_literal ... ok
+test simple_parser::tests::test_parse_string_literal ... ok
+test simple_parser::tests::test_skip_comments ... ok
+test simple_parser::tests::test_parse_float_literal ... ok
+test python_to_rust::tests::test_type_inference_string ... ok
+test simple_parser::tests::test_parse_binary_operation ... ok
+test python_to_rust::tests::test_translate_simple_assignment ... ok
+test stdlib_mapper::tests::test_cargo_deps_generation ... ok
+test stdlib_mapper::tests::test_json_module_mapping ... ok
+test python_to_rust::tests::test_translate_function ... ok
+test stdlib_mapper::tests::test_function_translation ... ok
+test stdlib_mapper::tests::test_math_module_mapping ... ok
+test stdlib_mapper::tests::test_use_statements_generation ... ok
+test test_import_aliases::test_from_import_with_alias ... ok
+test test_import_aliases::test_import_with_alias ... ok
+test test_import_aliases::test_nested_attribute_os_path_exists ... ok
+test test_import_aliases::test_import_with_alias_function_call ... ok
+test test_import_aliases::test_mixed_imports_with_and_without_aliases ... ok
+test tests::test_generate_simple_function ... ok
+test tests::test_generate_fibonacci ... ok
+test test_import_aliases::test_multiple_imports_with_aliases ... ok
+test test_import_aliases::test_nested_attribute_from_import ... ok
+
+failures:
+
+---- day10_11_features_test::test_list_comprehension_with_condition stdout ----
+Generated Rust:
+// Generated by Portalis Python → Rust Translator
+#![allow(unused)]
+
+
+
+thread 'day10_11_features_test::test_list_comprehension_with_condition' panicked at agents/transpiler/src/day10_11_features_test.rs:102:5:
+assertion failed: rust.contains("evens")
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- day16_17_features_test::test_lambda_no_args stdout ----
+
+thread 'day16_17_features_test::test_lambda_no_args' panicked at agents/transpiler/src/day16_17_features_test.rs:43:45:
+called `Result::unwrap()` on an `Err` value: CodeGeneration("Unable to parse expression: lambda: 42")
+
+---- day18_19_features_test::test_nested_builtin_functions stdout ----
+
+thread 'day18_19_features_test::test_nested_builtin_functions' panicked at agents/transpiler/src/day18_19_features_test.rs:169:45:
+called `Result::unwrap()` on an `Err` value: CodeGeneration("Unable to parse expression: abs(x) for x in numbers")
+
+---- day28_29_features_test::test_any_with_condition stdout ----
+Generated Rust:
+// Generated by Portalis Python → Rust Translator
+#![allow(unused)]
+
+let numbers: Vec<i32> = vec![1, 2, 3, 4, 5];
+
+
+thread 'day28_29_features_test::test_any_with_condition' panicked at agents/transpiler/src/day28_29_features_test.rs:50:5:
+assertion failed: rust.contains("has_even")
+
+---- day28_29_features_test::test_all_with_condition stdout ----
+Generated Rust:
+// Generated by Portalis Python → Rust Translator
+#![allow(unused)]
+
+let numbers: Vec<i32> = vec![2, 4, 6, 8];
+
+
+thread 'day28_29_features_test::test_all_with_condition' panicked at agents/transpiler/src/day28_29_features_test.rs:64:5:
+assertion failed: rust.contains("all_even")
+
+---- day3_features_test::tests::test_comparison_operators stdout ----
+
+thread 'day3_features_test::tests::test_comparison_operators' panicked at agents/transpiler/src/day3_features_test.rs:24:13:
+Failed for: x == y
+
+---- day3_features_test::tests::test_full_day3_program stdout ----
+Generated Rust:
+// Generated by Portalis Python → Rust Translator
+#![allow(unused)]
+
+let x: i32 = 10;
+let y: i32 = 20;
+let is_less: bool = x < y;
+let numbers: Vec<i32> = vec![1, 2, 3];
+let coords: () = (x, y);
+let first: () = numbers[0];
+
+
+thread 'day3_features_test::tests::test_full_day3_program' panicked at agents/transpiler/src/day3_features_test.rs:121:9:
+assertion failed: rust.contains("x == y")
+
+---- day4_5_features_test::test_complete_program_fibonacci stdout ----
+Generated Rust code:
+// Generated by Portalis Python → Rust Translator
+#![allow(unused)]
+
+let a: i32 = 0;
+let b: i32 = 1;
+for i in 0..10 {
+    println!("{:?}", a);
+    let temp: i32 = a + b;
+    let a: i32 = b;
+    let b: i32 = temp;
+}
+
+
+thread 'day4_5_features_test::test_complete_program_fibonacci' panicked at agents/transpiler/src/day4_5_features_test.rs:198:5:
+assertion failed: rust.contains("print(a);")
+
+---- day4_5_features_test::test_complete_program_fizzbuzz stdout ----
+Generated Rust code:
+// Generated by Portalis Python → Rust Translator
+#![allow(unused)]
+
+for i in 1..16 {
+    if i % 15 == 0 {
+        println!("{:?}", "FizzBuzz");
+    } else {
+        if i % 3 == 0 {
+            println!("{:?}", "Fizz");
+        } else {
+            if i % 5 == 0 {
+                println!("{:?}", "Buzz");
+            } else {
+                println!("{:?}", i);
+            }
+        }
+    }
+}
+
+
+thread 'day4_5_features_test::test_complete_program_fizzbuzz' panicked at agents/transpiler/src/day4_5_features_test.rs:223:5:
+assertion failed: rust.contains(r#"print("FizzBuzz");"#)
+
+---- day6_7_features_test::test_simple_function_no_params stdout ----
+Generated Rust:
+// Generated by Portalis Python → Rust Translator
+#![allow(unused)]
+
+pub fn greet() -> () {
+    println!("{:?}", "Hello");
+}
+
+
+
+thread 'day6_7_features_test::test_simple_function_no_params' panicked at agents/transpiler/src/day6_7_features_test.rs:26:5:
+assertion failed: rust.contains(r#"print("Hello");"#)
+
+---- feature_translator::tests::test_full_program stdout ----
+Generated Rust code:
+// Generated by Portalis Python → Rust Translator
+#![allow(unused)]
+
+let x: i32 = 10;
+let y: i32 = 20;
+let total: i32 = x + y;
+println!("{:?}", "Result");
+
+
+thread 'feature_translator::tests::test_full_program' panicked at agents/transpiler/src/feature_translator.rs:257:9:
+assertion failed: rust.contains(r#"print("Result");"#)
+
+---- feature_translator::tests::test_translate_print stdout ----
+
+thread 'feature_translator::tests::test_translate_print' panicked at agents/transpiler/src/feature_translator.rs:200:9:
+assertion failed: rust.contains(r#"print("hello");"#)
+
+
+failures:
+    day10_11_features_test::test_list_comprehension_with_condition
+    day16_17_features_test::test_lambda_no_args
+    day18_19_features_test::test_nested_builtin_functions
+    day28_29_features_test::test_all_with_condition
+    day28_29_features_test::test_any_with_condition
+    day3_features_test::tests::test_comparison_operators
+    day3_features_test::tests::test_full_day3_program
+    day4_5_features_test::test_complete_program_fibonacci
+    day4_5_features_test::test_complete_program_fizzbuzz
+    day6_7_features_test::test_simple_function_no_params
+    feature_translator::tests::test_full_program
+    feature_translator::tests::test_translate_print
+
+test result: FAILED. 221 passed; 12 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.09s
+
+error: test failed, to rerun pass `--lib`

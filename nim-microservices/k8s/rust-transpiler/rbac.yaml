@@ -1,0 +1,49 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: portalis-transpiler
+  namespace: portalis-deployment
+  labels:
+    app: portalis-rust-transpiler
+    component: transpiler
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: portalis-transpiler
+  namespace: portalis-deployment
+  labels:
+    app: portalis-rust-transpiler
+    component: transpiler
+rules:
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["services"]
+  verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: portalis-transpiler
+  namespace: portalis-deployment
+  labels:
+    app: portalis-rust-transpiler
+    component: transpiler
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: portalis-transpiler
+subjects:
+- kind: ServiceAccount
+  name: portalis-transpiler
+  namespace: portalis-deployment

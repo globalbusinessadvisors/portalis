@@ -1,0 +1,16 @@
+# Grafana Dashboard Provisioning - Portalis Dashboards
+# Phase 5 Week 37 - Auto-load dashboards
+
+apiVersion: 1
+
+providers:
+  - name: 'Portalis Dashboards'
+    orgId: 1
+    folder: 'Portalis'
+    type: file
+    disableDeletion: false
+    updateIntervalSeconds: 10
+    allowUiUpdates: true
+    options:
+      path: /etc/grafana/dashboards
+      foldersFromFilesStructure: false

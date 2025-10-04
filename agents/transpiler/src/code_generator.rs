@@ -2,7 +2,7 @@
 //!
 //! Translates Python constructs to idiomatic Rust with full control flow support.
 
-use portalis_core::{Error, Result};
+use crate::{Error, Result};
 use serde_json::Value;
 
 pub struct CodeGenerator {

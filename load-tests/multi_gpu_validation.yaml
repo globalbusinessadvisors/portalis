@@ -1,0 +1,332 @@
+# Load Testing Configuration for Multi-GPU Validation
+# Week 28 - DGX Cloud Integration Testing
+
+test_suite:
+  name: "Multi-GPU Performance Validation"
+  version: "1.0.0"
+  description: "Validate 1000+ concurrent requests across multi-GPU deployment"
+
+# Test environment
+environment:
+  target_cluster: "portalis-dgx-production"
+  services:
+    transpiler: "http://portalis-transpiler:8080"
+    orchestration: "http://portalis-orchestration:8081"
+    nemo_bridge: "http://portalis-nemo-bridge:8082"
+
+  # GPU configuration
+  gpu_nodes: 8
+  gpus_per_node: 8
+  total_gpus: 64
+
+# Test scenarios
+scenarios:
+  # Scenario 1: Concurrent translation requests
+  - name: "concurrent_translations"
+    description: "1000+ concurrent translation requests"
+    duration: "10m"
+
+    load:
+      users: 1000
+      spawn_rate: 50  # users per second
+      distribution: "uniform"
+
+    requests:
+      - endpoint: "/api/v1/translate"
+        method: "POST"
+        weight: 80
+        payload:
+          source: "{{ python_sample }}"
+          optimization: "release"
+          target: "wasm"
+
+        # Performance targets
+        targets:
+          p50_latency_ms: 500
+          p95_latency_ms: 2000
+          p99_latency_ms: 5000
+          success_rate: 0.99
+          throughput_rps: 100
+
+      - endpoint: "/api/v1/batch_translate"
+        method: "POST"
+        weight: 20
+        payload:
+          sources: "{{ python_samples }}"
+          count: 10
+          optimization: "release"
+
+        targets:
+          p95_latency_ms: 10000
+          success_rate: 0.95
+          throughput_rps: 10
+
+    # GPU validation
+    gpu_metrics:
+      min_utilization: 0.60  # 60% minimum GPU utilization
+      max_temperature: 85    # Max 85°C
+      memory_efficiency: 0.70  # 70% memory utilization
+
+  # Scenario 2: Burst traffic
+  - name: "burst_traffic"
+    description: "Handle traffic bursts and validate autoscaling"
+    duration: "15m"
+
+    load_pattern:
+      - phase: "warmup"
+        duration: "2m"
+        users: 100
+        spawn_rate: 10
+
+      - phase: "burst_1"
+        duration: "3m"
+        users: 2000
+        spawn_rate: 200
+
+      - phase: "steady"
+        duration: "5m"
+        users: 500
+        spawn_rate: 50
+
+      - phase: "burst_2"
+        duration: "3m"
+        users: 2500
+        spawn_rate: 250
+
+      - phase: "cooldown"
+        duration: "2m"
+        users: 100
+        spawn_rate: -100
+
+    validation:
+      - metric: "autoscaling_response_time"
+        threshold: "180s"  # Scale up within 3 minutes
+      - metric: "no_request_failures_during_scaling"
+      - metric: "queue_depth"
+        max_value: 500
+
+  # Scenario 3: End-to-end pipeline
+  - name: "end_to_end_pipeline"
+    description: "Python → Rust → WASM → Omniverse deployment"
+    duration: "20m"
+
+    load:
+      users: 500
+      spawn_rate: 25
+
+    workflow:
+      - step: "translate"
+        endpoint: "/api/v1/translate"
+        capture: "translation_id"
+
+      - step: "compile"
+        endpoint: "/api/v1/compile_wasm"
+        payload:
+          translation_id: "{{ translation_id }}"
+        capture: "wasm_artifact_id"
+
+      - step: "deploy"
+        endpoint: "/api/v1/deploy_omniverse"
+        payload:
+          artifact_id: "{{ wasm_artifact_id }}"
+
+    targets:
+      end_to_end_p95_latency_ms: 30000  # 30 seconds
+      pipeline_success_rate: 0.95
+
+  # Scenario 4: GPU distribution validation
+  - name: "gpu_distribution"
+    description: "Validate multi-GPU workload distribution"
+    duration: "10m"
+
+    load:
+      users: 800
+      spawn_rate: 40
+
+    validation:
+      - metric: "gpu_utilization_stddev"
+        max_value: 0.15  # Max 15% standard deviation
+        description: "Ensure even GPU distribution"
+
+      - metric: "gpu_memory_balance"
+        max_imbalance: 0.20  # Max 20% imbalance
+
+      - metric: "task_migration_rate"
+        max_rate: 0.05  # Max 5% task migrations
+
+  # Scenario 5: Cache effectiveness
+  - name: "cache_validation"
+    description: "Validate translation cache effectiveness"
+    duration: "15m"
+
+    load:
+      users: 600
+      spawn_rate: 30
+
+    request_distribution:
+      unique_requests: 0.30  # 30% unique
+      repeated_requests: 0.70  # 70% repeated
+
+    targets:
+      cache_hit_rate: 0.60  # 60% minimum
+      cache_latency_reduction: 0.90  # 90% faster with cache
+
+  # Scenario 6: Failure recovery
+  - name: "failure_recovery"
+    description: "Validate fault tolerance and recovery"
+    duration: "20m"
+
+    load:
+      users: 500
+      spawn_rate: 25
+
+    chaos_engineering:
+      - event: "kill_random_pod"
+        schedule: "5m"
+        target: "portalis-transpiler"
+        count: 1
+
+      - event: "network_delay"
+        schedule: "10m"
+        duration: "2m"
+        latency_ms: 500
+
+      - event: "gpu_throttle"
+        schedule: "15m"
+        duration: "3m"
+
+    validation:
+      - metric: "request_success_rate"
+        min_value: 0.95  # 95% success during chaos
+      - metric: "recovery_time"
+        max_value: 120  # 2 minutes max recovery
+
+# Performance benchmarks
+benchmarks:
+  translation_throughput:
+    metric: "translations_per_second"
+    target: 150
+    measurement_window: "5m"
+
+  gpu_efficiency:
+    metric: "gpu_utilization_per_translation"
+    target: 0.75  # 75% efficiency
+
+  cost_efficiency:
+    metric: "cost_per_1000_translations"
+    target: 5.00  # $5 per 1000 translations
+
+  multi_gpu_scaling:
+    metric: "throughput_scaling_factor"
+    target: 0.85  # 85% linear scaling
+
+# Monitoring and reporting
+monitoring:
+  prometheus_url: "http://prometheus:9090"
+  grafana_url: "http://grafana:3000"
+
+  metrics_to_collect:
+    - portalis_transpiler_requests_total
+    - portalis_transpiler_request_duration_seconds
+    - portalis_transpiler_gpu_utilization_percent
+    - portalis_transpiler_gpu_memory_used_bytes
+    - portalis_transpiler_gpu_temperature_celsius
+    - portalis_transpiler_errors_total
+    - portalis_orchestration_jobs_active
+    - portalis_orchestration_jobs_queued
+    - portalis_nemo_inference_duration_seconds
+    - dcgm_gpu_utilization_percent
+    - dcgm_gpu_temperature_celsius
+
+  collection_interval: 15s
+
+reporting:
+  output_format: ["json", "html", "markdown"]
+  output_path: "/workspace/portalis/load-tests/results"
+
+  include:
+    - summary_statistics
+    - percentile_distributions
+    - gpu_metrics
+    - error_analysis
+    - scalability_analysis
+    - cost_analysis
+    - recommendations
+
+# Test data
+test_data:
+  python_samples:
+    - path: "/workspace/portalis/examples/simple_function.py"
+      category: "tiny"
+      loc: 50
+
+    - path: "/workspace/portalis/examples/class_example.py"
+      category: "small"
+      loc: 200
+
+    - path: "/workspace/portalis/examples/complex_algorithm.py"
+      category: "medium"
+      loc: 1000
+
+    - path: "/workspace/portalis/examples/large_module.py"
+      category: "large"
+      loc: 5000
+
+  distribution:
+    tiny: 0.40    # 40%
+    small: 0.35   # 35%
+    medium: 0.20  # 20%
+    large: 0.05   # 5%
+
+# Success criteria
+success_criteria:
+  - name: "1000_concurrent_users"
+    description: "Handle 1000+ concurrent requests"
+    metric: "max_concurrent_users"
+    threshold: 1000
+    required: true
+
+  - name: "p95_latency"
+    description: "P95 latency under 2 seconds"
+    metric: "request_duration_p95"
+    threshold: 2.0
+    unit: "seconds"
+    required: true
+
+  - name: "success_rate"
+    description: "99% success rate"
+    metric: "success_rate"
+    threshold: 0.99
+    required: true
+
+  - name: "gpu_utilization"
+    description: "70%+ GPU utilization under load"
+    metric: "avg_gpu_utilization"
+    threshold: 0.70
+    required: true
+
+  - name: "autoscaling"
+    description: "Scale within 3 minutes"
+    metric: "scale_up_time"
+    threshold: 180
+    unit: "seconds"
+    required: true
+
+  - name: "fault_tolerance"
+    description: "95%+ success during failures"
+    metric: "chaos_success_rate"
+    threshold: 0.95
+    required: true
+
+  - name: "cache_effectiveness"
+    description: "60%+ cache hit rate"
+    metric: "cache_hit_rate"
+    threshold: 0.60
+    required: false
+
+  - name: "cost_efficiency"
+    description: "Under $0.10 per translation"
+    metric: "cost_per_translation"
+    threshold: 0.10
+    unit: "usd"
+    required: false

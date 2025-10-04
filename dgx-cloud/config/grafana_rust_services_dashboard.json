@@ -1,0 +1,416 @@
+{
+  "dashboard": {
+    "title": "Portalis Rust Services - Production Monitoring",
+    "tags": ["portalis", "rust", "dgx", "gpu", "production"],
+    "timezone": "browser",
+    "editable": true,
+    "graphTooltip": 1,
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "15s",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Service Health Overview",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 0, "w": 24, "h": 4},
+        "targets": [
+          {
+            "expr": "up{job=~\"portalis-.*\"}",
+            "legendFormat": "{{job}} - {{instance}}"
+          },
+          {
+            "expr": "sum(rate(portalis_transpiler_requests_total[5m]))",
+            "legendFormat": "Requests/s (Transpiler)"
+          },
+          {
+            "expr": "sum(portalis_orchestration_jobs_active)",
+            "legendFormat": "Active Jobs (Orchestration)"
+          },
+          {
+            "expr": "sum(rate(portalis_nemo_inference_requests_total[5m]))",
+            "legendFormat": "Inferences/s (NeMo)"
+          }
+        ],
+        "options": {
+          "orientation": "horizontal",
+          "textMode": "value_and_name",
+          "colorMode": "value",
+          "graphMode": "area"
+        }
+      },
+      {
+        "id": 2,
+        "title": "GPU Utilization by Service",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 4, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_transpiler_gpu_utilization_percent",
+            "legendFormat": "Transpiler - GPU {{gpu_id}} ({{node_id}})"
+          },
+          {
+            "expr": "DCGM_FI_DEV_GPU_UTIL{job=\"dcgm-exporter\"}",
+            "legendFormat": "DCGM - GPU {{gpu}} ({{UUID}})"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "green"},
+                {"value": 70, "color": "yellow"},
+                {"value": 90, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "title": "GPU Memory Usage",
+        "type": "timeseries",
+        "gridPos": {"x": 12, "y": 4, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_transpiler_gpu_memory_used_bytes / portalis_transpiler_gpu_memory_total_bytes * 100",
+            "legendFormat": "GPU {{gpu_id}} Memory %"
+          },
+          {
+            "expr": "DCGM_FI_DEV_FB_USED{job=\"dcgm-exporter\"} / DCGM_FI_DEV_FB_FREE{job=\"dcgm-exporter\"} * 100",
+            "legendFormat": "DCGM GPU {{gpu}} Memory %"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 100
+          }
+        }
+      },
+      {
+        "id": 4,
+        "title": "Translation Request Latency (p50, p95, p99)",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 12, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(portalis_transpiler_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+            "legendFormat": "p50 - {{endpoint}}"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_transpiler_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+            "legendFormat": "p95 - {{endpoint}}"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(portalis_transpiler_request_duration_seconds_bucket[5m])) by (le, endpoint))",
+            "legendFormat": "p99 - {{endpoint}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "s", "label": "Latency"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 5,
+        "title": "Job Queue Depth by Priority",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 12, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "portalis_orchestration_jobs_queued{priority=\"critical\"}",
+            "legendFormat": "Critical"
+          },
+          {
+            "expr": "portalis_orchestration_jobs_queued{priority=\"high\"}",
+            "legendFormat": "High"
+          },
+          {
+            "expr": "portalis_orchestration_jobs_queued{priority=\"medium\"}",
+            "legendFormat": "Medium"
+          },
+          {
+            "expr": "portalis_orchestration_jobs_queued{priority=\"low\"}",
+            "legendFormat": "Low"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Jobs"},
+          {"format": "short"}
+        ],
+        "stack": true
+      },
+      {
+        "id": 6,
+        "title": "Translation Throughput",
+        "type": "graph",
+        "gridPos": {"x": 0, "y": 20, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(portalis_transpiler_translations_total{status=\"success\"}[5m]) * 60",
+            "legendFormat": "Successful/min"
+          },
+          {
+            "expr": "rate(portalis_transpiler_translations_total{status=\"failed\"}[5m]) * 60",
+            "legendFormat": "Failed/min"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Translations/min"},
+          {"format": "short"}
+        ]
+      },
+      {
+        "id": 7,
+        "title": "Cache Hit Rate",
+        "type": "gauge",
+        "gridPos": {"x": 8, "y": 20, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_transpiler_cache_hits_total[5m])) / (sum(rate(portalis_transpiler_cache_hits_total[5m])) + sum(rate(portalis_transpiler_cache_misses_total[5m])))",
+            "legendFormat": "Cache Hit Rate"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "min": 0,
+            "max": 1,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": 0, "color": "red"},
+                {"value": 0.5, "color": "yellow"},
+                {"value": 0.8, "color": "green"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 8,
+        "title": "Error Rate",
+        "type": "graph",
+        "gridPos": {"x": 16, "y": 20, "w": 8, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_transpiler_errors_total[5m])) by (error_type)",
+            "legendFormat": "{{error_type}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "short", "label": "Errors/sec"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [0.05], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High Error Rate - Transpiler",
+          "noDataState": "no_data"
+        }
+      },
+      {
+        "id": 9,
+        "title": "NeMo Model Inference Duration",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 26, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_nemo_inference_duration_seconds_bucket[5m])) by (le, model_name))",
+            "legendFormat": "p95 - {{model_name}}"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(portalis_nemo_inference_duration_seconds_bucket[5m])) by (le, model_name))",
+            "legendFormat": "p99 - {{model_name}}"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "min": 0
+          }
+        }
+      },
+      {
+        "id": 10,
+        "title": "GPU Temperature",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 26, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "portalis_transpiler_gpu_temperature_celsius",
+            "legendFormat": "Transpiler GPU {{gpu_id}}"
+          },
+          {
+            "expr": "DCGM_FI_DEV_GPU_TEMP{job=\"dcgm-exporter\"}",
+            "legendFormat": "DCGM GPU {{gpu}}"
+          }
+        ],
+        "yaxes": [
+          {"format": "celsius", "label": "Temperature"},
+          {"format": "short"}
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {"params": [85], "type": "gt"},
+              "operator": {"type": "and"},
+              "query": {"params": ["A", "5m", "now"]},
+              "reducer": {"params": [], "type": "avg"},
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "1m",
+          "handler": 1,
+          "name": "High GPU Temperature",
+          "noDataState": "no_data"
+        }
+      },
+      {
+        "id": 11,
+        "title": "Active Workers by Service",
+        "type": "stat",
+        "gridPos": {"x": 0, "y": 32, "w": 12, "h": 4},
+        "targets": [
+          {
+            "expr": "portalis_transpiler_active_workers",
+            "legendFormat": "Transpiler Workers"
+          },
+          {
+            "expr": "sum(up{job=\"portalis-orchestration\"})",
+            "legendFormat": "Orchestration Pods"
+          },
+          {
+            "expr": "sum(up{job=\"portalis-nemo-bridge\"})",
+            "legendFormat": "NeMo Bridge Pods"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "title": "Job Duration Distribution",
+        "type": "heatmap",
+        "gridPos": {"x": 12, "y": 32, "w": 12, "h": 8},
+        "targets": [
+          {
+            "expr": "sum(increase(portalis_orchestration_job_duration_seconds_bucket[5m])) by (le)",
+            "format": "heatmap",
+            "legendFormat": "{{le}}"
+          }
+        ]
+      },
+      {
+        "id": 13,
+        "title": "Triton Server Health",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 40, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(portalis_nemo_triton_requests_total{status=\"success\"}[5m])",
+            "legendFormat": "Successful Requests/s"
+          },
+          {
+            "expr": "rate(portalis_nemo_triton_errors_total[5m])",
+            "legendFormat": "Errors/s - {{error_type}}"
+          }
+        ]
+      },
+      {
+        "id": 14,
+        "title": "WASM Pipeline Metrics",
+        "type": "graph",
+        "gridPos": {"x": 12, "y": 40, "w": 12, "h": 6},
+        "targets": [
+          {
+            "expr": "rate(portalis_wasm_pipeline_duration_seconds_sum[5m]) / rate(portalis_wasm_pipeline_duration_seconds_count[5m])",
+            "legendFormat": "Avg Duration - {{module}}"
+          },
+          {
+            "expr": "portalis_wasm_artifact_size_bytes / 1024 / 1024",
+            "legendFormat": "Artifact Size MB - {{module}}"
+          }
+        ]
+      },
+      {
+        "id": 15,
+        "title": "Request Rate by Endpoint",
+        "type": "timeseries",
+        "gridPos": {"x": 0, "y": 46, "w": 24, "h": 6},
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_transpiler_requests_total[5m])) by (endpoint, status)",
+            "legendFormat": "{{endpoint}} - {{status}}"
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "type": "datasource",
+          "query": "prometheus"
+        },
+        {
+          "name": "service",
+          "type": "query",
+          "query": "label_values(up{job=~\"portalis-.*\"}, job)",
+          "datasource": "$datasource",
+          "multi": true
+        },
+        {
+          "name": "gpu",
+          "type": "query",
+          "query": "label_values(portalis_transpiler_gpu_utilization_percent, gpu_id)",
+          "datasource": "$datasource",
+          "multi": true
+        },
+        {
+          "name": "node",
+          "type": "query",
+          "query": "label_values(portalis_transpiler_gpu_utilization_percent, node_id)",
+          "datasource": "$datasource",
+          "multi": true
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Deployments",
+          "datasource": "$datasource",
+          "enable": true,
+          "expr": "changes(up{job=~\"portalis-.*\"}[5m]) > 0",
+          "iconColor": "blue",
+          "tagKeys": "service"
+        },
+        {
+          "name": "Scaling Events",
+          "datasource": "$datasource",
+          "enable": true,
+          "expr": "changes(portalis_transpiler_active_workers[5m]) != 0",
+          "iconColor": "green"
+        }
+      ]
+    }
+  }
+}

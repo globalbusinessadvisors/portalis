@@ -1,0 +1,145 @@
+# Portalis Monitoring Stack - Docker Compose
+# Phase 5 Week 37 - Prometheus + Grafana Deployment
+#
+# This deploys a complete monitoring stack for Portalis:
+# - Prometheus (metrics collection)
+# - Grafana (visualization)
+# - Node Exporter (system metrics)
+# - Alertmanager (alert management)
+#
+# Usage:
+#   docker-compose -f monitoring/docker-compose.yml up -d
+#   docker-compose -f monitoring/docker-compose.yml down
+
+version: '3.8'
+
+services:
+  # Prometheus - Time-Series Database and Metrics Collection
+  prometheus:
+    image: prom/prometheus:v2.50.0
+    container_name: portalis-prometheus
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      # Prometheus configuration
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      # Persistent data storage
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - portalis-monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9090/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Grafana - Metrics Visualization and Dashboards
+  grafana:
+    image: grafana/grafana:10.3.3
+    container_name: portalis-grafana
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      # Admin credentials (change in production!)
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+      # Server configuration
+      - GF_SERVER_ROOT_URL=http://localhost:3000
+      - GF_SERVER_SERVE_FROM_SUB_PATH=false
+      # Anonymous access (disable in production)
+      - GF_AUTH_ANONYMOUS_ENABLED=false
+      # Data source auto-provisioning
+      - GF_DATASOURCE_PROMETHEUS_URL=http://prometheus:9090
+      # Dashboard provisioning
+      - GF_DASHBOARDS_DEFAULT_HOME_DASHBOARD_PATH=/etc/grafana/dashboards/portalis-overview.json
+      # Plugins
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel,grafana-clock-panel
+    volumes:
+      # Dashboard configurations
+      - ./grafana/portalis-overview.json:/etc/grafana/dashboards/portalis-overview.json:ro
+      - ./grafana/portalis-performance.json:/etc/grafana/dashboards/portalis-performance.json:ro
+      - ./grafana/portalis-errors.json:/etc/grafana/dashboards/portalis-errors.json:ro
+      # Dashboard provisioning config
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      # Persistent storage
+      - grafana-data:/var/lib/grafana
+    networks:
+      - portalis-monitoring
+    depends_on:
+      - prometheus
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+
+  # Node Exporter - Host System Metrics
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    container_name: portalis-node-exporter
+    restart: unless-stopped
+    ports:
+      - "9100:9100"
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    networks:
+      - portalis-monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9100/metrics"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Alertmanager - Alert Routing and Management
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    container_name: portalis-alertmanager
+    restart: unless-stopped
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager-data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    networks:
+      - portalis-monitoring
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:9093/-/healthy"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+networks:
+  portalis-monitoring:
+    driver: bridge
+    name: portalis-monitoring
+
+volumes:
+  prometheus-data:
+    name: portalis-prometheus-data
+  grafana-data:
+    name: portalis-grafana-data
+  alertmanager-data:
+    name: portalis-alertmanager-data

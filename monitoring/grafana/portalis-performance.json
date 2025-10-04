@@ -1,0 +1,559 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "portalis-performance",
+    "title": "Portalis - Performance Metrics",
+    "tags": ["portalis", "performance", "latency"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "10s",
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {
+          "x": 0,
+          "y": 0,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Latency Percentiles"
+      },
+      {
+        "id": 2,
+        "gridPos": {
+          "x": 0,
+          "y": 1,
+          "w": 8,
+          "h": 4
+        },
+        "type": "stat",
+        "title": "Translation P50 Latency",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(portalis_translation_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P50",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 3,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 1, "color": "yellow"},
+                {"value": 3, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": {
+          "x": 8,
+          "y": 1,
+          "w": 8,
+          "h": 4
+        },
+        "type": "stat",
+        "title": "Translation P95 Latency",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_translation_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P95",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 3,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 5, "color": "yellow"},
+                {"value": 10, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": {
+          "x": 16,
+          "y": 1,
+          "w": 8,
+          "h": 4
+        },
+        "type": "stat",
+        "title": "Translation P99 Latency",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(portalis_translation_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "P99",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "decimals": 3,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"value": null, "color": "green"},
+                {"value": 10, "color": "yellow"},
+                {"value": 20, "color": "red"}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "gridPos": {
+          "x": 0,
+          "y": 5,
+          "w": 24,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "Translation Latency Percentiles Over Time",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.50, sum(rate(portalis_translation_duration_seconds_bucket[1m])) by (le))",
+            "legendFormat": "P50",
+            "refId": "A"
+          },
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_translation_duration_seconds_bucket[1m])) by (le))",
+            "legendFormat": "P95",
+            "refId": "B"
+          },
+          {
+            "expr": "histogram_quantile(0.99, sum(rate(portalis_translation_duration_seconds_bucket[1m])) by (le))",
+            "legendFormat": "P99",
+            "refId": "C"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 0
+            }
+          }
+        }
+      },
+      {
+        "id": 20,
+        "gridPos": {
+          "x": 0,
+          "y": 13,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Throughput Metrics"
+      },
+      {
+        "id": 21,
+        "gridPos": {
+          "x": 0,
+          "y": 14,
+          "w": 12,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "Translation Throughput (QPS)",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_translations_total[1m]))",
+            "legendFormat": "Total QPS",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rate(portalis_translations_success_total[1m]))",
+            "legendFormat": "Success QPS",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ops",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 22,
+        "gridPos": {
+          "x": 12,
+          "y": 14,
+          "w": 12,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "Lines of Code Processed",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_translation_lines_of_code_sum[1m])) / sum(rate(portalis_translation_lines_of_code_count[1m]))",
+            "legendFormat": "Avg LOC per Translation",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "custom": {
+              "lineWidth": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 30,
+        "gridPos": {
+          "x": 0,
+          "y": 22,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Resource Utilization"
+      },
+      {
+        "id": 31,
+        "gridPos": {
+          "x": 0,
+          "y": 23,
+          "w": 12,
+          "h": 7
+        },
+        "type": "timeseries",
+        "title": "CPU and Memory Usage",
+        "targets": [
+          {
+            "expr": "portalis_cpu_usage_percent",
+            "legendFormat": "CPU %",
+            "refId": "A"
+          },
+          {
+            "expr": "portalis_memory_usage_bytes / (1024*1024*1024)",
+            "legendFormat": "Memory (GB)",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "custom": {
+              "lineWidth": 2
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "CPU %"},
+              "properties": [
+                {"id": "unit", "value": "percent"},
+                {"id": "custom.axisPlacement", "value": "left"}
+              ]
+            },
+            {
+              "matcher": {"id": "byName", "options": "Memory (GB)"},
+              "properties": [
+                {"id": "unit", "value": "decgbytes"},
+                {"id": "custom.axisPlacement", "value": "right"}
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 32,
+        "gridPos": {
+          "x": 12,
+          "y": 23,
+          "w": 12,
+          "h": 7
+        },
+        "type": "timeseries",
+        "title": "GPU Utilization",
+        "targets": [
+          {
+            "expr": "avg(portalis_transpiler_gpu_utilization_percent) by (gpu_id)",
+            "legendFormat": "GPU {{gpu_id}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "max": 100,
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 10
+            }
+          }
+        }
+      },
+      {
+        "id": 40,
+        "gridPos": {
+          "x": 0,
+          "y": 30,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "WASM Performance"
+      },
+      {
+        "id": 41,
+        "gridPos": {
+          "x": 0,
+          "y": 31,
+          "w": 8,
+          "h": 7
+        },
+        "type": "timeseries",
+        "title": "WASM Compilation Time (P95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_wasm_compile_duration_seconds_bucket[5m])) by (optimization_level, le))",
+            "legendFormat": "{{optimization_level}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "lineWidth": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 42,
+        "gridPos": {
+          "x": 8,
+          "y": 31,
+          "w": 8,
+          "h": 7
+        },
+        "type": "timeseries",
+        "title": "WASM Binary Size (P95)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_wasm_binary_size_bytes_bucket[5m])) by (optimization_level, le))",
+            "legendFormat": "{{optimization_level}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "decbytes",
+            "custom": {
+              "lineWidth": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 43,
+        "gridPos": {
+          "x": 16,
+          "y": 31,
+          "w": 8,
+          "h": 7
+        },
+        "type": "timeseries",
+        "title": "WASM Execution Time",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_wasm_execution_duration_seconds_bucket[5m])) by (module_name, le))",
+            "legendFormat": "{{module_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "lineWidth": 2
+            }
+          }
+        }
+      },
+      {
+        "id": 50,
+        "gridPos": {
+          "x": 0,
+          "y": 38,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Pipeline Phase Performance"
+      },
+      {
+        "id": 51,
+        "gridPos": {
+          "x": 0,
+          "y": 39,
+          "w": 24,
+          "h": 8
+        },
+        "type": "timeseries",
+        "title": "Phase Duration (P95) by Phase",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_pipeline_phase_duration_seconds_bucket[5m])) by (phase_name, le))",
+            "legendFormat": "{{phase_name}}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "lineWidth": 2,
+              "fillOpacity": 0
+            }
+          }
+        }
+      },
+      {
+        "id": 60,
+        "gridPos": {
+          "x": 0,
+          "y": 47,
+          "w": 24,
+          "h": 1
+        },
+        "type": "row",
+        "title": "Comparison vs Baselines"
+      },
+      {
+        "id": 61,
+        "gridPos": {
+          "x": 0,
+          "y": 48,
+          "w": 12,
+          "h": 7
+        },
+        "type": "timeseries",
+        "title": "P95 Latency vs 5s Target",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(portalis_translation_duration_seconds_bucket[5m])) by (le))",
+            "legendFormat": "Current P95",
+            "refId": "A"
+          },
+          {
+            "expr": "vector(5)",
+            "legendFormat": "Target (5s)",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "custom": {
+              "lineWidth": 2
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Target (5s)"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "red"}},
+                {"id": "custom.lineStyle", "value": {"dash": [10, 10], "fill": "dash"}}
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 62,
+        "gridPos": {
+          "x": 12,
+          "y": 48,
+          "w": 12,
+          "h": 7
+        },
+        "type": "timeseries",
+        "title": "Success Rate vs 95% Target",
+        "targets": [
+          {
+            "expr": "sum(rate(portalis_translations_success_total[5m])) / sum(rate(portalis_translations_total[5m])) * 100",
+            "legendFormat": "Current Success Rate",
+            "refId": "A"
+          },
+          {
+            "expr": "vector(95)",
+            "legendFormat": "Target (95%)",
+            "refId": "B"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "max": 100,
+            "custom": {
+              "lineWidth": 2
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Target (95%)"},
+              "properties": [
+                {"id": "color", "value": {"mode": "fixed", "fixedColor": "green"}},
+                {"id": "custom.lineStyle", "value": {"dash": [10, 10], "fill": "dash"}}
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "label": "Data Source",
+          "type": "datasource",
+          "query": "prometheus"
+        },
+        {
+          "name": "percentile",
+          "label": "Percentile",
+          "type": "custom",
+          "options": [
+            {"text": "P50", "value": "0.50"},
+            {"text": "P95", "value": "0.95"},
+            {"text": "P99", "value": "0.99"}
+          ],
+          "current": {
+            "text": "P95",
+            "value": "0.95"
+          }
+        }
+      ]
+    }
+  }
+}

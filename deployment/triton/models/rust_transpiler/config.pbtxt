@@ -1,0 +1,190 @@
+name: "rust_transpiler"
+backend: "python"
+max_batch_size: 32
+
+input [
+  {
+    name: "python_code"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "translation_options"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+    optional: true
+  }
+]
+
+output [
+  {
+    name: "rust_code"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "confidence_score"
+    data_type: TYPE_FP32
+    dims: [ 1 ]
+  },
+  {
+    name: "metadata"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+  },
+  {
+    name: "warnings"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+    optional: true
+  },
+  {
+    name: "suggestions"
+    data_type: TYPE_STRING
+    dims: [ -1 ]
+    optional: true
+  }
+]
+
+# Dynamic batching configuration
+dynamic_batching {
+  preferred_batch_size: [ 4, 8, 16, 32 ]
+  max_queue_delay_microseconds: 100000
+
+  # Priority levels for different request types
+  priority_levels: 2
+  default_priority_level: 1
+
+  # Queue policy
+  default_queue_policy {
+    timeout_action: REJECT
+    default_timeout_microseconds: 30000000
+    allow_timeout_override: true
+    max_queue_size: 256
+  }
+
+  # Priority queue policy for interactive requests
+  priority_queue_policy {
+    key: 1
+    value {
+      timeout_action: DELAY
+      default_timeout_microseconds: 10000000
+      allow_timeout_override: true
+      max_queue_size: 64
+    }
+  }
+}
+
+# Instance groups for GPU acceleration
+instance_group [
+  {
+    count: 2
+    kind: KIND_GPU
+    gpus: [ 0 ]
+    profile: [ "rust_transpiler_fast" ]
+  },
+  {
+    count: 1
+    kind: KIND_GPU
+    gpus: [ 1 ]
+    profile: [ "rust_transpiler_quality" ]
+  }
+]
+
+# Model warmup
+model_warmup [
+  {
+    name: "simple_function"
+    batch_size: 1
+    inputs {
+      key: "python_code"
+      value: {
+        data_type: TYPE_STRING
+        dims: [ 1 ]
+        string_contents: "def add(a, b):\n    return a + b"
+      }
+    }
+  },
+  {
+    name: "batch_translation"
+    batch_size: 8
+    inputs {
+      key: "python_code"
+      value: {
+        data_type: TYPE_STRING
+        dims: [ 8 ]
+        string_contents: "def test(): pass"
+      }
+    }
+  }
+]
+
+# Model optimization
+optimization {
+  cuda {
+    graphs: true
+    busy_wait_events: true
+    graph_spec {
+      batch_size: 8
+      input {
+        key: "python_code"
+        value {
+          dim: [ 1 ]
+        }
+      }
+    }
+    graph_spec {
+      batch_size: 16
+      input {
+        key: "python_code"
+        value {
+          dim: [ 1 ]
+        }
+      }
+    }
+  }
+
+  # Priority scheduling
+  priority {
+    default_priority: 1
+    priority_levels: 2
+  }
+}
+
+# Resource requirements
+parameters: {
+  key: "EXECUTION_ENV_PATH"
+  value: {
+    string_value: "/rust-bin/portalis-cli"
+  }
+}
+
+parameters: {
+  key: "ENABLE_CUDA"
+  value: {
+    string_value: "true"
+  }
+}
+
+parameters: {
+  key: "RUST_WORKERS"
+  value: {
+    string_value: "8"
+  }
+}
+
+parameters: {
+  key: "RUST_BACKTRACE"
+  value: {
+    string_value: "1"
+  }
+}
+
+parameters: {
+  key: "CACHE_SIZE_MB"
+  value: {
+    string_value: "2048"
+  }
+}
+
+version_policy: { latest { num_versions: 2 }}

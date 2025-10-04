@@ -22,6 +22,7 @@ from ..models import (
 )
 from ..middleware import record_translation_metrics
 from ...config.service_config import get_service_config
+from ..rust_integration import get_rust_transpiler, RustTranslationRequest
 
 logger = logging.getLogger(__name__)
 
@@ -98,22 +99,45 @@ async def translate_code(
     try:
         # Get service based on mode
         if request.mode == "fast":
-            # Use NeMo directly for fast mode
-            service = get_nemo_service()
-            result = service.translate_code(
-                python_code=request.python_code,
-                context=request.context
-            )
+            # Try Rust transpiler first, fallback to NeMo
+            try:
+                rust_client = get_rust_transpiler()
+                rust_request = RustTranslationRequest(
+                    python_code=request.python_code,
+                    mode="fast",
+                    enable_cuda=True,
+                    optimization_level=1,
+                    context=request.context
+                )
+                result = await rust_client.translate_code(rust_request)
 
-            response = TranslationResponse(
-                rust_code=result.rust_code,
-                confidence=result.confidence,
-                alternatives=result.alternatives if request.include_alternatives else None,
-                metadata=result.metadata,
-                warnings=[],
-                suggestions=[],
-                processing_time_ms=result.processing_time_ms
-            )
+                response = TranslationResponse(
+                    rust_code=result.rust_code,
+                    confidence=result.confidence,
+                    alternatives=None,
+                    metadata=result.metadata,
+                    warnings=result.warnings,
+                    suggestions=result.suggestions,
+                    processing_time_ms=result.processing_time_ms
+                )
+            except Exception as rust_error:
+                logger.warning(f"Rust transpiler failed, falling back to NeMo: {rust_error}")
+                # Fallback to NeMo
+                service = get_nemo_service()
+                result = service.translate_code(
+                    python_code=request.python_code,
+                    context=request.context
+                )
+
+                response = TranslationResponse(
+                    rust_code=result.rust_code,
+                    confidence=result.confidence,
+                    alternatives=result.alternatives if request.include_alternatives else None,
+                    metadata=result.metadata,
+                    warnings=[],
+                    suggestions=[],
+                    processing_time_ms=result.processing_time_ms
+                )
 
         else:
             # Use Triton for standard/quality modes

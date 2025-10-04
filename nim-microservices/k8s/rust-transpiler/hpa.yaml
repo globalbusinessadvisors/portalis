@@ -1,0 +1,111 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: portalis-rust-transpiler-hpa
+  namespace: portalis-deployment
+  labels:
+    app: portalis-rust-transpiler
+    component: transpiler
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: portalis-rust-transpiler
+  minReplicas: 3
+  maxReplicas: 20
+
+  metrics:
+  # CPU-based scaling
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+
+  # Memory-based scaling
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+
+  # GPU utilization (custom metric via Prometheus adapter)
+  - type: Pods
+    pods:
+      metric:
+        name: gpu_utilization_percent
+      target:
+        type: AverageValue
+        averageValue: "75"
+
+  # Request queue depth
+  - type: Pods
+    pods:
+      metric:
+        name: translation_queue_depth
+      target:
+        type: AverageValue
+        averageValue: "50"
+
+  # Request rate
+  - type: Pods
+    pods:
+      metric:
+        name: translation_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "100"
+
+  behavior:
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+      - type: Pods
+        value: 4
+        periodSeconds: 30
+      selectPolicy: Max
+
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+      - type: Pods
+        value: 2
+        periodSeconds: 60
+      selectPolicy: Min
+
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: portalis-rust-transpiler-vpa
+  namespace: portalis-deployment
+  labels:
+    app: portalis-rust-transpiler
+    component: transpiler
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: portalis-rust-transpiler
+
+  updatePolicy:
+    updateMode: "Auto"
+
+  resourcePolicy:
+    containerPolicies:
+    - containerName: rust-transpiler
+      minAllowed:
+        cpu: 2
+        memory: 8Gi
+      maxAllowed:
+        cpu: 16
+        memory: 64Gi
+      controlledResources: ["cpu", "memory"]

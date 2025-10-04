@@ -2,7 +2,7 @@
 //!
 //! Translates Python classes to idiomatic Rust structs with impl blocks.
 
-use portalis_core::{Error, Result};
+use crate::{Error, Result};
 use serde_json::Value;
 
 pub struct ClassTranslator {

@@ -1,0 +1,132 @@
+# Portalis Rust Transpiler NIM Container
+# Multi-stage build optimized for GPU-accelerated Rust transpilation
+# Based on NVIDIA NGC containers with Rust toolchain
+#
+# Target: Production-ready containerized Rust agents with GPU support
+
+# Stage 1: Rust Builder
+FROM rust:1.75-slim-bookworm AS rust-builder
+
+# Install build dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    pkg-config \
+    libssl-dev \
+    git \
+    curl \
+    ca-certificates \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /build
+
+# Copy workspace manifests first for caching
+COPY Cargo.toml Cargo.lock ./
+COPY core/Cargo.toml ./core/
+COPY agents/transpiler/Cargo.toml ./agents/transpiler/
+COPY agents/nemo-bridge/Cargo.toml ./agents/nemo-bridge/
+COPY agents/cuda-bridge/Cargo.toml ./agents/cuda-bridge/
+COPY agents/ingest/Cargo.toml ./agents/ingest/
+COPY agents/analysis/Cargo.toml ./agents/analysis/
+COPY agents/specgen/Cargo.toml ./agents/specgen/
+COPY agents/build/Cargo.toml ./agents/build/
+COPY agents/test/Cargo.toml ./agents/test/
+COPY agents/packaging/Cargo.toml ./agents/packaging/
+COPY orchestration/Cargo.toml ./orchestration/
+COPY cli/Cargo.toml ./cli/
+
+# Create dummy source files to cache dependencies
+RUN mkdir -p core/src agents/transpiler/src agents/nemo-bridge/src \
+    agents/cuda-bridge/src agents/ingest/src agents/analysis/src \
+    agents/specgen/src agents/build/src agents/test/src \
+    agents/packaging/src orchestration/src cli/src && \
+    echo "fn main() {}" > cli/src/main.rs && \
+    touch core/src/lib.rs agents/transpiler/src/lib.rs \
+    agents/nemo-bridge/src/lib.rs agents/cuda-bridge/src/lib.rs \
+    agents/ingest/src/lib.rs agents/analysis/src/lib.rs \
+    agents/specgen/src/lib.rs agents/build/src/lib.rs \
+    agents/test/src/lib.rs agents/packaging/src/lib.rs \
+    orchestration/src/lib.rs
+
+# Build dependencies only
+RUN cargo build --release --workspace && \
+    rm -rf target/release/deps/portalis*
+
+# Copy actual source code
+COPY core ./core
+COPY agents ./agents
+COPY orchestration ./orchestration
+COPY cli ./cli
+
+# Build the actual application
+RUN cargo build --release --workspace
+
+# Stage 2: Python + CUDA Runtime
+FROM nvcr.io/nvidia/pytorch:24.01-py3
+
+# Metadata
+LABEL maintainer="Portalis Team"
+LABEL description="Rust Transpiler NIM with GPU acceleration and NeMo/Triton integration"
+LABEL version="1.0.0"
+LABEL com.nvidia.nim.version="1.0"
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    NVIDIA_VISIBLE_DEVICES=all \
+    NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+    RUST_BACKTRACE=1 \
+    RUST_LOG=info
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libssl3 \
+    ca-certificates \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create application directories and non-root user
+RUN useradd -m -u 1000 -s /bin/bash portalis && \
+    mkdir -p /app /models /data /rust-bin && \
+    chown -R portalis:portalis /app /models /data /rust-bin
+
+# Copy Rust binaries from builder
+COPY --from=rust-builder /build/target/release/portalis-cli /rust-bin/
+COPY --from=rust-builder /build/target/release/libportalis_core.so /rust-bin/ || true
+COPY --from=rust-builder /build/target/release/libportalis_transpiler.so /rust-bin/ || true
+
+# Set working directory
+WORKDIR /app
+
+# Copy Python integration layer
+COPY nim-microservices/requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && \
+    pip install --no-cache-dir -r requirements.txt
+
+# Copy application code
+COPY --chown=portalis:portalis nim-microservices/ .
+
+# Copy Rust agents source for reference
+COPY --chown=portalis:portalis agents /app/rust-agents
+
+# Set PATH to include Rust binaries
+ENV PATH="/rust-bin:${PATH}"
+
+# Switch to non-root user
+USER portalis
+
+# Expose ports
+# 8000: REST API
+# 8001: Rust transpiler service
+# 50051: gRPC
+# 9090: Prometheus metrics
+EXPOSE 8000 8001 50051 9090
+
+# Health check for both Python and Rust services
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8000/health && \
+        curl -f http://localhost:8001/health || exit 1
+
+# Default command - starts both Python API and Rust transpiler service
+CMD ["python", "-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8000"]
