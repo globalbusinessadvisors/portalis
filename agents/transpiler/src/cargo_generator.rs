@@ -40,6 +40,30 @@ pub struct CargoConfig {
 
     /// Additional features to include
     pub features: Vec<String>,
+
+    /// Repository URL
+    pub repository: Option<String>,
+
+    /// Homepage URL
+    pub homepage: Option<String>,
+
+    /// Documentation URL
+    pub documentation: Option<String>,
+
+    /// Keywords for crates.io
+    pub keywords: Vec<String>,
+
+    /// Categories for crates.io
+    pub categories: Vec<String>,
+
+    /// Generate binary target
+    pub generate_binary: bool,
+
+    /// Generate benchmarks
+    pub generate_benchmarks: bool,
+
+    /// Minimum supported Rust version
+    pub rust_version: Option<String>,
 }
 
 impl Default for CargoConfig {
@@ -54,6 +78,14 @@ impl Default for CargoConfig {
             wasm_optimized: true,
             wasi_support: false,
             features: vec![],
+            repository: None,
+            homepage: None,
+            documentation: None,
+            keywords: vec![],
+            categories: vec![],
+            generate_binary: false,
+            generate_benchmarks: false,
+            rust_version: None,
         }
     }
 }
@@ -88,6 +120,20 @@ impl CargoGenerator {
         output.push_str(&self.generate_dependencies_section(analysis));
         output.push('\n');
 
+        // Dev dependencies
+        let dev_deps = self.generate_dev_dependencies_section(analysis);
+        if !dev_deps.is_empty() {
+            output.push_str(&dev_deps);
+            output.push('\n');
+        }
+
+        // Build dependencies
+        let build_deps = self.generate_build_dependencies_section(analysis);
+        if !build_deps.is_empty() {
+            output.push_str(&build_deps);
+            output.push('\n');
+        }
+
         // WASM-specific dependencies
         if analysis.wasm_compatibility.needs_js_interop || analysis.wasm_compatibility.needs_wasi {
             output.push_str(&self.generate_wasm_dependencies(analysis));
@@ -106,6 +152,18 @@ impl CargoGenerator {
 
         // Lib section for WASM
         output.push_str(&self.generate_lib_section(analysis));
+
+        // Bin section if generating binary
+        if self.config.generate_binary {
+            output.push('\n');
+            output.push_str(&self.generate_bin_section());
+        }
+
+        // Benchmarks section
+        if self.config.generate_benchmarks {
+            output.push('\n');
+            output.push_str(&self.generate_bench_section());
+        }
 
         output
     }
@@ -134,6 +192,40 @@ impl CargoGenerator {
 
         if let Some(ref license) = self.config.license {
             section.push_str(&format!("license = \"{}\"\n", license));
+        }
+
+        if let Some(ref repo) = self.config.repository {
+            section.push_str(&format!("repository = \"{}\"\n", repo));
+        }
+
+        if let Some(ref homepage) = self.config.homepage {
+            section.push_str(&format!("homepage = \"{}\"\n", homepage));
+        }
+
+        if let Some(ref documentation) = self.config.documentation {
+            section.push_str(&format!("documentation = \"{}\"\n", documentation));
+        }
+
+        if !self.config.keywords.is_empty() {
+            section.push_str(&format!("keywords = [{}]\n",
+                self.config.keywords.iter()
+                    .map(|k| format!("\"{}\"", k))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+
+        if !self.config.categories.is_empty() {
+            section.push_str(&format!("categories = [{}]\n",
+                self.config.categories.iter()
+                    .map(|c| format!("\"{}\"", c))
+                    .collect::<Vec<_>>()
+                    .join(", ")
+            ));
+        }
+
+        if let Some(ref rust_ver) = self.config.rust_version {
+            section.push_str(&format!("rust-version = \"{}\"\n", rust_ver));
         }
 
         section
@@ -296,6 +388,63 @@ impl CargoGenerator {
         })
     }
 
+    /// Generate [dev-dependencies] section
+    fn generate_dev_dependencies_section(&self, analysis: &ImportAnalysis) -> String {
+        let mut section = String::new();
+
+        // Check if project has tests
+        let has_tests = analysis.python_imports.iter().any(|imp| {
+            matches!(imp.module.as_str(), "pytest" | "unittest" | "doctest")
+        });
+
+        if has_tests {
+            section.push_str("[dev-dependencies]\n");
+            section.push_str("criterion = \"0.5\"  # Benchmarking framework\n");
+            section.push_str("proptest = \"1.0\"   # Property-based testing\n");
+            section.push_str("pretty_assertions = \"1.0\"  # Better assertion output\n");
+        }
+
+        section
+    }
+
+    /// Generate [build-dependencies] section
+    fn generate_build_dependencies_section(&self, analysis: &ImportAnalysis) -> String {
+        let mut section = String::new();
+
+        // Check if we need build-time code generation
+        let needs_build_deps = analysis.wasm_compatibility.needs_js_interop;
+
+        if needs_build_deps {
+            section.push_str("[build-dependencies]\n");
+            section.push_str("wasm-bindgen-cli = \"0.2\"  # WASM bindings generator\n");
+        }
+
+        section
+    }
+
+    /// Generate [[bin]] section for binary targets
+    fn generate_bin_section(&self) -> String {
+        let mut section = String::new();
+
+        section.push_str("[[bin]]\n");
+        section.push_str(&format!("name = \"{}\"\n", self.config.package_name));
+        section.push_str("path = \"src/main.rs\"\n");
+
+        section
+    }
+
+    /// Generate [[bench]] section for benchmarks
+    fn generate_bench_section(&self) -> String {
+        let mut section = String::new();
+
+        section.push_str("[[bench]]\n");
+        section.push_str("name = \"benchmarks\"\n");
+        section.push_str("harness = false\n");
+        section.push_str("path = \"benches/main.rs\"\n");
+
+        section
+    }
+
     /// Generate complete Cargo workspace configuration
     pub fn generate_workspace(&self, projects: Vec<(&str, &ImportAnalysis)>) -> String {
         let mut output = String::new();
@@ -372,6 +521,72 @@ impl CargoGenerator {
     /// Set package version
     pub fn with_version(mut self, version: String) -> Self {
         self.config.version = version;
+        self
+    }
+
+    /// Set repository URL
+    pub fn with_repository(mut self, repo: String) -> Self {
+        self.config.repository = Some(repo);
+        self
+    }
+
+    /// Set homepage URL
+    pub fn with_homepage(mut self, homepage: String) -> Self {
+        self.config.homepage = Some(homepage);
+        self
+    }
+
+    /// Set documentation URL
+    pub fn with_documentation(mut self, docs: String) -> Self {
+        self.config.documentation = Some(docs);
+        self
+    }
+
+    /// Add keywords
+    pub fn with_keywords(mut self, keywords: Vec<String>) -> Self {
+        self.config.keywords = keywords;
+        self
+    }
+
+    /// Add categories
+    pub fn with_categories(mut self, categories: Vec<String>) -> Self {
+        self.config.categories = categories;
+        self
+    }
+
+    /// Enable binary generation
+    pub fn with_binary(mut self, enabled: bool) -> Self {
+        self.config.generate_binary = enabled;
+        self
+    }
+
+    /// Enable benchmarks
+    pub fn with_benchmarks(mut self, enabled: bool) -> Self {
+        self.config.generate_benchmarks = enabled;
+        self
+    }
+
+    /// Set minimum Rust version
+    pub fn with_rust_version(mut self, version: String) -> Self {
+        self.config.rust_version = Some(version);
+        self
+    }
+
+    /// Set authors
+    pub fn with_authors(mut self, authors: Vec<String>) -> Self {
+        self.config.authors = authors;
+        self
+    }
+
+    /// Set description
+    pub fn with_description(mut self, desc: String) -> Self {
+        self.config.description = Some(desc);
+        self
+    }
+
+    /// Set license
+    pub fn with_license(mut self, license: String) -> Self {
+        self.config.license = Some(license);
         self
     }
 }
