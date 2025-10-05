@@ -10,7 +10,7 @@ use portalis_core::assessment::{
 };
 use portalis_ingest::{ProjectParser, PythonProject};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 /// Assessment command
 #[derive(Args, Debug)]

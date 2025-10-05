@@ -130,19 +130,10 @@ impl TranslateCommand {
             "ast" => Ok(TranslationMode::AstBased),
             "feature" => Ok(TranslationMode::FeatureBased),
             "nemo" => {
-                #[cfg(feature = "nemo")]
-                {
-                    Ok(TranslationMode::NeMo {
-                        service_url: std::env::var("NEMO_SERVICE_URL")
-                            .unwrap_or_else(|_| "http://localhost:8000".to_string()),
-                        mode: "translation".to_string(),
-                        temperature: self.temperature,
-                    })
-                }
-                #[cfg(not(feature = "nemo"))]
-                {
-                    anyhow::bail!("NeMo mode requires the 'nemo' feature. Rebuild with: cargo build --features nemo")
-                }
+                anyhow::bail!(
+                    "NeMo mode is not available in this build. Use: pattern, ast, or feature.\n\
+                     To enable NeMo support, rebuild with: cargo build --features nemo"
+                )
             }
             _ => anyhow::bail!(
                 "Invalid translation mode: {}. Use: pattern, ast, feature, or nemo",

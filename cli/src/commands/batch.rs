@@ -113,7 +113,7 @@ impl BatchCommand {
             while tasks.len() >= workers {
                 if let Some(result) = tasks.join_next().await {
                     match result {
-                        Ok((file, Ok(_))) => {
+                        Ok((_file, Ok(_))) => {
                             success_count += 1;
                             main_pb.inc(1);
                             main_pb.set_message(format!("{} succeeded", success_count));

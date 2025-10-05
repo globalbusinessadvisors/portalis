@@ -1,6 +1,6 @@
 //! Package command - Package WASM for deployment
 
-use anyhow::{Context, Result};
+use anyhow::Result;
 use clap::Args;
 use colored::Colorize;
 use std::path::PathBuf;

@@ -48,8 +48,10 @@ pub struct ServeCommand {
 struct TranslateRequest {
     python_code: String,
     #[serde(default)]
+    #[allow(dead_code)]
     mode: Option<String>,
     #[serde(default)]
+    #[allow(dead_code)]
     temperature: Option<f32>,
 }
 
@@ -105,7 +107,8 @@ async fn health_check() -> impl IntoResponse {
 async fn translate(Json(req): Json<TranslateRequest>) -> impl IntoResponse {
     // TODO: Implement actual translation using TranspilerAgent
     let rust_code = format!("// Translated from Python\n{}", req.python_code);
-    let wasm_bytes = base64::encode(rust_code.as_bytes());
+    use base64::{Engine as _, engine::general_purpose};
+    let wasm_bytes = general_purpose::STANDARD.encode(rust_code.as_bytes());
 
     Json(TranslateResponse {
         rust_code,

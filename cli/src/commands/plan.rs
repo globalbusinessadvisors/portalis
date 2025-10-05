@@ -5,7 +5,6 @@
 use anyhow::{Context, Result};
 use clap::Args;
 use portalis_ingest::{ProjectParser, PythonProject};
-use std::collections::HashMap;
 use std::path::PathBuf;
 
 /// Migration plan
