@@ -11,6 +11,7 @@ pub mod asyncio_orchestrator;
 pub mod threading_translator;
 pub mod type_inference;
 pub mod lifetime_analysis;
+pub mod generic_translator;
 pub mod python_ast;
 pub mod python_to_rust;
 pub mod python_parser;
