@@ -46,6 +46,46 @@ impl DeploymentTarget {
     }
 }
 
+/// Optimization level for WASM
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum OptimizationLevel {
+    /// No optimization (fastest build)
+    None,
+    /// Basic optimization (O1)
+    Basic,
+    /// Standard optimization (O2)
+    Standard,
+    /// Aggressive optimization (O3)
+    Aggressive,
+    /// Size optimization (Oz)
+    Size,
+    /// Maximum size optimization (Ozz)
+    MaxSize,
+}
+
+impl OptimizationLevel {
+    /// Get wasm-opt flag
+    pub fn wasm_opt_flag(&self) -> &str {
+        match self {
+            Self::None => "-O0",
+            Self::Basic => "-O1",
+            Self::Standard => "-O2",
+            Self::Aggressive => "-O3",
+            Self::Size => "-Oz",
+            Self::MaxSize => "-Ozz",
+        }
+    }
+}
+
+/// Compression format
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub enum CompressionFormat {
+    None,
+    Gzip,
+    Brotli,
+    Both,
+}
+
 /// Bundle configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct BundleConfig {
@@ -67,6 +107,16 @@ pub struct BundleConfig {
     pub weak_refs: bool,
     /// Enable reference types
     pub reference_types: bool,
+    /// Optimization level
+    pub optimization_level: OptimizationLevel,
+    /// Compression format
+    pub compression: CompressionFormat,
+    /// Generate README
+    pub generate_readme: bool,
+    /// Enable code splitting
+    pub code_splitting: bool,
+    /// Minify JS output
+    pub minify_js: bool,
 }
 
 impl Default for BundleConfig {
@@ -81,6 +131,11 @@ impl Default for BundleConfig {
             debug: false,
             weak_refs: true,
             reference_types: true,
+            optimization_level: OptimizationLevel::Standard,
+            compression: CompressionFormat::None,
+            generate_readme: true,
+            code_splitting: false,
+            minify_js: false,
         }
     }
 }
@@ -98,6 +153,11 @@ impl BundleConfig {
             debug: false,
             weak_refs: true,
             reference_types: true,
+            optimization_level: OptimizationLevel::MaxSize,
+            compression: CompressionFormat::Both,
+            generate_readme: true,
+            code_splitting: true,
+            minify_js: true,
         }
     }
 
@@ -113,6 +173,31 @@ impl BundleConfig {
             debug: true,
             weak_refs: false,
             reference_types: false,
+            optimization_level: OptimizationLevel::None,
+            compression: CompressionFormat::None,
+            generate_readme: false,
+            code_splitting: false,
+            minify_js: false,
+        }
+    }
+
+    /// Create CDN-optimized config
+    pub fn cdn_optimized() -> Self {
+        Self {
+            output_dir: "cdn".to_string(),
+            package_name: "wasm_app".to_string(),
+            target: DeploymentTarget::Web,
+            typescript: true,
+            source_maps: false,
+            optimize_size: true,
+            debug: false,
+            weak_refs: true,
+            reference_types: true,
+            optimization_level: OptimizationLevel::MaxSize,
+            compression: CompressionFormat::Both,
+            generate_readme: true,
+            code_splitting: true,
+            minify_js: true,
         }
     }
 }
@@ -142,13 +227,13 @@ impl BundleOutput {
         report.push_str("=== WASM Bundle Output ===\n\n");
         report.push_str(&format!("Target: {:?}\n", self.target));
         report.push_str(&format!("Output Directory: {}\n", self.output_dir));
-        report.push_str(&format!("Total Size: {}\n", Self::format_size(self.total_size)));
+        report.push_str(&format!("Total Size: {}\n", WasmBundler::format_size(self.total_size)));
         report.push_str(&format!("  WASM: {} ({:.1}%)\n",
-            Self::format_size(self.wasm_size),
+            WasmBundler::format_size(self.wasm_size),
             (self.wasm_size as f64 / self.total_size as f64) * 100.0
         ));
         report.push_str(&format!("  JS:   {} ({:.1}%)\n",
-            Self::format_size(self.js_size),
+            WasmBundler::format_size(self.js_size),
             (self.js_size as f64 / self.total_size as f64) * 100.0
         ));
 
@@ -156,22 +241,12 @@ impl BundleOutput {
         for file in &self.files {
             report.push_str(&format!("  {} - {} ({})\n",
                 file.path,
-                Self::format_size(file.size),
+                WasmBundler::format_size(file.size),
                 file.file_type
             ));
         }
 
         report
-    }
-
-    fn format_size(bytes: u64) -> String {
-        if bytes < 1024 {
-            format!("{} B", bytes)
-        } else if bytes < 1024 * 1024 {
-            format!("{:.1} KB", bytes as f64 / 1024.0)
-        } else {
-            format!("{:.2} MB", bytes as f64 / (1024.0 * 1024.0))
-        }
     }
 }
 
@@ -492,6 +567,255 @@ echo "Deploy the '{}' directory to your server or CDN"
             self.config.output_dir,
             self.config.output_dir,
         )
+    }
+
+    /// Generate wasm-opt optimization command
+    pub fn generate_wasm_opt_command(&self, input: &str, output: &str) -> String {
+        let mut cmd = format!("wasm-opt {} {}", self.config.optimization_level.wasm_opt_flag(), input);
+
+        cmd.push_str(" --enable-bulk-memory");
+        cmd.push_str(" --enable-sign-ext");
+
+        if !self.config.debug {
+            cmd.push_str(" --strip-debug");
+            cmd.push_str(" --strip-producers");
+            cmd.push_str(" --strip-target-features");
+        }
+
+        if self.config.optimize_size {
+            cmd.push_str(" --vacuum");
+            cmd.push_str(" --dce");
+            cmd.push_str(" --remove-unused-names");
+            cmd.push_str(" --remove-unused-module-elements");
+        }
+
+        cmd.push_str(&format!(" -o {}", output));
+        cmd
+    }
+
+    /// Generate compression commands
+    pub fn generate_compression_commands(&self, wasm_file: &str) -> Vec<String> {
+        let mut commands = Vec::new();
+
+        match self.config.compression {
+            CompressionFormat::None => {},
+            CompressionFormat::Gzip | CompressionFormat::Both => {
+                commands.push(format!("gzip -9 -k {}", wasm_file));
+            },
+            CompressionFormat::Brotli => {
+                commands.push(format!("brotli -9 -k {}", wasm_file));
+            },
+        }
+
+        if matches!(self.config.compression, CompressionFormat::Both) {
+            commands.push(format!("brotli -9 -k {}", wasm_file));
+        }
+
+        commands
+    }
+
+    /// Generate README.md for the bundle
+    pub fn generate_readme(&self) -> String {
+        format!(r#"# {} - WASM Module
+
+Generated WASM module ready for deployment.
+
+## Quick Start
+
+### Web (Browser)
+
+```html
+<script type="module">
+  import init from './{}.js';
+
+  async function run() {{
+    await init();
+    // Your code here
+  }}
+
+  run();
+</script>
+```
+
+### Node.js
+
+```javascript
+const wasm = require('./{}.js');
+
+async function main() {{
+  await wasm.initWasm();
+  // Your code here
+}}
+
+main();
+```
+
+## Files
+
+- `{}_bg.wasm` - WASM binary module
+- `{}.js` - JavaScript glue code
+- `{}.d.ts` - TypeScript type definitions
+- `package.json` - NPM package manifest
+
+## Optimization
+
+This bundle is optimized for:
+- Target: {:?}
+- Optimization level: {:?}
+- Compression: {:?}
+
+## Bundle Size
+
+The WASM binary is highly optimized:
+- Dead code elimination
+- Tree shaking
+- Aggressive optimization passes
+{}
+
+## Deployment
+
+### Static Hosting
+
+Upload all files to your web server or CDN. Ensure:
+- WASM files are served with `application/wasm` MIME type
+- Compressed files (.gz, .br) are served with appropriate encoding headers
+
+### NPM Package
+
+```bash
+npm publish
+```
+
+### CDN (unpkg, jsDelivr)
+
+```html
+<script type="module">
+  import init from 'https://unpkg.com/{}@latest/{}.js';
+  await init();
+</script>
+```
+
+## Performance Tips
+
+1. **Preload WASM**: Add `<link rel="preload" as="fetch" href="{}_bg.wasm">` to HTML
+2. **Use Compression**: Serve .wasm.br or .wasm.gz for 70-90% size reduction
+3. **Cache-Control**: Set long cache times with versioned filenames
+4. **Lazy Loading**: Use dynamic imports for code splitting
+
+## License
+
+See parent project for license information.
+"#,
+            self.config.package_name,
+            self.config.package_name,
+            self.config.package_name,
+            self.config.package_name,
+            self.config.package_name,
+            self.config.package_name,
+            self.config.target,
+            self.config.optimization_level,
+            self.config.compression,
+            if matches!(self.config.compression, CompressionFormat::None) {
+                ""
+            } else {
+                "\n- Gzip/Brotli compression included"
+            },
+            self.config.package_name,
+            self.config.package_name,
+            self.config.package_name,
+        )
+    }
+
+    /// Generate .gitignore for bundle directory
+    pub fn generate_gitignore(&self) -> String {
+        r#"# Build artifacts
+*.wasm
+*.js
+*.d.ts
+!package.json
+!README.md
+
+# Source maps
+*.map
+
+# Compression artifacts
+*.gz
+*.br
+
+# Node modules
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+"#.to_string()
+    }
+
+    /// Estimate compressed sizes
+    pub fn estimate_compressed_size(&self, original_size: u64) -> (u64, u64) {
+        // Typical compression ratios for WASM
+        let gzip_size = (original_size as f64 * 0.3) as u64;  // ~70% reduction
+        let brotli_size = (original_size as f64 * 0.25) as u64;  // ~75% reduction
+        (gzip_size, brotli_size)
+    }
+
+    /// Generate optimization report
+    pub fn generate_optimization_report(&self, original_size: u64, optimized_size: u64) -> String {
+        let reduction = original_size - optimized_size;
+        let reduction_pct = (reduction as f64 / original_size as f64) * 100.0;
+
+        let (gzip_size, brotli_size) = self.estimate_compressed_size(optimized_size);
+
+        format!(r#"=== WASM Optimization Report ===
+
+Original Size:     {}
+Optimized Size:    {} ({:.1}% reduction)
+Reduction:         {}
+
+Compression Estimates:
+  Gzip:            {} ({:.1}% of optimized)
+  Brotli:          {} ({:.1}% of optimized)
+
+Optimization Level: {:?}
+Target:            {:?}
+
+Applied Optimizations:
+{}{}{}{}{}
+
+Deployment Size Estimates:
+  Uncompressed:    {}
+  Gzip:            {} (best for HTTP/1.1)
+  Brotli:          {} (best for HTTP/2+)
+"#,
+            Self::format_size(original_size),
+            Self::format_size(optimized_size),
+            reduction_pct,
+            Self::format_size(reduction),
+            Self::format_size(gzip_size),
+            (gzip_size as f64 / optimized_size as f64) * 100.0,
+            Self::format_size(brotli_size),
+            (brotli_size as f64 / optimized_size as f64) * 100.0,
+            self.config.optimization_level,
+            self.config.target,
+            if !self.config.debug { "  ✓ Debug symbols stripped\n" } else { "" },
+            if self.config.optimize_size { "  ✓ Size optimization passes\n" } else { "" },
+            if self.config.weak_refs { "  ✓ Weak references enabled\n" } else { "" },
+            if self.config.reference_types { "  ✓ Reference types enabled\n" } else { "" },
+            if self.config.minify_js { "  ✓ JavaScript minification\n" } else { "" },
+            Self::format_size(optimized_size),
+            Self::format_size(gzip_size),
+            Self::format_size(brotli_size),
+        )
+    }
+
+    fn format_size(bytes: u64) -> String {
+        if bytes < 1024 {
+            format!("{} B", bytes)
+        } else if bytes < 1024 * 1024 {
+            format!("{:.1} KB", bytes as f64 / 1024.0)
+        } else {
+            format!("{:.2} MB", bytes as f64 / (1024.0 * 1024.0))
+        }
     }
 
     /// Simulate bundle creation (for demo purposes)

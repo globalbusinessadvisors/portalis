@@ -2,7 +2,7 @@
 // Demonstrates deployment pipeline for different targets
 
 use portalis_transpiler::wasm_bundler::{
-    WasmBundler, DeploymentTarget, BundleConfig,
+    WasmBundler, DeploymentTarget, BundleConfig, OptimizationLevel, CompressionFormat,
 };
 
 fn main() {
@@ -38,6 +38,22 @@ fn main() {
     demo_build_configurations();
     println!("\n{}", "=".repeat(80));
 
+    // Demo 8: Optimization Levels
+    demo_optimization_levels();
+    println!("\n{}", "=".repeat(80));
+
+    // Demo 9: Compression & Size Analysis
+    demo_compression_analysis();
+    println!("\n{}", "=".repeat(80));
+
+    // Demo 10: CDN Deployment
+    demo_cdn_deployment();
+    println!("\n{}", "=".repeat(80));
+
+    // Demo 11: README Generation
+    demo_readme_generation();
+    println!("\n{}", "=".repeat(80));
+
     println!("\n🎉 WASM bundler demonstration complete!");
 }
 
@@ -54,6 +70,11 @@ fn demo_web_deployment() {
         debug: false,
         weak_refs: true,
         reference_types: true,
+        optimization_level: OptimizationLevel::Size,
+        compression: CompressionFormat::Gzip,
+        generate_readme: true,
+        code_splitting: false,
+        minify_js: true,
     });
 
     println!("Target: Modern Web Browsers (ES2020+)");
@@ -97,17 +118,11 @@ fn demo_web_deployment() {
 fn demo_nodejs_deployment() {
     println!("\n=== Demo 2: Node.js Deployment ===\n");
 
-    let bundler = WasmBundler::new(BundleConfig {
-        output_dir: "dist/nodejs".to_string(),
-        package_name: "my_wasm_app".to_string(),
-        target: DeploymentTarget::NodeJs,
-        typescript: false,
-        source_maps: true,
-        optimize_size: false,
-        debug: true,
-        weak_refs: false,
-        reference_types: false,
-    });
+    let mut config = BundleConfig::development();
+    config.output_dir = "dist/nodejs".to_string();
+    config.package_name = "my_wasm_app".to_string();
+    config.target = DeploymentTarget::NodeJs;
+    let bundler = WasmBundler::new(config);
 
     println!("Target: Node.js (v16+)");
     println!("Module System: CommonJS\n");
@@ -142,17 +157,11 @@ fn demo_nodejs_deployment() {
 fn demo_bundler_deployment() {
     println!("\n=== Demo 3: Bundler (Webpack/Rollup) Deployment ===\n");
 
-    let bundler = WasmBundler::new(BundleConfig {
-        output_dir: "dist/bundler".to_string(),
-        package_name: "my_wasm_app".to_string(),
-        target: DeploymentTarget::Bundler,
-        typescript: true,
-        source_maps: true,
-        optimize_size: true,
-        debug: false,
-        weak_refs: true,
-        reference_types: true,
-    });
+    let mut config = BundleConfig::production();
+    config.output_dir = "dist/bundler".to_string();
+    config.package_name = "my_wasm_app".to_string();
+    config.target = DeploymentTarget::Bundler;
+    let bundler = WasmBundler::new(config);
 
     println!("Target: Webpack/Rollup/Vite");
     println!("Module System: ES Modules (optimized for bundlers)\n");
@@ -206,17 +215,11 @@ export default {{
 fn demo_deno_deployment() {
     println!("\n=== Demo 4: Deno Deployment ===\n");
 
-    let bundler = WasmBundler::new(BundleConfig {
-        output_dir: "dist/deno".to_string(),
-        package_name: "my_wasm_app".to_string(),
-        target: DeploymentTarget::Deno,
-        typescript: true,
-        source_maps: false,
-        optimize_size: true,
-        debug: false,
-        weak_refs: true,
-        reference_types: true,
-    });
+    let mut config = BundleConfig::production();
+    config.output_dir = "dist/deno".to_string();
+    config.package_name = "my_wasm_app".to_string();
+    config.target = DeploymentTarget::Deno;
+    let bundler = WasmBundler::new(config);
 
     println!("Target: Deno (v1.30+)");
     println!("Module System: ES Modules with Deno APIs\n");
@@ -245,17 +248,14 @@ fn demo_deno_deployment() {
 fn demo_no_modules_deployment() {
     println!("\n=== Demo 5: No-modules (Classic) Deployment ===\n");
 
-    let bundler = WasmBundler::new(BundleConfig {
-        output_dir: "dist/no-modules".to_string(),
-        package_name: "my_wasm_app".to_string(),
-        target: DeploymentTarget::NoModules,
-        typescript: false,
-        source_maps: false,
-        optimize_size: true,
-        debug: false,
-        weak_refs: false,
-        reference_types: false,
-    });
+    let mut config = BundleConfig::production();
+    config.output_dir = "dist/no-modules".to_string();
+    config.package_name = "my_wasm_app".to_string();
+    config.target = DeploymentTarget::NoModules;
+    config.typescript = false;
+    config.weak_refs = false;
+    config.reference_types = false;
+    let bundler = WasmBundler::new(config);
 
     println!("Target: Legacy Browsers (IE11+)");
     println!("Module System: None (global namespace)\n");
@@ -404,4 +404,205 @@ fn demo_build_configurations() {
     let reduction = ((dev_bundle.total_size - prod_bundle.total_size) as f64 / dev_bundle.total_size as f64) * 100.0;
     println!("\nSize Reduction: {:.1}%", reduction);
     println!("{}", "=".repeat(80));
+}
+
+fn demo_optimization_levels() {
+    println!("\n=== Demo 8: Optimization Levels ===\n");
+
+    println!("Testing different optimization levels with wasm-opt:\n");
+
+    let levels = vec![
+        (OptimizationLevel::None, "No optimization - fastest build", 2_500_000),
+        (OptimizationLevel::Basic, "Basic (-O1)", 1_800_000),
+        (OptimizationLevel::Standard, "Standard (-O2)", 1_200_000),
+        (OptimizationLevel::Aggressive, "Aggressive (-O3)", 900_000),
+        (OptimizationLevel::Size, "Size (-Oz)", 600_000),
+        (OptimizationLevel::MaxSize, "Max Size (-Ozz)", 450_000),
+    ];
+
+    for (level, desc, expected_size) in levels {
+        let config = BundleConfig {
+            optimization_level: level,
+            package_name: "optimized_app".to_string(),
+            ..BundleConfig::default()
+        };
+
+        let bundler = WasmBundler::new(config);
+        let cmd = bundler.generate_wasm_opt_command("input.wasm", "output.wasm");
+
+        println!("{:?} - {}", level, desc);
+        println!("  Flag: {}", level.wasm_opt_flag());
+        println!("  Expected size: {:.1} MB", expected_size as f64 / 1_000_000.0);
+        println!("  Command: {}", cmd);
+        println!();
+    }
+
+    println!("Optimization vs Build Time Trade-off:");
+    println!("  None      → 0.1s build, 2.5 MB output");
+    println!("  Basic     → 0.5s build, 1.8 MB output");
+    println!("  Standard  → 2s build, 1.2 MB output");
+    println!("  Aggressive→ 10s build, 900 KB output");
+    println!("  Size      → 30s build, 600 KB output");
+    println!("  MaxSize   → 60s build, 450 KB output (BEST)");
+}
+
+fn demo_compression_analysis() {
+    println!("\n=== Demo 9: Compression & Size Analysis ===\n");
+
+    println!("Analyzing compression strategies:\n");
+
+    let formats = vec![
+        (CompressionFormat::None, "No compression"),
+        (CompressionFormat::Gzip, "Gzip only"),
+        (CompressionFormat::Brotli, "Brotli only"),
+        (CompressionFormat::Both, "Gzip + Brotli"),
+    ];
+
+    let original_size = 450_000_u64;
+
+    for (format, desc) in formats {
+        let config = BundleConfig {
+            compression: format,
+            optimization_level: OptimizationLevel::MaxSize,
+            package_name: "compressed_app".to_string(),
+            ..BundleConfig::default()
+        };
+
+        let bundler = WasmBundler::new(config);
+        let (gzip_size, brotli_size) = bundler.estimate_compressed_size(original_size);
+
+        println!("{:?} - {}", format, desc);
+        println!("  Original: {:.1} KB", original_size as f64 / 1024.0);
+
+        match format {
+            CompressionFormat::None => {
+                println!("  Deployed: {:.1} KB", original_size as f64 / 1024.0);
+            },
+            CompressionFormat::Gzip => {
+                println!("  Gzip: {:.1} KB ({:.1}% reduction)",
+                    gzip_size as f64 / 1024.0,
+                    ((original_size - gzip_size) as f64 / original_size as f64) * 100.0);
+            },
+            CompressionFormat::Brotli => {
+                println!("  Brotli: {:.1} KB ({:.1}% reduction)",
+                    brotli_size as f64 / 1024.0,
+                    ((original_size - brotli_size) as f64 / original_size as f64) * 100.0);
+            },
+            CompressionFormat::Both => {
+                println!("  Gzip: {:.1} KB ({:.1}% reduction)",
+                    gzip_size as f64 / 1024.0,
+                    ((original_size - gzip_size) as f64 / original_size as f64) * 100.0);
+                println!("  Brotli: {:.1} KB ({:.1}% reduction)",
+                    brotli_size as f64 / 1024.0,
+                    ((original_size - brotli_size) as f64 / original_size as f64) * 100.0);
+            },
+        }
+
+        let commands = bundler.generate_compression_commands("output.wasm");
+        if !commands.is_empty() {
+            println!("  Commands:");
+            for cmd in commands {
+                println!("    $ {}", cmd);
+            }
+        }
+        println!();
+    }
+
+    // Optimization report
+    println!("\nComplete Optimization Pipeline:");
+    println!("{}", "=".repeat(80));
+
+    let bundler = WasmBundler::new(BundleConfig::production());
+    let report = bundler.generate_optimization_report(2_500_000, 450_000);
+    println!("{}", report);
+}
+
+fn demo_cdn_deployment() {
+    println!("\n=== Demo 10: CDN-Optimized Deployment ===\n");
+
+    let cdn_config = BundleConfig::cdn_optimized();
+    let bundler = WasmBundler::new(cdn_config);
+
+    println!("CDN Configuration:");
+    println!("{}", "-".repeat(80));
+    println!("  Output: cdn/");
+    println!("  Optimization: {:?}", OptimizationLevel::MaxSize);
+    println!("  Compression: {:?}", CompressionFormat::Both);
+    println!("  Minify JS: Yes");
+    println!("  Code Splitting: Yes");
+    println!("{}", "-".repeat(80));
+
+    println!("\nGenerated Files:");
+    let bundle = bundler.create_bundle_simulation(450_000);
+    println!("{}", bundle.generate_report());
+
+    println!("\nCDN Deployment Instructions:");
+    println!("{}", "=".repeat(80));
+    println!("1. Upload bundle to CDN:");
+    println!("   $ aws s3 sync cdn/ s3://my-cdn-bucket/wasm-app/v1.0.0/");
+    println!("\n2. Configure Cache-Control:");
+    println!("   Cache-Control: public, max-age=31536000, immutable");
+    println!("\n3. Configure CORS:");
+    println!(r#"   {{
+     "AllowedOrigins": ["*"],
+     "AllowedMethods": ["GET"],
+     "AllowedHeaders": ["*"]
+   }}"#);
+    println!("\n4. Enable Compression:");
+    println!("   Content-Encoding: br (for .wasm.br files)");
+    println!("   Content-Encoding: gzip (for .wasm.gz files)");
+    println!("\n5. Set Content-Type:");
+    println!("   .wasm files: application/wasm");
+    println!("   .js files: application/javascript");
+    println!("{}", "=".repeat(80));
+
+    println!("\nUsage from CDN:");
+    println!(r#"  <script type="module">
+    import init from 'https://cdn.example.com/wasm-app/v1.0.0/compressed_app.js';
+
+    async function main() {{
+      await init();
+      console.log('WASM loaded from CDN!');
+    }}
+    main();
+  </script>"#);
+
+    println!("\nPerformance Benefits:");
+    println!("  ✓ Global edge distribution");
+    println!("  ✓ Aggressive caching (1 year)");
+    println!("  ✓ Automatic compression selection (Brotli > Gzip)");
+    println!("  ✓ HTTP/2 multiplexing");
+    println!("  ✓ Reduced server load");
+}
+
+fn demo_readme_generation() {
+    println!("\n=== Demo 11: README Generation ===\n");
+
+    let bundler = WasmBundler::new(BundleConfig {
+        package_name: "awesome_wasm_app".to_string(),
+        optimization_level: OptimizationLevel::MaxSize,
+        compression: CompressionFormat::Both,
+        generate_readme: true,
+        ..BundleConfig::production()
+    });
+
+    println!("Generated README.md:");
+    println!("{}", "=".repeat(80));
+    println!("{}", bundler.generate_readme());
+    println!("{}", "=".repeat(80));
+
+    println!("\nAdditional Generated Files:");
+    println!("  - .gitignore");
+    println!("{}", "-".repeat(40));
+    println!("{}", bundler.generate_gitignore());
+
+    println!("\nBundle Contents:");
+    println!("  ✓ WASM binary (optimized)");
+    println!("  ✓ JS glue code (minified)");
+    println!("  ✓ TypeScript definitions");
+    println!("  ✓ package.json");
+    println!("  ✓ README.md");
+    println!("  ✓ index.html (for web target)");
+    println!("  ✓ .gitignore");
+    println!("  ✓ Compressed files (.gz, .br)");
 }
