@@ -15,6 +15,7 @@ pub mod generic_translator;
 pub mod reference_optimizer;
 pub mod version_resolver;
 pub mod numpy_translator;
+pub mod pandas_translator;
 pub mod python_ast;
 pub mod python_to_rust;
 pub mod python_parser;
