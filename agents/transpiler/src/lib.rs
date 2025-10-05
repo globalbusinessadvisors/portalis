@@ -5,6 +5,7 @@
 mod code_generator;
 pub mod class_translator;
 pub mod class_inheritance;
+pub mod decorator_translator;
 pub mod python_ast;
 pub mod python_to_rust;
 pub mod python_parser;
