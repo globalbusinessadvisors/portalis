@@ -13,6 +13,7 @@ pub mod type_inference;
 pub mod lifetime_analysis;
 pub mod generic_translator;
 pub mod reference_optimizer;
+pub mod version_resolver;
 pub mod python_ast;
 pub mod python_to_rust;
 pub mod python_parser;
