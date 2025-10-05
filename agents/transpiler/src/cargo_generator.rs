@@ -695,17 +695,13 @@ from datetime import datetime
 
     #[test]
     fn test_custom_config() {
-        let config = CargoConfig {
-            package_name: "my_project".to_string(),
-            version: "1.0.0".to_string(),
-            edition: "2021".to_string(),
-            authors: vec!["Alice <alice@example.com>".to_string()],
-            description: Some("Custom project".to_string()),
-            license: Some("Apache-2.0".to_string()),
-            wasm_optimized: true,
-            wasi_support: false,
-            features: vec!["custom".to_string()],
-        };
+        let mut config = CargoConfig::default();
+        config.package_name = "my_project".to_string();
+        config.version = "1.0.0".to_string();
+        config.authors = vec!["Alice <alice@example.com>".to_string()];
+        config.description = Some("Custom project".to_string());
+        config.license = Some("Apache-2.0".to_string());
+        config.features = vec!["custom".to_string()];
 
         let generator = CargoGenerator::with_config(config);
         let analyzer = ImportAnalyzer::new();
