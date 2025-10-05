@@ -2,7 +2,7 @@
 // Demonstrates comprehensive code optimization and tree-shaking
 
 use portalis_transpiler::dead_code_eliminator::{
-    DeadCodeEliminator, WasmOptPass, TreeShakingAnalysis,
+    DeadCodeEliminator, WasmOptPass, TreeShakingAnalysis, OptimizationStrategy,
 };
 use std::collections::{HashMap, HashSet};
 
@@ -29,6 +29,14 @@ fn main() {
 
     // Demo 5: Optimization Recommendations
     demo_recommendations();
+    println!("\n{}", "=".repeat(80));
+
+    // Demo 6: Call Graph Analysis
+    demo_call_graph_analysis();
+    println!("\n{}", "=".repeat(80));
+
+    // Demo 7: Optimization Strategies
+    demo_optimization_strategies();
     println!("\n{}", "=".repeat(80));
 
     println!("\n🎉 Dead code elimination demonstration complete!");
@@ -314,4 +322,184 @@ fn main() {
     println!("  wasm-opt + DCE:        Additional 40-50%");
     println!("  Gzip compression:      Additional 60-70%");
     println!("  Total:                 95-98% reduction");
+}
+
+fn demo_call_graph_analysis() {
+    println!("\n=== Demo 6: Call Graph Analysis ===\n");
+
+    let sample_code = r#"
+pub fn main() {
+    let result = entry_point();
+    println!("Result: {}", result);
+}
+
+pub fn entry_point() -> i32 {
+    let x = helper_a(10);
+    let y = helper_b(20);
+    x + y
+}
+
+fn helper_a(val: i32) -> i32 {
+    val * 2
+}
+
+fn helper_b(val: i32) -> i32 {
+    internal_compute(val)
+}
+
+fn internal_compute(n: i32) -> i32 {
+    n + 1
+}
+
+// Unreachable functions
+fn unused_function() {
+    println!("Never called");
+}
+
+fn another_unused() {
+    orphaned_helper();
+}
+
+fn orphaned_helper() {
+    println!("Also never called");
+}
+
+#[wasm_bindgen]
+pub fn exported_wasm_function() -> i32 {
+    42
+}
+"#;
+
+    println!("Building call graph...\n");
+    let eliminator = DeadCodeEliminator::new();
+    let call_graph = eliminator.build_call_graph(sample_code);
+
+    println!("Call Graph Statistics:");
+    println!("  Total functions: {}", call_graph.nodes.len());
+    println!("  Entry points: {}", call_graph.entry_points.len());
+    println!("  Edges (calls): {}", call_graph.edges.values().map(|v| v.len()).sum::<usize>());
+    println!();
+
+    println!("Entry Points:");
+    for entry in &call_graph.entry_points {
+        println!("  ✓ {}", entry);
+    }
+    println!();
+
+    let reachable = call_graph.compute_reachable();
+    println!("Reachable Functions ({}):", reachable.len());
+    for func in &reachable {
+        if let Some(node) = call_graph.nodes.get(func) {
+            let vis = match node.visibility {
+                portalis_transpiler::dead_code_eliminator::Visibility::Public => "pub",
+                portalis_transpiler::dead_code_eliminator::Visibility::PublicCrate => "pub(crate)",
+                portalis_transpiler::dead_code_eliminator::Visibility::Private => "private",
+            };
+            let async_marker = if node.is_async { " async" } else { "" };
+            println!("  ✓ {} ({}{})", func, vis, async_marker);
+        }
+    }
+    println!();
+
+    let unreachable = call_graph.find_unreachable();
+    if !unreachable.is_empty() {
+        println!("Unreachable Functions ({}):", unreachable.len());
+        for func in &unreachable {
+            if let Some(node) = call_graph.nodes.get(func) {
+                println!("  ✗ {} at line {} - can be removed", func, node.line);
+            }
+        }
+        println!();
+    }
+
+    println!("Call Chains:");
+    println!("  main → entry_point → helper_a");
+    println!("                    → helper_b → internal_compute");
+    println!("  exported_wasm_function (WASM export)");
+    println!();
+
+    println!("Optimization:");
+    println!("  {} functions can be safely removed", unreachable.len());
+    println!("  Estimated savings: ~{} bytes", unreachable.len() * 150);
+}
+
+fn demo_optimization_strategies() {
+    println!("\n=== Demo 7: Optimization Strategies ===\n");
+
+    let sample_code = r#"
+pub fn public_used() {
+    helper();
+}
+
+pub fn public_unused() {
+    println!("Public but not used");
+}
+
+fn helper() {
+    println!("Helper");
+}
+
+fn private_unused() {
+    println!("Private and unused");
+}
+
+fn main() {
+    public_used();
+}
+"#;
+
+    println!("Testing different optimization strategies:\n");
+
+    // Conservative strategy
+    println!("1. Conservative Strategy:");
+    println!("   - Only removes clearly unused private code");
+    println!("   - Preserves all public APIs");
+    let conservative = DeadCodeEliminator::with_strategy(OptimizationStrategy::Conservative);
+    let analysis = conservative.analyze_with_call_graph(sample_code);
+    println!("   - Found {} removable functions", analysis.unused_functions.len());
+    for func in &analysis.unused_functions {
+        println!("     ✗ {}", func.name);
+    }
+    println!();
+
+    // Moderate strategy
+    println!("2. Moderate Strategy (Default):");
+    println!("   - Removes private unused code");
+    println!("   - Removes pub(crate) unused code");
+    println!("   - Preserves public APIs");
+    let moderate = DeadCodeEliminator::with_strategy(OptimizationStrategy::Moderate);
+    let analysis = moderate.analyze_with_call_graph(sample_code);
+    println!("   - Found {} removable functions", analysis.unused_functions.len());
+    for func in &analysis.unused_functions {
+        println!("     ✗ {}", func.name);
+    }
+    println!();
+
+    // Aggressive strategy
+    println!("3. Aggressive Strategy:");
+    println!("   - Removes ALL unreachable code");
+    println!("   - Requires whole-program analysis");
+    println!("   - Use only for final production builds");
+    let aggressive = DeadCodeEliminator::with_strategy(OptimizationStrategy::Aggressive);
+    let mut aggressive_mut = aggressive;
+    aggressive_mut.preserve_exports = false;
+    let analysis = aggressive_mut.analyze_with_call_graph(sample_code);
+    println!("   - Found {} removable functions", analysis.unused_functions.len());
+    for func in &analysis.unused_functions {
+        println!("     ✗ {}", func.name);
+    }
+    println!();
+
+    println!("Strategy Recommendations:");
+    println!("  📦 Development:    Conservative - fast iteration");
+    println!("  🚀 Staging:        Moderate - balanced optimization");
+    println!("  🏭 Production:     Aggressive - maximum size reduction");
+    println!();
+
+    println!("Integration with wasm-opt:");
+    println!("  Rust DCE (Conservative) → 20-30% reduction");
+    println!("  Rust DCE (Moderate)     → 40-50% reduction");
+    println!("  Rust DCE (Aggressive)   → 60-70% reduction");
+    println!("  + wasm-opt --dce        → Additional 25-30% reduction");
+    println!("  + wasm-opt full passes  → Total 85-95% reduction");
 }

@@ -332,68 +332,307 @@ pub struct PartiallyUsedDependency {
     pub unused_features: Vec<String>,
 }
 
-/// Dead code eliminator
-pub struct DeadCodeEliminator;
+/// Call graph for reachability analysis
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallGraph {
+    /// Function nodes
+    pub nodes: HashMap<String, CallGraphNode>,
+    /// Edges (caller -> callees)
+    pub edges: HashMap<String, Vec<String>>,
+    /// Entry points (main, public functions, exported)
+    pub entry_points: HashSet<String>,
+}
 
-impl DeadCodeEliminator {
-    /// Analyze Rust code for dead code
-    pub fn analyze_rust_code(code: &str) -> DeadCodeAnalysis {
-        let mut unused_functions = Vec::new();
-        let unused_types = Vec::new();
-        let mut unused_imports = Vec::new();
+impl CallGraph {
+    /// Create new call graph
+    pub fn new() -> Self {
+        Self {
+            nodes: HashMap::new(),
+            edges: HashMap::new(),
+            entry_points: HashSet::new(),
+        }
+    }
 
-        // Simple heuristic analysis (in production, use proper AST parsing)
-        let lines: Vec<&str> = code.lines().collect();
+    /// Add function node
+    pub fn add_function(&mut self, name: String, node: CallGraphNode) {
+        self.nodes.insert(name.clone(), node);
+        self.edges.entry(name).or_insert_with(Vec::new);
+    }
 
-        // Track function definitions
-        let mut defined_functions = HashSet::new();
-        let mut used_functions = HashSet::new();
+    /// Add function call edge
+    pub fn add_call(&mut self, from: String, to: String) {
+        self.edges.entry(from).or_insert_with(Vec::new).push(to);
+    }
 
-        for (idx, line) in lines.iter().enumerate() {
-            // Find function definitions
-            if line.contains("fn ") && !line.trim_start().starts_with("//") {
-                if let Some(name) = Self::extract_function_name(line) {
-                    defined_functions.insert((name.clone(), idx + 1));
-                }
-            }
+    /// Mark function as entry point
+    pub fn add_entry_point(&mut self, name: String) {
+        self.entry_points.insert(name);
+    }
 
-            // Find function calls (simple heuristic)
-            for (name, _) in &defined_functions {
-                if line.contains(&format!("{}(", name)) && !line.contains(&format!("fn {}", name)) {
-                    used_functions.insert(name.clone());
-                }
-            }
+    /// Compute reachable functions from entry points
+    pub fn compute_reachable(&self) -> HashSet<String> {
+        let mut reachable = HashSet::new();
+        let mut stack: Vec<String> = self.entry_points.iter().cloned().collect();
 
-            // Find unused imports
-            if line.trim_start().starts_with("use ") {
-                if let Some(import) = Self::extract_import(line) {
-                    // Check if import is used in code
-                    let is_used = code.contains(&import) &&
-                        code.matches(&import).count() > 1; // More than just the import line
-
-                    if !is_used {
-                        unused_imports.push(import);
+        while let Some(func) = stack.pop() {
+            if reachable.insert(func.clone()) {
+                if let Some(callees) = self.edges.get(&func) {
+                    for callee in callees {
+                        if !reachable.contains(callee) {
+                            stack.push(callee.clone());
+                        }
                     }
                 }
             }
         }
 
-        // Identify unused functions
-        for (name, line) in defined_functions {
-            if !used_functions.contains(&name) && name != "main" {
-                unused_functions.push(UnusedItem {
-                    name: name.clone(),
-                    item_type: "function".to_string(),
-                    file: "generated.rs".to_string(),
-                    line,
-                    estimated_size: 100, // Estimated avg function size
-                    reason: "Never called".to_string(),
-                });
+        reachable
+    }
+
+    /// Find unreachable functions
+    pub fn find_unreachable(&self) -> Vec<String> {
+        let reachable = self.compute_reachable();
+        self.nodes
+            .keys()
+            .filter(|name| !reachable.contains(*name))
+            .cloned()
+            .collect()
+    }
+}
+
+/// Call graph node
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct CallGraphNode {
+    /// Function name
+    pub name: String,
+    /// Visibility (pub, pub(crate), private)
+    pub visibility: Visibility,
+    /// Is generic function
+    pub is_generic: bool,
+    /// Is async function
+    pub is_async: bool,
+    /// Has #[inline] attribute
+    pub is_inline: bool,
+    /// Line number
+    pub line: usize,
+}
+
+/// Function visibility
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum Visibility {
+    Public,
+    PublicCrate,
+    Private,
+}
+
+/// Optimization strategy for dead code elimination
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum OptimizationStrategy {
+    /// Conservative - only remove clearly unused code
+    Conservative,
+    /// Moderate - remove unused code with high confidence
+    Moderate,
+    /// Aggressive - remove all unreachable code
+    Aggressive,
+}
+
+impl OptimizationStrategy {
+    /// Should remove private unused functions
+    pub fn remove_private_unused(&self) -> bool {
+        matches!(self, OptimizationStrategy::Moderate | OptimizationStrategy::Aggressive)
+    }
+
+    /// Should remove public unused functions (requires whole-program analysis)
+    pub fn remove_public_unused(&self) -> bool {
+        matches!(self, OptimizationStrategy::Aggressive)
+    }
+
+    /// Should inline small functions
+    pub fn inline_small_functions(&self) -> bool {
+        matches!(self, OptimizationStrategy::Moderate | OptimizationStrategy::Aggressive)
+    }
+}
+
+/// Dead code eliminator
+pub struct DeadCodeEliminator {
+    /// Optimization strategy
+    pub strategy: OptimizationStrategy,
+    /// Preserve exported functions
+    pub preserve_exports: bool,
+}
+
+impl Default for DeadCodeEliminator {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl DeadCodeEliminator {
+    /// Create new eliminator with default strategy
+    pub fn new() -> Self {
+        Self {
+            strategy: OptimizationStrategy::Moderate,
+            preserve_exports: true,
+        }
+    }
+
+    /// Create with specific strategy
+    pub fn with_strategy(strategy: OptimizationStrategy) -> Self {
+        Self {
+            strategy,
+            preserve_exports: true,
+        }
+    }
+
+    /// Build call graph from Rust code
+    pub fn build_call_graph(&self, code: &str) -> CallGraph {
+        let mut graph = CallGraph::new();
+        let lines: Vec<&str> = code.lines().collect();
+
+        // Track current function for call edges
+        let mut current_function: Option<String> = None;
+
+        for (idx, line) in lines.iter().enumerate() {
+            let trimmed = line.trim();
+
+            // Skip comments
+            if trimmed.starts_with("//") || trimmed.starts_with("/*") {
+                continue;
+            }
+
+            // Find function definitions
+            if trimmed.starts_with("fn ") || trimmed.starts_with("pub fn ") ||
+               trimmed.starts_with("pub(crate) fn ") || trimmed.starts_with("async fn ") {
+                if let Some(name) = Self::extract_function_name(line) {
+                    let visibility = if trimmed.starts_with("pub fn ") {
+                        Visibility::Public
+                    } else if trimmed.starts_with("pub(crate) fn ") {
+                        Visibility::PublicCrate
+                    } else {
+                        Visibility::Private
+                    };
+
+                    let node = CallGraphNode {
+                        name: name.clone(),
+                        visibility: visibility.clone(),
+                        is_generic: line.contains('<') && line.contains('>'),
+                        is_async: line.contains("async"),
+                        is_inline: Self::has_inline_attribute(&lines, idx),
+                        line: idx + 1,
+                    };
+
+                    graph.add_function(name.clone(), node);
+                    current_function = Some(name.clone());
+
+                    // Entry points: main, public functions, #[wasm_bindgen]
+                    if name == "main" || visibility == Visibility::Public ||
+                       Self::has_wasm_bindgen_attribute(&lines, idx) {
+                        graph.add_entry_point(name);
+                    }
+                }
+            }
+
+            // Find function calls
+            if let Some(ref from_func) = current_function {
+                for to_func in Self::extract_function_calls(line) {
+                    graph.add_call(from_func.clone(), to_func);
+                }
+            }
+
+            // End of function body
+            if trimmed == "}" && current_function.is_some() {
+                current_function = None;
             }
         }
 
+        graph
+    }
+
+    /// Extract function calls from a line
+    fn extract_function_calls(line: &str) -> Vec<String> {
+        let mut calls = Vec::new();
+        let line = line.trim();
+
+        // Simple pattern: identifier followed by (
+        let mut chars = line.chars().peekable();
+        let mut current_word = String::new();
+
+        while let Some(ch) = chars.next() {
+            if ch.is_alphanumeric() || ch == '_' {
+                current_word.push(ch);
+            } else if ch == '(' && !current_word.is_empty() {
+                // Check if it's not a keyword
+                if !Self::is_rust_keyword(&current_word) {
+                    calls.push(current_word.clone());
+                }
+                current_word.clear();
+            } else {
+                current_word.clear();
+            }
+        }
+
+        calls
+    }
+
+    /// Check if word is a Rust keyword
+    fn is_rust_keyword(word: &str) -> bool {
+        matches!(word, "if" | "else" | "match" | "for" | "while" | "loop" |
+                       "fn" | "let" | "mut" | "const" | "static" | "struct" |
+                       "enum" | "impl" | "trait" | "mod" | "use" | "pub")
+    }
+
+    /// Check for #[inline] attribute
+    fn has_inline_attribute(lines: &[&str], idx: usize) -> bool {
+        if idx > 0 {
+            lines[idx - 1].trim().contains("#[inline")
+        } else {
+            false
+        }
+    }
+
+    /// Check for #[wasm_bindgen] attribute
+    fn has_wasm_bindgen_attribute(lines: &[&str], idx: usize) -> bool {
+        if idx > 0 {
+            lines[idx - 1].trim().contains("#[wasm_bindgen")
+        } else {
+            false
+        }
+    }
+
+    /// Analyze Rust code for dead code using call graph
+    pub fn analyze_with_call_graph(&self, code: &str) -> DeadCodeAnalysis {
+        let graph = self.build_call_graph(code);
+        let unreachable = graph.find_unreachable();
+        let mut unused_functions = Vec::new();
+
+        for func_name in unreachable {
+            if let Some(node) = graph.nodes.get(&func_name) {
+                // Apply strategy
+                let should_remove = match node.visibility {
+                    Visibility::Private => self.strategy.remove_private_unused(),
+                    Visibility::PublicCrate => self.strategy.remove_private_unused(),
+                    Visibility::Public => self.strategy.remove_public_unused(),
+                };
+
+                if should_remove && (!self.preserve_exports || node.visibility == Visibility::Private) {
+                    unused_functions.push(UnusedItem {
+                        name: func_name.clone(),
+                        item_type: "function".to_string(),
+                        file: "generated.rs".to_string(),
+                        line: node.line,
+                        estimated_size: 150,
+                        reason: "Unreachable from entry points".to_string(),
+                    });
+                }
+            }
+        }
+
+        let unused_types = Vec::new();
+        let unused_imports = self.find_unused_imports(code);
+        let unused_dependencies = Vec::new();
+
         let potential_reduction =
-            (unused_functions.len() * 100) as u64 +
+            (unused_functions.len() * 150) as u64 +
             (unused_types.len() * 50) as u64 +
             (unused_imports.len() * 20) as u64;
 
@@ -401,9 +640,42 @@ impl DeadCodeEliminator {
             unused_functions,
             unused_types,
             unused_imports,
-            unused_dependencies: vec![],
+            unused_dependencies,
             potential_size_reduction: potential_reduction,
         }
+    }
+
+    /// Find unused imports
+    fn find_unused_imports(&self, code: &str) -> Vec<String> {
+        let mut unused = Vec::new();
+        let lines: Vec<&str> = code.lines().collect();
+
+        for line in lines {
+            if line.trim().starts_with("use ") {
+                if let Some(import) = Self::extract_import(line) {
+                    // Extract the actual item name
+                    let item_name = if let Some(pos) = import.rfind("::") {
+                        &import[pos + 2..]
+                    } else {
+                        &import
+                    };
+
+                    // Check if used (simple heuristic)
+                    let usage_count = code.matches(item_name).count();
+                    if usage_count <= 1 { // Only the import line
+                        unused.push(import);
+                    }
+                }
+            }
+        }
+
+        unused
+    }
+
+    /// Analyze Rust code for dead code (simplified static method)
+    pub fn analyze_rust_code(code: &str) -> DeadCodeAnalysis {
+        let eliminator = Self::new();
+        eliminator.analyze_with_call_graph(code)
     }
 
     /// Extract function name from definition line
