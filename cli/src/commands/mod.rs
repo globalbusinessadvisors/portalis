@@ -1,7 +1,10 @@
 //! CLI Commands
 
 pub mod assess;
+pub mod batch;
+pub mod doctor;
+pub mod package;
 pub mod plan;
-
-pub use assess::AssessCommand;
-pub use plan::PlanCommand;
+pub mod serve;
+pub mod test;
+pub mod translate;

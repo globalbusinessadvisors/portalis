@@ -3,6 +3,7 @@
 //! Analyzes dependency graph and generates migration plan.
 
 use anyhow::{Context, Result};
+use clap::Args;
 use portalis_ingest::{ProjectParser, PythonProject};
 use std::collections::HashMap;
 use std::path::PathBuf;
@@ -37,32 +38,33 @@ pub struct MigrationPhase {
 }
 
 /// Migration planning command
+#[derive(Args, Debug)]
 pub struct PlanCommand {
-    project_path: PathBuf,
-    strategy: MigrationStrategy,
-    output_path: Option<PathBuf>,
-    verbose: bool,
+    /// Python project directory
+    #[arg(short, long)]
+    pub project: PathBuf,
+
+    /// Migration strategy (full, incremental, bottom-up, top-down, critical-path)
+    #[arg(short, long, default_value = "bottom-up")]
+    pub strategy: String,
+
+    /// Output plan file
+    #[arg(short, long)]
+    pub output: Option<PathBuf>,
+
+    /// Verbose output
+    #[arg(short, long)]
+    pub verbose: bool,
 }
 
 impl PlanCommand {
-    pub fn new(
-        project_path: PathBuf,
-        strategy: MigrationStrategy,
-        output_path: Option<PathBuf>,
-        verbose: bool,
-    ) -> Self {
-        Self {
-            project_path,
-            strategy,
-            output_path,
-            verbose,
-        }
-    }
 
     /// Execute the planning command
     pub async fn execute(&self) -> Result<()> {
-        println!("🗺️  Creating migration plan for: {}", self.project_path.display());
-        println!("   Strategy: {:?}\n", self.strategy);
+        let strategy = self.parse_strategy()?;
+
+        println!("🗺️  Creating migration plan for: {}", self.project.display());
+        println!("   Strategy: {:?}\n", strategy);
 
         // Parse the project
         let project = self.parse_project()?;
@@ -71,13 +73,13 @@ impl PlanCommand {
         println!("   Dependencies: {} edges\n", project.dependency_graph.edges.len());
 
         // Generate migration plan
-        let plan = self.generate_plan(&project)?;
+        let plan = self.generate_plan(&project, strategy)?;
 
         // Print plan
         self.print_plan(&plan);
 
         // Save plan if output specified
-        if let Some(output_path) = &self.output_path {
+        if let Some(output_path) = &self.output {
             self.save_plan(&plan, output_path)?;
             println!("\n📄 Plan saved to: {}", output_path.display());
         }
@@ -88,13 +90,13 @@ impl PlanCommand {
     /// Parse the Python project
     fn parse_project(&self) -> Result<PythonProject> {
         let parser = ProjectParser::new();
-        parser.parse_project(&self.project_path)
+        parser.parse_project(&self.project)
             .context("Failed to parse Python project")
     }
 
     /// Generate migration plan
-    fn generate_plan(&self, project: &PythonProject) -> Result<MigrationPlan> {
-        let plan = match self.strategy {
+    fn generate_plan(&self, project: &PythonProject, strategy: MigrationStrategy) -> Result<MigrationPlan> {
+        let plan = match strategy {
             MigrationStrategy::FullMigration => self.plan_full_migration(project)?,
             MigrationStrategy::Incremental => self.plan_incremental(project)?,
             MigrationStrategy::BottomUp => self.plan_bottom_up(project)?,
@@ -347,5 +349,16 @@ impl PlanCommand {
 
         std::fs::write(path, content)?;
         Ok(())
+    }
+
+    fn parse_strategy(&self) -> Result<MigrationStrategy> {
+        match self.strategy.to_lowercase().as_str() {
+            "full" => Ok(MigrationStrategy::FullMigration),
+            "incremental" => Ok(MigrationStrategy::Incremental),
+            "bottom-up" => Ok(MigrationStrategy::BottomUp),
+            "top-down" => Ok(MigrationStrategy::TopDown),
+            "critical-path" => Ok(MigrationStrategy::CriticalPath),
+            _ => anyhow::bail!("Invalid strategy: {}. Use: full, incremental, bottom-up, top-down, or critical-path", self.strategy),
+        }
     }
 }

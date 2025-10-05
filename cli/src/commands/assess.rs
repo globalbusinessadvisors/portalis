@@ -3,6 +3,7 @@
 //! Scans Python codebase and generates compatibility assessment report.
 
 use anyhow::{Context, Result};
+use clap::Args;
 use portalis_core::assessment::{
     FeatureDetector, CompatibilityAnalyzer, EffortEstimator, ReportGenerator, ReportFormat,
     feature_detector::PythonAst,
@@ -12,31 +13,31 @@ use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 
 /// Assessment command
+#[derive(Args, Debug)]
 pub struct AssessCommand {
-    project_path: PathBuf,
-    output_path: Option<PathBuf>,
-    format: ReportFormat,
-    verbose: bool,
+    /// Python project directory
+    #[arg(short, long)]
+    pub project: PathBuf,
+
+    /// Output report file
+    #[arg(short = 'o', long)]
+    pub report: Option<PathBuf>,
+
+    /// Report format (html, json, markdown, pdf)
+    #[arg(short, long, default_value = "html")]
+    pub format: String,
+
+    /// Verbose output
+    #[arg(short, long)]
+    pub verbose: bool,
 }
 
 impl AssessCommand {
-    pub fn new(
-        project_path: PathBuf,
-        output_path: Option<PathBuf>,
-        format: ReportFormat,
-        verbose: bool,
-    ) -> Self {
-        Self {
-            project_path,
-            output_path,
-            format,
-            verbose,
-        }
-    }
-
     /// Execute the assessment command
     pub async fn execute(&self) -> Result<()> {
-        println!("🔍 Assessing Python project at: {}", self.project_path.display());
+        let format = self.parse_report_format()?;
+
+        println!("🔍 Assessing Python project at: {}", self.project.display());
         println!();
 
         // Parse the project
@@ -85,7 +86,7 @@ impl AssessCommand {
         let report_gen = ReportGenerator::new();
         let report = report_gen.generate(
             &self.get_project_name()?,
-            &self.project_path,
+            &self.project,
             combined_features,
             compatibility,
             effort,
@@ -96,7 +97,7 @@ impl AssessCommand {
 
         // Save report to file
         let output_path = self.get_output_path();
-        report_gen.save_report(&report, &output_path, self.format)
+        report_gen.save_report(&report, &output_path, format)
             .context("Failed to save report")?;
 
         println!("\n✅ Assessment complete!");
@@ -108,7 +109,7 @@ impl AssessCommand {
     /// Parse the Python project
     fn parse_project(&self) -> Result<PythonProject> {
         let parser = ProjectParser::new();
-        parser.parse_project(&self.project_path)
+        parser.parse_project(&self.project)
             .context("Failed to parse Python project")
     }
 
@@ -170,7 +171,7 @@ impl AssessCommand {
 
     /// Get project name from path
     fn get_project_name(&self) -> Result<String> {
-        Ok(self.project_path
+        Ok(self.project
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("unknown")
@@ -179,14 +180,15 @@ impl AssessCommand {
 
     /// Get output path
     fn get_output_path(&self) -> PathBuf {
-        if let Some(path) = &self.output_path {
+        if let Some(path) = &self.report {
             path.clone()
         } else {
-            let extension = match self.format {
-                ReportFormat::Html => "html",
-                ReportFormat::Json => "json",
-                ReportFormat::Markdown => "md",
-                ReportFormat::Pdf => "pdf",
+            let extension = match self.format.as_str() {
+                "html" => "html",
+                "json" => "json",
+                "markdown" | "md" => "md",
+                "pdf" => "pdf",
+                _ => "html",
             };
 
             PathBuf::from(format!("portalis-assessment.{}", extension))
@@ -285,5 +287,15 @@ impl AssessCommand {
         println!("  {}", report.executive_summary.recommendation);
 
         println!("\n{}", "=".repeat(80));
+    }
+
+    fn parse_report_format(&self) -> Result<ReportFormat> {
+        match self.format.to_lowercase().as_str() {
+            "html" => Ok(ReportFormat::Html),
+            "json" => Ok(ReportFormat::Json),
+            "markdown" | "md" => Ok(ReportFormat::Markdown),
+            "pdf" => Ok(ReportFormat::Pdf),
+            _ => anyhow::bail!("Invalid format: {}. Use: html, json, markdown, or pdf", self.format),
+        }
     }
 }
