@@ -9,6 +9,7 @@ pub mod decorator_translator;
 pub mod generator_translator;
 pub mod asyncio_orchestrator;
 pub mod threading_translator;
+pub mod type_inference;
 pub mod python_ast;
 pub mod python_to_rust;
 pub mod python_parser;
