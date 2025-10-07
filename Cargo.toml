@@ -11,6 +11,7 @@ members = [
     "agents/packaging",
     "agents/nemo-bridge",
     "agents/cuda-bridge",
+    "agents/wassette-bridge",
     "orchestration",
     "cli",
 ]
