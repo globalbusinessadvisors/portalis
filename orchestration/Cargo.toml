@@ -12,14 +12,14 @@ categories.workspace = true
 readme = "../../README.md"
 
 [dependencies]
-portalis-core = { path = "../core" }
-portalis-ingest = { path = "../agents/ingest" }
-portalis-analysis = { path = "../agents/analysis" }
-portalis-specgen = { path = "../agents/specgen" }
-portalis-transpiler = { path = "../agents/transpiler" }
-portalis-build = { path = "../agents/build" }
-portalis-test = { path = "../agents/test" }
-portalis-packaging = { path = "../agents/packaging" }
+portalis-core = { version = "0.1.0", path = "../core" }
+portalis-ingest = { version = "0.1.0", path = "../agents/ingest" }
+portalis-analysis = { version = "0.1.0", path = "../agents/analysis" }
+portalis-specgen = { version = "0.1.0", path = "../agents/specgen" }
+portalis-transpiler = { version = "0.1.0", path = "../agents/transpiler" }
+portalis-build = { version = "0.1.0", path = "../agents/build" }
+portalis-test = { version = "0.1.0", path = "../agents/test" }
+portalis-packaging = { version = "0.1.0", path = "../agents/packaging" }
 tokio.workspace = true
 async-trait.workspace = true
 anyhow.workspace = true

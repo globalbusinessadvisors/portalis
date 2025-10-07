@@ -12,7 +12,7 @@ categories.workspace = true
 readme = "../../README.md"
 
 [dependencies]
-portalis-core = { path = "../../core" }
+portalis-core = { version = "0.1.0", path = "../../core" }
 serde.workspace = true
 serde_json.workspace = true
 tracing.workspace = true

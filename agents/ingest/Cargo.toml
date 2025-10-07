@@ -12,8 +12,8 @@ categories.workspace = true
 readme = "../../README.md"
 
 [dependencies]
-portalis-core = { path = "../../core" }
-portalis-cuda-bridge = { path = "../cuda-bridge", optional = true }
+portalis-core = { version = "0.1.0", path = "../../core" }
+portalis-cuda-bridge = { version = "0.1.0", path = "../cuda-bridge", optional = true }
 tokio.workspace = true
 async-trait.workspace = true
 anyhow.workspace = true

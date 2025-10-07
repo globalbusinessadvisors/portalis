@@ -16,12 +16,12 @@ name = "portalis"
 path = "src/main.rs"
 
 [dependencies]
-portalis-core = { path = "../core" }
-portalis-orchestration = { path = "../orchestration" }
-portalis-ingest = { path = "../agents/ingest" }
-portalis-transpiler = { path = "../agents/transpiler" }
-portalis-test = { path = "../agents/test" }
-portalis-packaging = { path = "../agents/packaging" }
+portalis-core = { version = "0.1.0", path = "../core" }
+portalis-orchestration = { version = "0.1.0", path = "../orchestration" }
+portalis-ingest = { version = "0.1.0", path = "../agents/ingest" }
+portalis-transpiler = { version = "0.1.0", path = "../agents/transpiler" }
+portalis-test = { version = "0.1.0", path = "../agents/test" }
+portalis-packaging = { version = "0.1.0", path = "../agents/packaging" }
 tokio.workspace = true
 anyhow.workspace = true
 clap = { version = "4.4", features = ["derive", "cargo", "env"] }

@@ -32,8 +32,8 @@ rustpython-parser.workspace = true
 
 # Non-WASM dependencies
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
-portalis-core = { path = "../../core" }
-portalis-nemo-bridge = { path = "../nemo-bridge", optional = true }
+portalis-core = { version = "0.1.0", path = "../../core" }
+portalis-nemo-bridge = { version = "0.1.0", path = "../nemo-bridge", optional = true }
 tokio.workspace = true
 async-trait.workspace = true
 tracing.workspace = true
