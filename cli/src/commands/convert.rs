@@ -8,7 +8,7 @@ use anyhow::{Context, Result, bail};
 use clap::Parser;
 use colored::Colorize;
 use std::path::{Path, PathBuf};
-use portalis_transpiler::python_to_rust::PythonToRustTranslator;
+use portalis_transpiler::TranspilerAgent;
 
 #[derive(Parser, Debug)]
 pub struct ConvertCommand {
@@ -236,8 +236,8 @@ impl ConvertCommand {
 
         // Step 2: Translate to Rust
         print!("├─ {} to Rust... ", "Translating".cyan());
-        let transpiler = PythonToRustTranslator::new();
-        let rust_code = transpiler.translate(&python_code)?;
+        let transpiler = TranspilerAgent::with_ast_mode();
+        let rust_code = transpiler.translate_python_module(&python_code)?;
         println!("{}", "✓".green());
 
         // Step 3: Save Rust (if requested)
@@ -316,7 +316,7 @@ impl ConvertCommand {
         println!("{} Transpiling {} files...", "🔄".cyan(), py_files.len());
         println!();
 
-        let transpiler = PythonToRustTranslator::new();
+        let transpiler = TranspilerAgent::with_ast_mode();
         let mut rust_modules = Vec::new();
 
         // Convert each Python file to a Rust module
@@ -325,7 +325,7 @@ impl ConvertCommand {
             print!("  [{}/{}] {} ... ", i + 1, py_files.len(), relative_path.display());
 
             let python_code = std::fs::read_to_string(py_file)?;
-            let rust_code = transpiler.translate(&python_code)?;
+            let rust_code = transpiler.translate_python_module(&python_code)?;
 
             // Determine module name from file path
             let module_name = relative_path
