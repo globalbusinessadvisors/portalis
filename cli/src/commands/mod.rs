@@ -2,6 +2,7 @@
 
 pub mod assess;
 pub mod batch;
+pub mod convert;
 pub mod doctor;
 pub mod package;
 pub mod plan;
