@@ -23,3 +23,25 @@ tracing-subscriber = { workspace = true, features = ["env-filter"] }
 uuid.workspace = true
 chrono.workspace = true
 prometheus = "0.13"
+num_cpus = "1.16"
+raw-cpuid = "11.0"
+
+# Optional CUDA support
+cudarc = { version = "0.9", features = ["driver"], optional = true }
+
+# Memory optimization dependencies
+bumpalo = "3.14"              # Arena allocator
+dashmap = "5.5"               # Concurrent hashmap for string interning
+once_cell = "1.19"            # Lazy static initialization
+crossbeam = "0.8"             # Lock-free concurrent data structures
+
+# Platform-specific dependencies
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3", features = ["sysinfoapi"] }
+
+[features]
+# Enable CUDA support for GPU acceleration
+cuda = ["cudarc"]
+# Enable memory optimizations
+memory-opt = []
+default = ["memory-opt"]

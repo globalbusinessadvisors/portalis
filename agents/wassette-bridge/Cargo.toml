@@ -1,0 +1,34 @@
+[package]
+name = "portalis-wassette-bridge"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+description = "Wassette WebAssembly runtime integration for Portalis"
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../../README.md"
+
+[dependencies]
+portalis-core = { version = "0.1.0", path = "../../core" }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+uuid.workspace = true
+
+# Wassette dependencies (optional for runtime)
+wasmtime = { version = "24.0", optional = true }
+wasmtime-wasi = { version = "24.0", optional = true }
+
+[features]
+default = []
+runtime = ["wasmtime", "wasmtime-wasi"]
+
+[dev-dependencies]
+tempfile.workspace = true
+tokio = { workspace = true, features = ["test-util", "macros"] }

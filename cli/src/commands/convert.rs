@@ -39,6 +39,18 @@ pub struct ConvertCommand {
     /// Number of parallel jobs (default: CPU cores)
     #[arg(short, long)]
     pub jobs: Option<usize>,
+
+    /// Force CPU-only execution (disable GPU)
+    #[arg(long)]
+    pub cpu_only: bool,
+
+    /// Enable SIMD optimizations (AVX2/NEON)
+    #[arg(long)]
+    pub simd: bool,
+
+    /// Use hybrid CPU+GPU execution
+    #[arg(long)]
+    pub hybrid: bool,
 }
 
 #[derive(Debug, Clone, clap::ValueEnum)]
@@ -236,7 +248,46 @@ impl ConvertCommand {
 
         // Step 2: Translate to Rust
         print!("├─ {} to Rust... ", "Translating".cyan());
+
+        #[cfg(feature = "acceleration")]
+        let transpiler = {
+            if self.cpu_only || self.simd || self.hybrid || self.jobs.is_some() {
+                use portalis_core::acceleration::{ExecutionStrategy, AccelerationConfig};
+
+                let mut config = AccelerationConfig::cpu_only();
+
+                if let Some(jobs) = self.jobs {
+                    config.cpu_threads = Some(jobs);
+                }
+
+                if self.hybrid {
+                    config.strategy = ExecutionStrategy::Hybrid {
+                        gpu_allocation: 70,
+                        cpu_allocation: 30,
+                    };
+                }
+
+                if self.verbose {
+                    if self.simd {
+                        println!("\n  {} SIMD optimizations (AVX2/NEON)", "├─ Enabled:".cyan());
+                    }
+                    if self.cpu_only {
+                        println!("\n  {} CPU-only execution", "├─ Mode:".cyan());
+                    }
+                    if self.hybrid {
+                        println!("\n  {} Hybrid CPU+GPU", "├─ Mode:".cyan());
+                    }
+                }
+
+                TranspilerAgent::with_acceleration(config)
+            } else {
+                TranspilerAgent::with_ast_mode()
+            }
+        };
+
+        #[cfg(not(feature = "acceleration"))]
         let transpiler = TranspilerAgent::with_ast_mode();
+
         let rust_code = transpiler.translate_python_module(&python_code)?;
         println!("{}", "✓".green());
 

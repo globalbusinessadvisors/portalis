@@ -217,6 +217,8 @@ impl Default for TranslationMode {
 pub struct TranspilerAgent {
     id: AgentId,
     translation_mode: TranslationMode,
+    #[cfg(feature = "acceleration")]
+    acceleration: Option<std::sync::Arc<portalis_core::acceleration::StrategyManager<portalis_cpu_bridge::CpuBridge, portalis_core::acceleration::NoGpu>>>,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -225,6 +227,8 @@ impl TranspilerAgent {
         Self {
             id: AgentId::new(),
             translation_mode: TranslationMode::default(),
+            #[cfg(feature = "acceleration")]
+            acceleration: None,
         }
     }
 
@@ -233,6 +237,8 @@ impl TranspilerAgent {
         Self {
             id: AgentId::new(),
             translation_mode,
+            #[cfg(feature = "acceleration")]
+            acceleration: None,
         }
     }
 
@@ -244,6 +250,54 @@ impl TranspilerAgent {
     /// Create transpiler with feature-based translation mode
     pub fn with_feature_mode() -> Self {
         Self::with_mode(TranslationMode::FeatureBased)
+    }
+
+    /// Create transpiler with acceleration enabled
+    ///
+    /// This constructor creates a TranspilerAgent with CPU-based parallel acceleration
+    /// using the StrategyManager for intelligent workload distribution.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - Acceleration configuration (thread count, strategy, etc.)
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use portalis_transpiler::TranspilerAgent;
+    /// use portalis_core::AccelerationConfig;
+    ///
+    /// let config = AccelerationConfig::cpu_only();
+    /// let agent = TranspilerAgent::with_acceleration(config);
+    /// ```
+    #[cfg(feature = "acceleration")]
+    pub fn with_acceleration(config: portalis_core::AccelerationConfig) -> Self {
+        use std::sync::Arc;
+        use portalis_core::acceleration::{StrategyManager, NoGpu};
+        use portalis_cpu_bridge::CpuBridge;
+
+        // Create CPU bridge with appropriate config
+        let cpu_bridge = if let Some(threads) = config.cpu_threads {
+            let cpu_config = portalis_cpu_bridge::CpuConfig::builder()
+                .num_threads(threads)
+                .build();
+            Arc::new(CpuBridge::with_config(cpu_config))
+        } else {
+            Arc::new(CpuBridge::new())
+        };
+
+        // Create strategy manager
+        let strategy_manager = StrategyManager::with_strategy(
+            cpu_bridge,
+            None::<Arc<NoGpu>>,
+            config.strategy,
+        );
+
+        Self {
+            id: AgentId::new(),
+            translation_mode: TranslationMode::default(),
+            acceleration: Some(Arc::new(strategy_manager)),
+        }
     }
 
     /// Get current translation mode
@@ -318,6 +372,101 @@ impl TranspilerAgent {
                     "NeMo mode requires async translation. Use translate_with_nemo directly.".into()
                 ))
             }
+        }
+    }
+
+    /// Translate a batch of Python files using accelerated parallel processing
+    ///
+    /// This method leverages the StrategyManager to intelligently distribute translation
+    /// tasks across CPU cores (and optionally GPU if configured). It provides significant
+    /// speedup for large batches of files.
+    ///
+    /// # Arguments
+    ///
+    /// * `files` - Vector of Python source code strings to translate
+    ///
+    /// # Returns
+    ///
+    /// A `Result` containing a vector of `TranspilerOutput` for each file, or an error.
+    ///
+    /// # Example
+    ///
+    /// ```rust,no_run
+    /// use portalis_transpiler::TranspilerAgent;
+    /// use portalis_core::AccelerationConfig;
+    ///
+    /// let agent = TranspilerAgent::with_acceleration(AccelerationConfig::cpu_only());
+    /// let files = vec!["def add(a, b): return a + b".to_string()];
+    /// // let results = agent.translate_batch_accelerated(files).unwrap();
+    /// ```
+    ///
+    /// # Performance
+    ///
+    /// - Automatically selects optimal execution strategy based on batch size
+    /// - Scales linearly with CPU core count for large batches
+    /// - Falls back to sequential processing if acceleration is not configured
+    #[cfg(feature = "acceleration")]
+    pub fn translate_batch_accelerated(
+        &self,
+        files: Vec<String>,
+    ) -> Result<Vec<TranspilerOutput>> {
+        use portalis_core::acceleration::ExecutionResult;
+
+        if let Some(strategy_manager) = &self.acceleration {
+            // Use accelerated path with StrategyManager
+            tracing::info!(
+                "Translating {} files with acceleration (strategy: {:?})",
+                files.len(),
+                strategy_manager.strategy()
+            );
+
+            let result: ExecutionResult<TranspilerOutput> = strategy_manager.execute(
+                files,
+                |python_source| {
+                    // Translate individual file using configured mode
+                    let rust_code = self.translate_python_module(python_source)?;
+
+                    let metadata = ArtifactMetadata::new(self.name())
+                        .with_tag("mode", format!("{:?}", self.translation_mode))
+                        .with_tag("lines", rust_code.lines().count().to_string());
+
+                    Ok(TranspilerOutput {
+                        rust_code,
+                        metadata,
+                    })
+                },
+            ).map_err(|e| Error::CodeGeneration(e.to_string()))?;
+
+            tracing::info!(
+                "Batch translation completed in {:?} (fallback: {}, errors: {})",
+                result.execution_time,
+                result.fallback_occurred,
+                result.errors.len()
+            );
+
+            Ok(result.outputs)
+        } else {
+            // Fallback to sequential processing
+            tracing::warn!(
+                "Acceleration not configured, falling back to sequential processing for {} files",
+                files.len()
+            );
+
+            files
+                .iter()
+                .map(|python_source| {
+                    let rust_code = self.translate_python_module(python_source)?;
+
+                    let metadata = ArtifactMetadata::new(self.name())
+                        .with_tag("mode", format!("{:?}", self.translation_mode))
+                        .with_tag("lines", rust_code.lines().count().to_string());
+
+                    Ok(TranspilerOutput {
+                        rust_code,
+                        metadata,
+                    })
+                })
+                .collect()
         }
     }
 
