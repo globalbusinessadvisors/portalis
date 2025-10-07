@@ -585,19 +585,21 @@ PORTALIS_ENABLE_CUDA=1 cargo test --features cuda
 ### Getting Started
 - [Quick Start Guide](QUICK_START.md)
 - [Use Cases & Examples](USE_CASES.md)
-- [Python Language Features](PYTHON_LANGUAGE_FEATURES.md)
+- [Getting Started Tutorial](docs/getting-started.md)
 
 ### Architecture & Implementation
 - [System Architecture](plans/architecture.md)
 - [CPU Acceleration Architecture](plans/CPU_ACCELERATION_ARCHITECTURE.md) ⭐ NEW
-- [Wassette Integration](plans/wassette-integration-architecture.md) ⭐ NEW
+- [Wassette Integration](docs/WASSETTE_INTEGRATION.md) ⭐ NEW
+- [Integration Architecture Map](docs/INTEGRATION_ARCHITECTURE_MAP.md)
 - [Agent Design](plans/specification.md)
 
 ### Performance & Optimization
-- [CPU Component Validation Report](CPU_COMPONENT_VALIDATION_REPORT.md) ⭐ NEW
-- [SIMD Optimization Completion Report](SIMD_OPTIMIZATION_COMPLETION_REPORT.md)
-- [Memory Optimization Architecture](MEMORY_OPTIMIZATION_ARCHITECTURE.md)
-- [Phase 4 Memory Optimization Complete](PHASE4_MEMORY_OPTIMIZATION_COMPLETE.md)
+- [CPU Component Validation Report](docs/reports/CPU_COMPONENT_VALIDATION_REPORT.md) ⭐ NEW
+- [SIMD Optimization Completion Report](docs/reports/SIMD_OPTIMIZATION_COMPLETION_REPORT.md)
+- [Memory Optimization Test Strategy](docs/MEMORY_OPTIMIZATION_TEST_STRATEGY.md)
+- [Phase 4 Memory Optimization Complete](docs/summaries/PHASE4_MEMORY_OPTIMIZATION_COMPLETE.md)
+- [Workload Profiling Deliverables](docs/WORKLOAD_PROFILING_DELIVERABLES.md)
 
 ### GPU Acceleration (Optional - Enterprise)
 - [NVIDIA Integration Architecture](plans/nvidia-integration-architecture.md)
@@ -608,7 +610,11 @@ PORTALIS_ENABLE_CUDA=1 cargo test --features cuda
 ### Development
 - [Testing Strategy](plans/TESTING_STRATEGY.md)
 - [Contributing Guide](plans/CONTRIBUTING.md)
-- [Final Summary - CPU Component](FINAL_SUMMARY.md) ⭐ Milestone
+
+### Project Summaries
+- [Final Summary - CPU Component](docs/summaries/FINAL_SUMMARY.md) ⭐ Milestone
+- [Phase 4 Summary](docs/summaries/PHASE4_SUMMARY.md)
+- [Integration Executive Summary](docs/summaries/INTEGRATION_EXECUTIVE_SUMMARY.md)
 
 ---
 
