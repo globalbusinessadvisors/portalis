@@ -8,7 +8,7 @@ use anyhow::{Context, Result, bail};
 use clap::Parser;
 use colored::Colorize;
 use std::path::{Path, PathBuf};
-use portalis_transpiler::PythonToRustTranslator;
+use portalis_transpiler::python_to_rust::PythonToRustTranslator;
 
 #[derive(Parser, Debug)]
 pub struct ConvertCommand {
