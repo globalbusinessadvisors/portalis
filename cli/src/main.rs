@@ -11,6 +11,7 @@ use clap_complete::{generate, Shell};
 use commands::{
     assess::AssessCommand,
     batch::BatchCommand,
+    convert::ConvertCommand,
     doctor::DoctorCommand,
     package::PackageCommand,
     plan::PlanCommand,
@@ -56,13 +57,21 @@ enum ColorMode {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Translate a Python file to WASM
+    /// Convert Python to Rust/WASM (recommended)
+    Convert {
+        #[command(flatten)]
+        args: ConvertCommand,
+    },
+
+    /// Translate a Python file to WASM (deprecated - use 'convert')
+    #[command(hide = true)]
     Translate {
         #[command(flatten)]
         args: TranslateCommand,
     },
 
-    /// Batch translate multiple Python files
+    /// Batch translate multiple Python files (deprecated - use 'convert')
+    #[command(hide = true)]
     Batch {
         #[command(flatten)]
         args: BatchCommand,
@@ -157,8 +166,15 @@ async fn main() -> Result<()> {
 
     // Execute command
     match cli.command {
-        Commands::Translate { args } => args.execute().await?,
-        Commands::Batch { args } => args.execute().await?,
+        Commands::Convert { args } => args.execute().await?,
+        Commands::Translate { args } => {
+            eprintln!("⚠️  Warning: 'translate' is deprecated. Use 'portalis convert' instead.");
+            args.execute().await?
+        }
+        Commands::Batch { args } => {
+            eprintln!("⚠️  Warning: 'batch' is deprecated. Use 'portalis convert <directory>' instead.");
+            args.execute().await?
+        }
         Commands::Test { args } => args.execute().await?,
         Commands::Assess { args } => args.execute().await?,
         Commands::Plan { args } => args.execute().await?,

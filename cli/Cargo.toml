@@ -4,6 +4,12 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 authors.workspace = true
+description = "CLI for Portalis - GPU-accelerated Python to Rust/WASM transpiler"
+repository.workspace = true
+homepage.workspace = true
+keywords.workspace = true
+categories.workspace = true
+readme = "../README.md"
 
 [[bin]]
 name = "portalis"

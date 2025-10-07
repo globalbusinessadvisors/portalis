@@ -19,7 +19,12 @@ members = [
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-authors = ["Portalis Team"]
+authors = ["Portalis Team <team@portalis.ai>"]
+repository = "https://github.com/portalis/portalis"
+homepage = "https://portalis.dev"
+keywords = ["python", "rust", "wasm", "transpiler", "compiler"]
+categories = ["compilers", "wasm", "development-tools"]
+description = "GPU-accelerated Python to Rust/WASM transpiler"
 
 [workspace.dependencies]
 tokio = { version = "1.35", features = ["full"] }

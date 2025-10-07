@@ -131,42 +131,60 @@ PORTALIS uses a multi-agent architecture where each stage is accelerated by NVID
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-```bash
-# System requirements
-- Rust 1.75+
-- Python 3.11+
-- Cargo and rustup
-- (Optional) NVIDIA GPU with CUDA 12.0+ for acceleration
-```
-
 ### Installation
 
+**After publication (coming soon):**
 ```bash
-# Clone repository
-git clone https://github.com/your-org/portalis.git
-cd portalis
-
-# Build the platform
-cargo build --release
+# Install from crates.io
+cargo install portalis
 
 # Verify installation
-./target/release/portalis version
+portalis --version
+```
+
+**Current (development):**
+```bash
+# Clone and build from source
+git clone https://github.com/portalis/portalis.git
+cd portalis
+cargo build --release --bin portalis
+
+# Run CLI
+./target/release/portalis --version
 ```
 
 ### Basic Usage
 
+**Zero-friction conversion** - Navigate and convert:
+
 ```bash
-# Assess a Python project
-portalis assess --project ./my-python-app --report assessment.html
+# Navigate to your Python project
+cd my-python-project/
 
-# Generate migration plan
-portalis plan --project ./my-python-app --strategy bottom-up --output plan.json
-
-# Translate Python to Rust/WASM
-portalis translate --input app.py --output app.wasm
+# Convert to WASM (defaults to current directory)
+portalis convert
 ```
+
+**Or convert specific files/packages:**
+
+```bash
+# Convert a single script
+portalis convert calculator.py
+
+# Convert a Python library (creates Rust crate + WASM)
+portalis convert ./mylib/
+
+# Convert a directory of scripts
+portalis convert ./src/
+```
+
+**Auto-detection handles:**
+- ✅ Single Python scripts → WASM
+- ✅ Python packages (has `__init__.py`) → Rust crate + WASM library
+- ✅ Directories with Python files → Multiple WASM outputs
+- ✅ Entire projects → Complete conversion
+
+See [QUICK_START.md](QUICK_START.md) for detailed examples and [USE_CASES.md](USE_CASES.md) for real-world scenarios.
 
 ### With NVIDIA Acceleration
 
