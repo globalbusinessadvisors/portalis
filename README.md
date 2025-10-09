@@ -1,4 +1,4 @@
-# PORTALIS - High-Performance Python to WASM Translation Platform
+# PORTALIS - High-Performance Python to Rust Packaged as WASM Translation Platform
 
 **Enterprise-Grade Code Translation with CPU & GPU Acceleration**
 
